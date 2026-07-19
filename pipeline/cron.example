@@ -1,6 +1,7 @@
 # 분기별 자동 갱신 예시 (crontab -e 로 등록)
 # 서울시 추정매출 데이터는 분기 단위로 갱신되므로, 매 분기 첫 달(1,4,7,10월) 5일 새벽에 수집.
-# SEOUL_OPENAPI_KEY 는 crontab 상단 또는 /etc/environment 에 설정.
+# SEOUL_OPENAPI_KEY 실제 값은 커밋 금지. crontab 상단(사용자 전용) 또는 /etc/environment 에 설정.
+# 로컬 개발은 프로젝트 루트 .env 사용 (.env.example 참고).
 
 SEOUL_OPENAPI_KEY=여기에_발급받은_키
 PROJECT_DIR=/opt/nyang
