@@ -1,4 +1,4 @@
-package com.nyang.model;
+package com.nyang.industry.domain;
 
 import java.util.List;
 

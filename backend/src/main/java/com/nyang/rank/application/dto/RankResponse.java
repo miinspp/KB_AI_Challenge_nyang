@@ -1,4 +1,4 @@
-package com.nyang.model;
+package com.nyang.rank.application.dto;
 
 import java.util.List;
 import java.util.Map;

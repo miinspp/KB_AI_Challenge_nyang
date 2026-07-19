@@ -123,16 +123,23 @@ KB_AI_Challenge_nyang/
 ├── README.md
 ├── backend/
 │   ├── build.gradle, settings.gradle, gradlew          # Gradle 빌드 (래퍼 동봉)
-│   └── src/
+│   └── src/                                             # 도메인 중심 계층 구조
 │       ├── main/java/com/nyang/
-│       │   ├── NyangApplication.java               # 부트스트랩
-│       │   ├── config/CorsConfig.java                  # 개발용 CORS
-│       │   ├── controller/ApiController.java           # REST 엔드포인트
-│       │   ├── service/DataStore.java                  # 분포 JSON 로드/리로드
-│       │   ├── service/RankService.java                # 퍼센타일·종합점수 계산 (핵심)
-│       │   └── model/                                  # 요청/응답/업종 레코드
+│       │   ├── NyangApplication.java                   # 부트스트랩
+│       │   ├── global/                                 # 공통 관심사
+│       │   │   ├── config/CorsConfig.java              # 개발용 CORS
+│       │   │   └── exception/                          # ErrorResponse·GlobalExceptionHandler
+│       │   ├── industry/                               # 업종 데이터 도메인
+│       │   │   ├── domain/Industry.java                # 업종 레코드
+│       │   │   ├── repository/IndustryRepository.java  # 분포 JSON 로드/보관/리로드
+│       │   │   ├── application/                        # IndustryService + dto(요약·메타)
+│       │   │   ├── presentation/IndustryController.java# /meta·/industries·/admin/reload
+│       │   │   └── exception/IndustryNotFoundException.java
+│       │   └── rank/                                   # 상위 % 산출 도메인
+│       │       ├── application/                        # RankService(핵심) + dto(요청·응답)
+│       │       └── presentation/RankController.java    # POST /rank
 │       ├── main/resources/data/industry_distributions.json   # 가공된 분포 데이터(동봉)
-│       └── test/java/.../RankServiceTest.java          # 계산 로직 단위 테스트
+│       └── test/java/com/nyang/rank/application/RankServiceTest.java  # 계산 로직 단위 테스트
 ├── frontend/
 │   └── src/App.jsx, api.js, styles.css                 # 입력 폼·결과·분포 차트·방법론 표시
 └── pipeline/

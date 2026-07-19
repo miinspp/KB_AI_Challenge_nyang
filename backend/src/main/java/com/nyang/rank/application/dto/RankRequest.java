@@ -1,4 +1,4 @@
-package com.nyang.model;
+package com.nyang.rank.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
