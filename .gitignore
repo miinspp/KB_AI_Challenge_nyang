@@ -1,0 +1,28 @@
+# === OS / Editor ===
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# === Java / Gradle (backend) ===
+backend/.gradle/
+backend/build/
+backend/bin/
+backend/out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# === Node / Vite (frontend) ===
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-error.log*
+
+# === Python (pipeline) ===
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+pipeline/raw/
+
+# === misc ===
+*.log

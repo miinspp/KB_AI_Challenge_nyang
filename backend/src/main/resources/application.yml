@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+spring:
+  jackson:
+    serialization:
+      indent-output: true
+
+# 크론 파이프라인이 갱신하는 외부 데이터 파일을 쓰려면 주석 해제 (기본: 클래스패스 내장 데이터)
+# app:
+#   data-file: /opt/nyang/backend/src/main/resources/data/industry_distributions.json

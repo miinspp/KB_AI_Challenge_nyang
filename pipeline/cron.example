@@ -1,0 +1,11 @@
+# 분기별 자동 갱신 예시 (crontab -e 로 등록)
+# 서울시 추정매출 데이터는 분기 단위로 갱신되므로, 매 분기 첫 달(1,4,7,10월) 5일 새벽에 수집.
+# SEOUL_OPENAPI_KEY 는 crontab 상단 또는 /etc/environment 에 설정.
+
+SEOUL_OPENAPI_KEY=여기에_발급받은_키
+PROJECT_DIR=/opt/nyang
+
+0 4 5 1,4,7,10 * cd $PROJECT_DIR/pipeline && /usr/bin/python3 collect_seoul_sales.py --out-dir raw && /usr/bin/python3 build_distributions.py --sales raw/sales_latest.csv --stores raw/stores_latest.csv --out $PROJECT_DIR/backend/src/main/resources/data/industry_distributions.json >> /var/log/nyang-pipeline.log 2>&1
+
+# 갱신 후 백엔드 재기동이 필요하면 아래 주석 해제
+#5 5 5 1,4,7,10 * systemctl restart nyang-backend
