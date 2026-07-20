@@ -1,0 +1,75 @@
+{
+  "description": "업종 그룹별 수익성 벤치마크. 출처: 통계청·중소벤처기업부 「2022년 소상공인실태조사」 업종별 사업체당 연간 매출액/영업이익(백만원), 전체 평균은 「2023년 소상공인실태조사(잠정)」.",
+  "source": {
+    "name": "소상공인실태조사 (통계청·중소벤처기업부)",
+    "detail": "업종별: 2022년 확정결과 / 전체 평균: 2023년 잠정결과",
+    "url": "https://kosis.kr (소상공인실태조사)"
+  },
+  "groups": {
+    "food": {
+      "label": "숙박·음식점업",
+      "annualSalesMillionKrw": 145,
+      "annualProfitMillionKrw": 32,
+      "operatingMargin": 0.2207
+    },
+    "retail": {
+      "label": "도·소매업",
+      "annualSalesMillionKrw": 302,
+      "annualProfitMillionKrw": 32,
+      "operatingMargin": 0.106
+    },
+    "education": {
+      "label": "교육서비스업",
+      "annualSalesMillionKrw": 70,
+      "annualProfitMillionKrw": 25,
+      "operatingMargin": 0.3571
+    },
+    "leisure": {
+      "label": "예술·스포츠·여가업",
+      "annualSalesMillionKrw": 78,
+      "annualProfitMillionKrw": 18,
+      "operatingMargin": 0.2308
+    },
+    "repair_personal": {
+      "label": "수리·기타 서비스업",
+      "annualSalesMillionKrw": 53,
+      "annualProfitMillionKrw": 16,
+      "operatingMargin": 0.3019
+    },
+    "overall": {
+      "label": "소상공인 전체 평균",
+      "annualSalesMillionKrw": 199,
+      "annualProfitMillionKrw": 25,
+      "operatingMargin": 0.1256
+    }
+  },
+  "industryGroupMap": {
+    "CS200001": "education",
+    "CS200002": "education",
+    "CS200003": "education",
+    "CS200005": "education",
+    "CS200006": "overall",
+    "CS200007": "overall",
+    "CS200008": "overall",
+    "CS200016": "leisure",
+    "CS200017": "leisure",
+    "CS200019": "leisure",
+    "CS200024": "leisure",
+    "CS200025": "repair_personal",
+    "CS200026": "repair_personal",
+    "CS200028": "repair_personal",
+    "CS200029": "repair_personal",
+    "CS200030": "repair_personal",
+    "CS200031": "repair_personal",
+    "CS200032": "repair_personal",
+    "CS200033": "overall",
+    "CS200034": "food",
+    "CS200036": "food",
+    "CS200037": "leisure"
+  },
+  "prefixDefaults": {
+    "CS1": "food",
+    "CS2": "repair_personal",
+    "CS3": "retail"
+  }
+}
