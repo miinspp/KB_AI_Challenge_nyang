@@ -5,6 +5,7 @@ import com.nyang.rank.application.dto.RankRequest;
 import com.nyang.rank.application.dto.RankResponse;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -94,19 +95,42 @@ public class RankService {
         RankResponse.MarginComponent marginC = new RankResponse.MarginComponent(
                 round4(userMargin), ind.marginBenchmark(), round1(mScore));
 
+        List<String> notes = new ArrayList<>(List.of(
+                "매출 퍼센타일은 서울시 상권분석서비스 추정매출 실측 분포 기준입니다.",
+                "순수익 퍼센타일은 매출 분포에 소상공인실태조사 업종 평균 영업이익률("
+                        + Math.round(ind.marginBenchmark() * 1000) / 10.0 + "%, "
+                        + ind.groupLabel() + ")을 적용해 유도한 분포 기준으로, 점포별 이익률 편차는 반영되지 않습니다.",
+                "비용 효율 점수는 업종 평균 이익률 대비 비율 환산 휴리스틱입니다(평균=50점)."
+        ));
+
+        // 상권유형(골목/발달/전통시장) 지정 시 동일 유형 분포로 보조 순위 산출 (같은 가중치 적용)
+        RankResponse.AreaRank areaRank = null;
+        if (req.areaType() != null && !req.areaType().isBlank()) {
+            Industry.AreaTypeDist at = ind.areaTypes() == null ? null : ind.areaTypes().get(req.areaType());
+            if (at != null) {
+                double atSalesPct = percentileOf(at.quantiles(), sales);
+                List<Double> atProfitQ = at.quantiles().stream().map(x -> x * ind.marginBenchmark()).toList();
+                double atProfitPct = percentileOf(atProfitQ, netProfit);
+                double atComposite = ws * atSalesPct + wp * atProfitPct + wm * mScore;
+                areaRank = new RankResponse.AreaRank(
+                        req.areaType(), round1(atComposite), round1(Math.max(0.1, 100.0 - atComposite)),
+                        round1(atSalesPct), round1(100 - atSalesPct),
+                        at.nAreas(), at.nStores(), at.quantiles().get(50));
+                notes.add("상권유형 비교는 동일 업종 중 " + req.areaType()
+                        + " 점포 분포만으로 같은 방식(동일 가중치)으로 산출한 보조 지표입니다.");
+            } else {
+                notes.add("이 업종은 '" + req.areaType() + "' 표본 상권이 부족해 상권유형 비교를 제공하지 않습니다.");
+            }
+        }
+
         return new RankResponse(
                 ind.code(), ind.name(), ind.groupLabel(),
                 round1(composite), topPercent,
                 salesC, profitC, marginC,
                 Map.of("sales", ws, "profit", wp, "margin", wm),
                 new RankResponse.Peer(ind.nAreas(), ind.nStores(), ind.medianMonthlySales()),
-                List.of(
-                        "매출 퍼센타일은 서울시 상권분석서비스 추정매출 실측 분포 기준입니다.",
-                        "순수익 퍼센타일은 매출 분포에 소상공인실태조사 업종 평균 영업이익률("
-                                + Math.round(ind.marginBenchmark() * 1000) / 10.0 + "%, "
-                                + ind.groupLabel() + ")을 적용해 유도한 분포 기준으로, 점포별 이익률 편차는 반영되지 않습니다.",
-                        "비용 효율 점수는 업종 평균 이익률 대비 비율 환산 휴리스틱입니다(평균=50점)."
-                ));
+                areaRank,
+                notes);
     }
 
     private static double round1(double v) { return Math.round(v * 10) / 10.0; }

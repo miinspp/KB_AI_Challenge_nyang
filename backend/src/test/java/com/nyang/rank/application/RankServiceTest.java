@@ -50,9 +50,9 @@ class RankServiceTest {
     @Test
     void rank_composite_and_top_percent_consistent() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
         // 매출 500만(=P50), 지출 389.65만 → 순수익 110.35만 = 500만*0.2207 → 유도분포 P50, 이익률 = 벤치마크 → 50점
-        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, null);
+        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, null, null);
         RankResponse res = svc.rank(ind, req);
         assertEquals(50.0, res.sales().percentile(), 0.01);
         assertEquals(50.0, res.profit().percentile(), 0.01);
@@ -65,9 +65,9 @@ class RankServiceTest {
     @Test
     void rank_custom_weights_normalized() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
         // 매출 100% 가중치 → 종합 = 매출 퍼센타일
-        RankRequest req = new RankRequest("CS100001", 8_000_000, 8_000_000,
+        RankRequest req = new RankRequest("CS100001", 8_000_000, 8_000_000, null,
                 new RankRequest.Weights(2, 0, 0));
         RankResponse res = svc.rank(ind, req);
         assertEquals(res.sales().percentile(), res.compositeScore(), 1e-9);
@@ -75,10 +75,38 @@ class RankServiceTest {
     }
 
     @Test
+    void area_type_rank_uses_area_distribution() {
+        // 골목상권 격자 = 전체 격자 × 0.5 → 같은 매출이면 골목상권 내 퍼센타일이 더 높아야 함
+        List<Double> alley = linearGrid().stream().map(x -> x * 0.5).toList();
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(),
+                java.util.Map.of("골목상권", new Industry.AreaTypeDist(920, 16256, 2_500_000, alley)));
+        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, "골목상권", null);
+        RankResponse res = svc.rank(ind, req);
+        assertNotNull(res.areaRank());
+        assertEquals("골목상권", res.areaRank().areaType());
+        assertEquals(100.0, res.areaRank().salesPercentile(), 1e-9); // 500만 = 골목 격자 최댓값
+        assertTrue(res.areaRank().compositeScore() > res.compositeScore());
+        assertTrue(res.notes().stream().anyMatch(n -> n.contains("상권유형 비교")));
+    }
+
+    @Test
+    void area_type_absent_or_unknown_yields_null_area_rank() {
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        // areaType 미지정 → null
+        assertNull(svc.rank(ind, new RankRequest("CS100001", 5_000_000, 0, null, null)).areaRank());
+        // 표본 없는 유형 지정 → null + 안내 note
+        RankResponse res = svc.rank(ind, new RankRequest("CS100001", 5_000_000, 0, "관광특구", null));
+        assertNull(res.areaRank());
+        assertTrue(res.notes().stream().anyMatch(n -> n.contains("표본 상권이 부족")));
+    }
+
+    @Test
     void negative_profit_lands_at_bottom() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
-        RankRequest req = new RankRequest("CS100001", 3_000_000, 5_000_000, null);
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        RankRequest req = new RankRequest("CS100001", 3_000_000, 5_000_000, null, null);
         RankResponse res = svc.rank(ind, req);
         assertEquals(0.0, res.profit().percentile(), 1e-9);
         assertEquals(0.0, res.margin().score(), 1e-9);
