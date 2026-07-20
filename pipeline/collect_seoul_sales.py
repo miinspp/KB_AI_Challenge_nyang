@@ -4,7 +4,9 @@
 '점포-상권'(VwsmTrdarStorQq) 데이터를 전량 수집해 CSV로 저장한다.
 
 사용법
-  export SEOUL_OPENAPI_KEY=발급받은키   # https://data.seoul.go.kr → 인증키 신청 (즉시 발급, 무료)
+  # 방법 1) 프로젝트 루트 .env 에 SEOUL_OPENAPI_KEY=... 를 넣어두면 자동 로드 (python-dotenv 필요)
+  # 방법 2) 셸 환경변수:  export SEOUL_OPENAPI_KEY=발급받은키
+  #   키 발급: https://data.seoul.go.kr → 인증키 신청 (즉시 발급, 무료)
   python3 collect_seoul_sales.py --out-dir raw
 
 수집 후:
@@ -19,6 +21,14 @@ import os
 import sys
 import time
 import urllib.request
+
+# 프로젝트 루트 .env 자동 로드 (python-dotenv 설치 시). 미설치면 실제 환경변수(export/source)를 사용.
+try:
+    from pathlib import Path
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
 
 BASE = "http://openapi.seoul.go.kr:8088"
 PAGE = 1000  # API 1회 최대 조회 건수

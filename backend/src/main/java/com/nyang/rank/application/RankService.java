@@ -1,8 +1,8 @@
-package com.nyang.service;
+package com.nyang.rank.application;
 
-import com.nyang.model.Industry;
-import com.nyang.model.RankRequest;
-import com.nyang.model.RankResponse;
+import com.nyang.industry.domain.Industry;
+import com.nyang.rank.application.dto.RankRequest;
+import com.nyang.rank.application.dto.RankResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

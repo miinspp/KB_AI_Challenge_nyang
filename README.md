@@ -33,10 +33,12 @@ industry_distributions.json  (63개 업종 × 백분위 P0~P100 격자)
 
 ## 2. 어떤 데이터를 썼나
 
+> 📄 **데이터 범위·출처·한계 상세 정리: [docs/DATA.md](docs/DATA.md)** (서울 한정 여부, 홈택스와의 차이 등)
+
 **(1) 업종별 매출 분포 — 서울시 상권분석서비스(추정매출-상권)**
 - 출처: [서울 열린데이터광장 OA-15572](https://data.seoul.go.kr/dataList/OA-15572/S/1/datasetView.do) (서울신용보증재단, 카드사 매출 기반 추정)
-- 동봉된 데이터: 공식 배포본 **2019년 1~4분기 전체 135,578행** — 63개 업종 × 약 1,600개
-  상권 × 4개 분기, 점포수 포함
+- 동봉된 데이터: Open API 수집본 **최신 4개 분기(2025 Q2 ~ 2026 Q1)** — 60개 업종 ×
+  1,576개 상권, 점포수 데이터와 조인
 - 점포 단위로 비교 가능한 매출 공공데이터는 서울시만 공개하고 있어 **비교 범위는 서울**입니다
   (전국은 점포 위치·수만 공개되어 매출 분포를 만들 수 없음)
 
@@ -123,16 +125,23 @@ KB_AI_Challenge_nyang/
 ├── README.md
 ├── backend/
 │   ├── build.gradle, settings.gradle, gradlew          # Gradle 빌드 (래퍼 동봉)
-│   └── src/
+│   └── src/                                             # 도메인 중심 계층 구조
 │       ├── main/java/com/nyang/
-│       │   ├── NyangApplication.java               # 부트스트랩
-│       │   ├── config/CorsConfig.java                  # 개발용 CORS
-│       │   ├── controller/ApiController.java           # REST 엔드포인트
-│       │   ├── service/DataStore.java                  # 분포 JSON 로드/리로드
-│       │   ├── service/RankService.java                # 퍼센타일·종합점수 계산 (핵심)
-│       │   └── model/                                  # 요청/응답/업종 레코드
+│       │   ├── NyangApplication.java                   # 부트스트랩
+│       │   ├── global/                                 # 공통 관심사
+│       │   │   ├── config/CorsConfig.java              # 개발용 CORS
+│       │   │   └── exception/                          # ErrorResponse·GlobalExceptionHandler
+│       │   ├── industry/                               # 업종 데이터 도메인
+│       │   │   ├── domain/Industry.java                # 업종 레코드
+│       │   │   ├── repository/IndustryRepository.java  # 분포 JSON 로드/보관/리로드
+│       │   │   ├── application/                        # IndustryService + dto(요약·메타)
+│       │   │   ├── presentation/IndustryController.java# /meta·/industries·/admin/reload
+│       │   │   └── exception/IndustryNotFoundException.java
+│       │   └── rank/                                   # 상위 % 산출 도메인
+│       │       ├── application/                        # RankService(핵심) + dto(요청·응답)
+│       │       └── presentation/RankController.java    # POST /rank
 │       ├── main/resources/data/industry_distributions.json   # 가공된 분포 데이터(동봉)
-│       └── test/java/.../RankServiceTest.java          # 계산 로직 단위 테스트
+│       └── test/java/com/nyang/rank/application/RankServiceTest.java  # 계산 로직 단위 테스트
 ├── frontend/
 │   └── src/App.jsx, api.js, styles.css                 # 입력 폼·결과·분포 차트·방법론 표시
 └── pipeline/

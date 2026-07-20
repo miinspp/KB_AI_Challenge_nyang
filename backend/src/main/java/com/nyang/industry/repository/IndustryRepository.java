@@ -1,14 +1,14 @@
-package com.nyang.service;
+package com.nyang.industry.repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nyang.model.Industry;
+import com.nyang.industry.domain.Industry;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -25,9 +25,9 @@ import java.util.Optional;
  * app.data-file 프로퍼티(또는 DATA_FILE 환경변수)로 외부 파일 경로를 지정하고
  * POST /api/admin/reload 를 호출한다.
  */
-@Component
-public class DataStore {
-    private static final Logger log = LoggerFactory.getLogger(DataStore.class);
+@Repository
+public class IndustryRepository {
+    private static final Logger log = LoggerFactory.getLogger(IndustryRepository.class);
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Value("${app.data-file:}")
