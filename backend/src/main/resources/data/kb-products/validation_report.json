@@ -1,0 +1,98 @@
+{
+  "schema_version": "4.0.3",
+  "validated_at": "2026-07-20T16:26:00.578589+00:00",
+  "evidence_as_of": "2026-07-21",
+  "structural_valid": true,
+  "semantic_valid": true,
+  "url_channel_valid": true,
+  "document_mapping_valid": true,
+  "document_mapping_status_valid": true,
+  "recommendation_policy_valid": true,
+  "candidate_policy_required_role_valid": true,
+  "source_registry_valid": true,
+  "source_registry_single_product_id_valid": true,
+  "readme_role_enum_valid": true,
+  "readme_channel_enum_valid": true,
+  "readme_version_reference_valid": true,
+  "documentation_summary_valid": true,
+  "correction_report_count_valid": true,
+  "validated_files_hash_valid": true,
+  "manifest_self_reference_safe": true,
+  "zip_reextract_valid": true,
+  "final_handoff_ready": true,
+  "product_count": 48,
+  "available_product_count": 36,
+  "recommendable_count": 24,
+  "manual_override_v4_count": 18,
+  "document_count": 30,
+  "document_scope_counts": {
+    "COMMON": 7,
+    "PRODUCT_FAMILY": 3,
+    "PRODUCT": 20
+  },
+  "validation_matrix_pass_count": 48,
+  "validation_matrix_fail_count": 0,
+  "source_registry_rows": 281,
+  "source_registry_duplicate_rows": 0,
+  "source_registry_empty_urls": 0,
+  "candidate_duplicate_application_urls": [],
+  "package_expected_file_count": 12,
+  "validated_content_file_count": 10,
+  "validated_files_excluded": {
+    "validation_report.json": "자기참조 방지를 위해 내부 validated_files에서 제외하고 final_sha256.csv에서 검증",
+    "final_sha256.csv": "매니페스트 자기참조 방지를 위해 자신의 해시를 포함하지 않음"
+  },
+  "errors": [],
+  "warnings": [],
+  "accepted_limitations": [
+    "상품 판매상태와 공개금리는 KB 공식 페이지 변경 이후 달라질 수 있으므로 서비스 운영 시 주기적 갱신이 필요합니다.",
+    "공개 예시금리·한도는 개인별 승인금리·승인한도를 의미하지 않습니다.",
+    "BRANCH_OPENING 상품의 application_url은 온라인 거래 실행 URL이 아니라 공식 상품정보 또는 영업점 가입 안내 페이지입니다.",
+    "S004 KB셀러플러스대출은 현재 신규 판매 근거가 부족하여 HOLDING_ONLY로 유지했습니다.",
+    "A005는 패키지 내부 공식 신상품 안내·약관·상품설명서 간 일관성을 기준으로 유지했습니다.",
+    "일부 상품군·개별 문서는 원본 파일 크기와 수집 seed 정보가 없어 bytes와 captured_from_seed가 null입니다."
+  ],
+  "validated_files": {
+    "catalog_runtime.json": {
+      "sha256": "1c349ff725cc63e1ab4a6749b547d66d46faf2196645a5cf133917e2c16b523a",
+      "bytes": 109403
+    },
+    "recommendable_products.json": {
+      "sha256": "7a2d4fd00bfe5465115ec628907e3c6528994d16bccd788369dd10c62b815d19",
+      "bytes": 56915
+    },
+    "catalog_audit.json": {
+      "sha256": "7ee64b869037bdb69d62eed97964ed23de393ea1d507f12b2993fb9686affb22",
+      "bytes": 770378
+    },
+    "common_documents.json": {
+      "sha256": "95e6505cf02e78db39a079fd784c7d083142d3cb6cffb5b9f5002c84c9f1e31f",
+      "bytes": 25947
+    },
+    "source_registry.csv": {
+      "sha256": "3c5226c1deb6e3f4aacd3ef71d25b47b409a4a284d754816ed5360ed6c63cb8a",
+      "bytes": 58678
+    },
+    "review_decisions.json": {
+      "sha256": "f59a6d3b38844d342f739b604224ef12c02199bda5dfdccdf3daf2be02247753",
+      "bytes": 14630
+    },
+    "correction_report.json": {
+      "sha256": "e1e1d49421590a08bd9516f4d6ee73001dfda05e1cf64911f34697cdb31335cf",
+      "bytes": 29960
+    },
+    "validation_matrix.csv": {
+      "sha256": "6a1dad2ce55164f0b88053aaf1ed18b1a39f36ce354d7a36096a4cf56acf5d82",
+      "bytes": 8322
+    },
+    "README_KO.md": {
+      "sha256": "3e47335b4fbb5272e3549743de637e77bbda69dadb0bc412601aed4680d5e909",
+      "bytes": 5641
+    },
+    "KB_catalog_v4_0_3_correction_report_20260721.md": {
+      "sha256": "3b240639640af6660d9b91d288e43a1cb3bd48b36bced1de64e7556567116cea",
+      "bytes": 2101
+    }
+  },
+  "zip_reextract_verified_at": "2026-07-20T16:26:00.652159+00:00"
+}

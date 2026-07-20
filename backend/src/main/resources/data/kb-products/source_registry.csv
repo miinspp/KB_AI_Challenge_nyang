@@ -1,0 +1,282 @@
+﻿product_id,scope,applicable_product_ids,evidence_type,source_url,source_title,matched_text,sha256,review_status
+L001,PRODUCT,"[""L001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C111884,상품 대상·구조·공개조건,,,REFERENCE
+L001,PRODUCT,"[""L001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L001,PRODUCT,"[""L001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L001,PRODUCT,"[""L001""]",CURRENT_EXACT_PRODUCT_CARD,https://obiz.kbstar.com/quics?page=C016280,,"가입채널 인터넷 스타기업뱅킹 KB사장님+ 마이너스통장 사장님, 필요한만큼 사용하고 언제든 상환하세요 신청하기 비교하기",,AUTOMATED
+L002,PRODUCT,"[""L002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C100265,상품 대상·구조·공개조건,,,REFERENCE
+L002,PRODUCT,"[""L002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L002,PRODUCT,"[""L002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L002,PRODUCT,"[""L002""]",CURRENT_EXACT_PRODUCT_CARD,https://obiz.kbstar.com/quics?page=C016280,,가입채널 인터넷 스타기업뱅킹 KB소상공인 신용대출 바쁜 개인사업자를 위한 비대면 신용대출 신청하기 비교하기,,AUTOMATED
+L003,PRODUCT,"[""L003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C110367,상품 대상·구조·공개조건,,,REFERENCE
+L003,PRODUCT,"[""L003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L003,PRODUCT,"[""L003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L003,PRODUCT,"[""L003""]",CURRENT_PRODUCT_PAGE,https://obiz.kbstar.com/quics?page=C110367,,보증서 대출상품 ( KB기업뱅킹 | 금융상품 | 대출 | 대출상품 | 보증서 대출상품 ),,AUTOMATED
+L004,PRODUCT,"[""L004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C110956,상품 대상·구조·공개조건,,,REFERENCE
+L004,PRODUCT,"[""L004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L004,PRODUCT,"[""L004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L004,PRODUCT,"[""L004""]",CURRENT_EXACT_PRODUCT_CARD,https://obiz.kbstar.com/quics?page=C016280,,가입채널 인터넷 스타기업뱅킹 KB소상공인 보증서대출(온택트) 사업장에서 모바일로 간편하게 신청하기 비교하기,,AUTOMATED
+L005,PRODUCT,"[""L005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=N&page=C016280&prcode=LN25001564,상품 대상·구조·공개조건,,,REFERENCE
+L005,PRODUCT,"[""L005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L005,PRODUCT,"[""L005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L005,PRODUCT,"[""L005""]",CURRENT_EXACT_PRODUCT_CARD,https://obiz.kbstar.com/quics?page=C016280,,가입채널 스타기업뱅킹 영업점 KB소상공인보증서대출(모바일우대보증) - 경기도 소재 소상공인을 위한 비대면 전용 보증서대출 신청하기 비교하기,,AUTOMATED
+L006,PRODUCT,"[""L006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C112610,상품 대상·구조·공개조건,,,REFERENCE
+L006,PRODUCT,"[""L006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L006,PRODUCT,"[""L006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L006,PRODUCT,"[""L006""]",CURRENT_PRODUCT_PAGE_ACTION,https://obiz.kbstar.com/quics?page=C112610,,"아래 ①, ② 내용 모두 해당하는 고객님 ① 이벤트 기간 내에 「소상공인 정책자금대출」 비대면 서비스를 통해 정책자금 지원대상 확인서 신청하기 ② 「소상공인 정책자금대출」 비대면 서비스로 소상공인 정책자금 대출 받기",,AUTOMATED
+L007,PRODUCT,"[""L007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=obiz,상품 대상·구조·공개조건,,,REFERENCE
+L007,PRODUCT,"[""L007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,기업대출 상품공시·상품별 약정서/설명서,,,REFERENCE
+L007,PRODUCT,"[""L007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,은행여신거래기본약관·기업여신상품설명서,,,REFERENCE
+L007,PRODUCT,"[""L007""]",CURRENT_PRODUCT_PAGE_ACTION,https://obiz.kbstar.com/quics?page=obiz,,"ONE KB기업우대대출 대출신청 대상 간소화,대출기간 및 상환방식의다각화, 우대서비스 제공 바로가기",,AUTOMATED
+D001,PRODUCT,"[""D001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001590,상품 대상·구조·공개조건,,,REFERENCE
+D001,PRODUCT,"[""D001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,119plus 등 상품 공시자료,,,REFERENCE
+D001,PRODUCT,"[""D001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 약관·설명서,,,REFERENCE
+D001,PRODUCT,"[""D001""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C016280,,햇살론 119 ... 상담하기,,VERIFIED
+D002,PRODUCT,"[""D002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001614,상품 대상·구조·공개조건,,,REFERENCE
+D002,PRODUCT,"[""D002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,119plus 등 상품 공시자료,,,REFERENCE
+D002,PRODUCT,"[""D002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 약관·설명서,,,REFERENCE
+D002,PRODUCT,"[""D002""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001614,,상담신청 및 영업점 방문예약이 제공되는 현재 상품 페이지,,VERIFIED
+D003,PRODUCT,"[""D003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001621,상품 대상·구조·공개조건,,,REFERENCE
+D003,PRODUCT,"[""D003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C043830,119plus 등 상품 공시자료,,,REFERENCE
+D003,PRODUCT,"[""D003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 약관·설명서,,,REFERENCE
+D003,PRODUCT,"[""D003""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001621,,상담신청 및 영업점 방문예약이 제공되는 현재 상품 페이지,,VERIFIED
+S001,PRODUCT,"[""S001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,상품 대상·구조·공개조건,,,REFERENCE
+S001,PRODUCT,"[""S001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+S001,PRODUCT,"[""S001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,셀러론 상품구조 및 제휴처,,,REFERENCE
+S001,PRODUCT,"[""S001""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C059034,,모바일로 신청하기 및 PC로 신청하기 제공,,VERIFIED
+S002,PRODUCT,"[""S002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C067219,상품 대상·구조·공개조건,,,REFERENCE
+S002,PRODUCT,"[""S002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+S002,PRODUCT,"[""S002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,셀러론 상품구조 및 제휴처,,,REFERENCE
+S002,PRODUCT,"[""S002""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C067219,,신청하기 및 대출신청 메뉴 제공,,VERIFIED
+S003,PRODUCT,"[""S003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C101744,상품 대상·구조·공개조건,,,REFERENCE
+S003,PRODUCT,"[""S003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+S003,PRODUCT,"[""S003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,셀러론 상품구조 및 제휴처,,,REFERENCE
+S003,PRODUCT,"[""S003""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C101744,,"상담안내 및 신청, 상담진행현황, 전자약정·건별대출 절차 제공",,VERIFIED
+S004,PRODUCT,"[""S004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C016282,상품 대상·구조·공개조건,,,REFERENCE
+S004,PRODUCT,"[""S004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+S004,PRODUCT,"[""S004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,셀러론 상품구조 및 제휴처,,,REFERENCE
+S004,PRODUCT,"[""S004""]",MANUAL_OFFICIAL_REVIEW,https://obank.kbstar.com/quics?articleClass=1&articleId=137234&bbsMode=view&boardId=669&compId=b058334&page=C020721&searchCondition=title&searchStr=&viewPage=3,,"2025년 공식 공지는 KB셀러플러스대출의 만기도래 기존 계좌를 지원 대상으로 언급함. 2026-07-20 현재 83개 상품목록에는 정확한 상품 카드가 없고, 재수집 HTML의 관련 팝업 실행 코드는 주석 처리되어 있어 신규 판매 근거로 인정하지 않음.",,VERIFIED
+S005,PRODUCT,"[""S005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=obiz,상품 대상·구조·공개조건,,,REFERENCE
+S005,PRODUCT,"[""S005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+S005,PRODUCT,"[""S005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C062645,셀러론 상품구조 및 제휴처,,,REFERENCE
+S005,PRODUCT,"[""S005""]",CURRENT_PRODUCT_PAGE,https://obiz.kbstar.com/quics?page=C016280&cc=b035196:b035393&%EB%B8%8C%EB%9E%9C%EB%93%9C%EC%83%81%ED%92%88%EC%BD%94%EB%93%9C=LN25001490,,KB국민은행 기업인터넷뱅킹,,AUTOMATED
+SC001,PRODUCT,"[""SC001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C104469,상품 대상·구조·공개조건,,,REFERENCE
+SC001,PRODUCT,"[""SC001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC001,PRODUCT,"[""SC001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC001,PRODUCT,"[""SC001""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C104470,,영업점 대출신청 및 서류제출 절차가 현재 안내됨,,VERIFIED
+SC002,PRODUCT,"[""SC002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C101247,상품 대상·구조·공개조건,,,REFERENCE
+SC002,PRODUCT,"[""SC002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC002,PRODUCT,"[""SC002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC002,PRODUCT,"[""SC002""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C101247,,현재 상품 페이지와 인터넷 약정 안내가 존재하나 신규 신청 버튼은 추가 확인 필요,,VERIFIED
+SC003,PRODUCT,"[""SC003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C102419,상품 대상·구조·공개조건,,,REFERENCE
+SC003,PRODUCT,"[""SC003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC003,PRODUCT,"[""SC003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC003,PRODUCT,"[""SC003""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C102419,,현재 상품 페이지와 인터넷 이용신청 안내가 존재하나 신규 신청 버튼은 추가 확인 필요,,VERIFIED
+SC004,PRODUCT,"[""SC004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C110698,상품 대상·구조·공개조건,,,REFERENCE
+SC004,PRODUCT,"[""SC004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC004,PRODUCT,"[""SC004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC004,PRODUCT,"[""SC004""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C016280,,전체 대출상품의 정확한 상품 카드에 신청하기 표시,,VERIFIED
+SC005,PRODUCT,"[""SC005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C110699,상품 대상·구조·공개조건,,,REFERENCE
+SC005,PRODUCT,"[""SC005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC005,PRODUCT,"[""SC005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC005,PRODUCT,"[""SC005""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C110699,,현재 상품 소개와 생산자금 대출 신청·실행 프로세스가 존재,,VERIFIED
+SC006,PRODUCT,"[""SC006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C112735,상품 대상·구조·공개조건,,,REFERENCE
+SC006,PRODUCT,"[""SC006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,B2B 약정서·설명서·특약,,,REFERENCE
+SC006,PRODUCT,"[""SC006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019999,기업여신 공통 약관,,,REFERENCE
+SC006,PRODUCT,"[""SC006""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C016280,,전체 대출상품의 정확한 상품 카드에 신청하기 표시,,VERIFIED
+B001,PRODUCT,"[""B001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C023909,상품 대상·구조·공개조건,,,REFERENCE
+B001,PRODUCT,"[""B001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B001,PRODUCT,"[""B001""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C023638,,현재 서비스이용안내·세부요건·인터넷/영업점 거래 안내 존재,,VERIFIED
+B002,PRODUCT,"[""B002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C023908,상품 대상·구조·공개조건,,,REFERENCE
+B002,PRODUCT,"[""B002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B002,PRODUCT,"[""B002""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C023910,,현재 구매카드대출 서비스 흐름 안내 존재,,VERIFIED
+B003,PRODUCT,"[""B003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C023636,상품 대상·구조·공개조건,,,REFERENCE
+B003,PRODUCT,"[""B003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B003,PRODUCT,"[""B003""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C023911,,현재 외상매출채권전자대출 서비스 흐름 안내 존재,,VERIFIED
+B004,PRODUCT,"[""B004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C113310,상품 대상·구조·공개조건,,,REFERENCE
+B004,PRODUCT,"[""B004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B004,PRODUCT,"[""B004""]",CURRENT_PRODUCT_PAGE,https://obiz.kbstar.com/quics?page=C023637,,KB상생결제론 서비스 안내 ( KB기업뱅킹 | B2B | 통합서비스 | B2B상품 안내 | KB상생결제론 | KB상생결제론 서비스 안내 ),,AUTOMATED
+B005,PRODUCT,"[""B005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C016293,상품 대상·구조·공개조건,,,REFERENCE
+B005,PRODUCT,"[""B005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B005,PRODUCT,"[""B005""]",CURRENT_PRODUCT_PAGE,https://obiz.kbstar.com/quics?page=C016293,,KB구매론 ( KB기업뱅킹 | B2B | 통합서비스 | B2B상품 안내 | KB구매론 ),,AUTOMATED
+B006,PRODUCT,"[""B006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C016297,상품 대상·구조·공개조건,,,REFERENCE
+B006,PRODUCT,"[""B006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B006,PRODUCT,"[""B006""]",MANUAL_OFFICIAL_REVIEW,https://obiz.kbstar.com/quics?page=C023912,,현재 전자채권 서비스 흐름 안내 존재,,VERIFIED
+B007,PRODUCT,"[""B007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C023916,상품 대상·구조·공개조건,,,REFERENCE
+B007,PRODUCT,"[""B007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B007,PRODUCT,"[""B007""]",CURRENT_PRODUCT_PAGE,https://obiz.kbstar.com/quics?page=C023918,,서비스이용안내 ( KB기업뱅킹 | B2B | 통합서비스 | B2B상품 안내 | 전자어음 | 서비스이용안내 ),,AUTOMATED
+B008,PRODUCT,"[""B008""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C101745,상품 대상·구조·공개조건,,,REFERENCE
+B008,PRODUCT,"[""B008""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C020004,외담대·KB구매론·전자채권·전자어음 약정서,,,REFERENCE
+B008,PRODUCT,"[""B008""]",LINKED_ACCOUNT_REQUIREMENT_SOURCE,https://obiz.kbstar.com/quics?page=C101745,KB매출더하기론 필수 정산계좌 근거,KB매출더하기론 이용절차 ( KB기업뱅킹 | 금융상품 | 대출 | KB매출더하기론 | 상품 개요 | KB매출더하기론 이용절차 ),,AUTOMATED
+A001,PRODUCT,"[""A001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?articleClass=2&articleId=139522&bbsMode=view&boardId=669&compId=b058336&page=C020722,상품 대상·구조·공개조건,,,REFERENCE
+A001,PRODUCT,"[""A001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A001,PRODUCT,"[""A001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A001,PRODUCT,"[""A001""]",CURRENT_PRODUCT_PAGE_ACTION,https://obiz.kbstar.com/quics?page=C016144&cc=b065687%3Ab065741&prcode=DP01001618&isNew=N,,"스타기업뱅킹 영업점 장바구니담기 상담신청 하루만 맡겨도 이자 받고, 자유롭게 찾아 쓰고! KB사장님 파킹통장 금액 최대 1천만원 혜택 최고 연 2.5%",,AUTOMATED
+A002,PRODUCT,"[""A002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?articleClass=2&articleId=135912&bbsMode=view&boardId=669&compId=b058336&page=C020722,상품 대상·구조·공개조건,,,REFERENCE
+A002,PRODUCT,"[""A002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A002,PRODUCT,"[""A002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A002,PRODUCT,"[""A002""]",CURRENT_PRODUCT_PAGE,https://msbiz1.kbstar.com/mquics?asfilecode=1105532&page=E008827&productCd=DP01001588,,신상품 「KB사장님+통장」 출시 ( KB국민은행 | KB Life | 신상품 ),,AUTOMATED
+A003,PRODUCT,"[""A003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01001479,상품 대상·구조·공개조건,,,REFERENCE
+A003,PRODUCT,"[""A003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A003,PRODUCT,"[""A003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A003,PRODUCT,"[""A003""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01001479,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+A004,PRODUCT,"[""A004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP000010,상품 대상·구조·공개조건,,,REFERENCE
+A004,PRODUCT,"[""A004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A004,PRODUCT,"[""A004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A004,PRODUCT,"[""A004""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP000010,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+A005,PRODUCT,"[""A005""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,상품 대상·구조·공개조건,,,REFERENCE
+A005,PRODUCT,"[""A005""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A005,PRODUCT,"[""A005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A005,PRODUCT,"[""A005""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?articleClass=2&articleId=144823&bbsMode=view&boardId=669&compId=b058336&page=C020722#,,신상품 「KB중진공 정책자금 전용통장」 출시 ( KB국민은행 | KB Life | 신상품 ),,AUTOMATED
+A006,PRODUCT,"[""A006""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,상품 대상·구조·공개조건,,,REFERENCE
+A006,PRODUCT,"[""A006""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A006,PRODUCT,"[""A006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A007,PRODUCT,"[""A007""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000785,상품 대상·구조·공개조건,,,REFERENCE
+A007,PRODUCT,"[""A007""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A007,PRODUCT,"[""A007""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A007,PRODUCT,"[""A007""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000785,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+A008,PRODUCT,"[""A008""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,상품 대상·구조·공개조건,,,REFERENCE
+A008,PRODUCT,"[""A008""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A008,PRODUCT,"[""A008""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A008,PRODUCT,"[""A008""]",DISCLOSURE_PAGE,https://obank.kbstar.com/quics?page=C062181,with KB통장 상품공시·문서 페이지,법인용예금 ( 고객센터 | 상품공시실 | 입출금이 자유로운 예금 | 법인용예금 ),,AUTOMATED
+A009,PRODUCT,"[""A009""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,상품 대상·구조·공개조건,,,REFERENCE
+A009,PRODUCT,"[""A009""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062181,법인용 입출금예금 약관·특약·상품설명서,,,REFERENCE
+A009,PRODUCT,"[""A009""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+A009,PRODUCT,"[""A009""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01001565,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+SV001,PRODUCT,"[""SV001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?articleClass=2&articleId=139135&bbsMode=view&boardId=669&compId=b058336&page=C020722,상품 대상·구조·공개조건,,,REFERENCE
+SV001,PRODUCT,"[""SV001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV001,PRODUCT,"[""SV001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV002,PRODUCT,"[""SV002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000500,상품 대상·구조·공개조건,,,REFERENCE
+SV002,PRODUCT,"[""SV002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV002,PRODUCT,"[""SV002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV002,PRODUCT,"[""SV002""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000500,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+SV003,PRODUCT,"[""SV003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000226,상품 대상·구조·공개조건,,,REFERENCE
+SV003,PRODUCT,"[""SV003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV003,PRODUCT,"[""SV003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV003,PRODUCT,"[""SV003""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?page=C047865,,예금 상품/가입 ( 개인뱅킹 | 금융상품 | 예금 | 예금 상품/가입 ),,AUTOMATED
+SV004,PRODUCT,"[""SV004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,상품 대상·구조·공개조건,,,REFERENCE
+SV004,PRODUCT,"[""SV004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV004,PRODUCT,"[""SV004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV004,PRODUCT,"[""SV004""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?page=C062182,,법인용예금 ( 고객센터 | 상품공시실 | 적립식예금 | 법인용예금 ),,AUTOMATED
+SV005,PRODUCT,"[""SV005""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,상품 대상·구조·공개조건,,,REFERENCE
+SV005,PRODUCT,"[""SV005""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV005,PRODUCT,"[""SV005""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV005,PRODUCT,"[""SV005""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?page=C062182,,법인용예금 ( 고객센터 | 상품공시실 | 적립식예금 | 법인용예금 ),,AUTOMATED
+SV006,PRODUCT,"[""SV006""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,상품 대상·구조·공개조건,,,REFERENCE
+SV006,PRODUCT,"[""SV006""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062182,법인용 적립식예금 약관·특약·상품설명서,,,REFERENCE
+SV006,PRODUCT,"[""SV006""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+SV006,PRODUCT,"[""SV006""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?page=C062182,,법인용예금 ( 고객센터 | 상품공시실 | 적립식예금 | 법인용예금 ),,AUTOMATED
+TD001,PRODUCT,"[""TD001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000938,상품 대상·구조·공개조건,,,REFERENCE
+TD001,PRODUCT,"[""TD001""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062180,법인용 거치식예금 약관·특약·상품설명서,,,REFERENCE
+TD001,PRODUCT,"[""TD001""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+TD001,PRODUCT,"[""TD001""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000938,,예금상품 ( KB국민은행 | 개인 | 금융상품 | 예금상품 ),,AUTOMATED
+TD002,PRODUCT,"[""TD002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000029,상품 대상·구조·공개조건,,,REFERENCE
+TD002,PRODUCT,"[""TD002""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062180,법인용 거치식예금 약관·특약·상품설명서,,,REFERENCE
+TD002,PRODUCT,"[""TD002""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+TD002,PRODUCT,"[""TD002""]",MANUAL_OFFICIAL_REVIEW,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000029,,"현재 공식 상품 페이지에 국민수퍼정기예금(개인), 영업점, 신규: 영업점·고객센터가 표시됨.",,VERIFIED
+TD003,PRODUCT,"[""TD003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062180,상품 대상·구조·공개조건,,,REFERENCE
+TD003,PRODUCT,"[""TD003""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062180,법인용 거치식예금 약관·특약·상품설명서,,,REFERENCE
+TD003,PRODUCT,"[""TD003""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+TD003,PRODUCT,"[""TD003""]",CURRENT_PRODUCT_PAGE,https://obank.kbstar.com/quics?page=C062180,,법인용예금 ( 고객센터 | 상품공시실 | 거치식예금 | 법인용예금 ),,AUTOMATED
+TD004,PRODUCT,"[""TD004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000214,상품 대상·구조·공개조건,,,REFERENCE
+TD004,PRODUCT,"[""TD004""]",BASELINE_OFFICIAL_SOURCE,https://obank.kbstar.com/quics?page=C062180,법인용 거치식예금 약관·특약·상품설명서,,,REFERENCE
+TD004,PRODUCT,"[""TD004""]",BASELINE_OFFICIAL_SOURCE,https://obiz.kbstar.com/quics?page=C019997,예금 공통 약관,,,REFERENCE
+TD004,PRODUCT,"[""TD004""]",MANUAL_OFFICIAL_REVIEW,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000214,,"현재 공식 상품 페이지에 국민수퍼정기예금(CD금리연동형), 영업점, 신규: 영업점 방문이 표시됨.",,VERIFIED
+,COMMON,"[""A001"",""A002"",""A003"",""A004"",""A005"",""A006"",""A007"",""A008"",""A009"",""SV001"",""SV002"",""SV003"",""SV004"",""SV005"",""SV006"",""TD001"",""TD002"",""TD003"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,예금거래기본약관,예금거래기본약관20250207.pdf,0fdf133bc369779ae922b7b79e9073b257d93f65778ebbe10c2e6b1e42f8c7ec,VERIFIED
+,COMMON,"[""A001"",""A002"",""A003"",""A004"",""A005"",""A006"",""A007"",""A008"",""A009""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,입출금이자유로운예금약관,입출금이자유로운예금약관.pdf,20fe1cec7d89798e597777e2e93c76536eb0b865c0b55cccb6da712a1f4b6bfa,VERIFIED
+,COMMON,"[""SV001"",""SV002"",""SV003"",""SV004"",""SV005"",""SV006""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,적립식예금약관,적립식예금약관210924.pdf,d8b1e37dd019f605c4b586d74c10888c80ce879bae382dbd99e5e3ed1a813035,VERIFIED
+,COMMON,"[""TD001"",""TD002"",""TD003"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,거치식예금약관,거치식예금약관201008.pdf,4ecccbe7418c8ee4737414d9bf6de48b8a0e52044a5efe5bf7c41e8b2cccbc12,VERIFIED
+,COMMON,"[""B001"",""B002"",""B003"",""B004"",""B005"",""B006"",""B007"",""B008"",""D001"",""D002"",""D003"",""L001"",""L002"",""L003"",""L004"",""L005"",""L006"",""L007"",""S001"",""S002"",""S003"",""S004"",""S005"",""SC001"",""SC002"",""SC003"",""SC004"",""SC005"",""SC006""]",DOCUMENT,https://obiz.kbstar.com/quics?page=C043830,은행여신거래기본약관,은행여신거래기본약관기업용2304_5253691601325412.pdf,475da049ad80ea23d5b45154c2709b24bae6b9ccbbda24eab5c4e2713f7d4f2f,VERIFIED
+,COMMON,"[""B001"",""B002"",""B003"",""B004"",""B005"",""B006"",""B007"",""B008"",""D001"",""D002"",""D003"",""L001"",""L002"",""L003"",""L004"",""L005"",""L006"",""L007"",""S001"",""S002"",""S003"",""S004"",""S005"",""SC001"",""SC002"",""SC003"",""SC004"",""SC005"",""SC006""]",DOCUMENT,https://obiz.kbstar.com/quics?page=C043830,기업여신상품설명서,기업여신상품설명서_2334499070645391.pdf,ca0356e31493711079bc29a8884f2d54a1de66a9fdc18e0e73f549cfb85eb218,VERIFIED
+,COMMON,"[""B001"",""B002"",""B003"",""B004"",""B005"",""B006"",""B007"",""B008"",""D001"",""D002"",""D003"",""L001"",""L002"",""L003"",""L004"",""L005"",""L006"",""L007"",""S001"",""S002"",""S003"",""S004"",""S005"",""SC001"",""SC002"",""SC003"",""SC004"",""SC005"",""SC006""]",DOCUMENT,https://obiz.kbstar.com/quics?page=C043830,여신거래약정서(기업용),여신거래약정서_기업용_.pdf,122d3282386ea2cafdb445a5dd119c935341cdddc4b3c44c210c37df1736ab9b,VERIFIED
+SV005,PRODUCT_FAMILY,"[""SV005"",""SV006""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,상호부금 특약,KB상호부금특약.pdf,437b88df10200a93db9eb8ae1d4aee6d926f1ed79a020d5065206cdd6bc16ab3,VERIFIED
+SV006,PRODUCT_FAMILY,"[""SV005"",""SV006""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,상호부금 특약,KB상호부금특약.pdf,437b88df10200a93db9eb8ae1d4aee6d926f1ed79a020d5065206cdd6bc16ab3,VERIFIED
+TD002,PRODUCT_FAMILY,"[""TD002"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,국민수퍼정기예금특약,국민수퍼예금특약20231004_7987334390241968.pdf,d6b92bce48301c6f17ba5776d325f21ed7eaacd20e30624b55908abab6d7bcc9,VERIFIED
+TD004,PRODUCT_FAMILY,"[""TD002"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,국민수퍼정기예금특약,국민수퍼예금특약20231004_7987334390241968.pdf,d6b92bce48301c6f17ba5776d325f21ed7eaacd20e30624b55908abab6d7bcc9,VERIFIED
+TD002,PRODUCT_FAMILY,"[""TD002"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,국민수퍼정기예금 상품설명서,국민수퍼정기예금_250901.pdf,f718509a90dc6804188aef6a274d490f3cb4e8a4cb1933f834856f44e86b1909,VERIFIED
+TD004,PRODUCT_FAMILY,"[""TD002"",""TD004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,국민수퍼정기예금 상품설명서,국민수퍼정기예금_250901.pdf,f718509a90dc6804188aef6a274d490f3cb4e8a4cb1933f834856f44e86b1909,VERIFIED
+A005,PRODUCT,"[""A005""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB중진공 정책자금 전용통장 특약,중진공정책자금전용통장_특약.pdf,a34254e6daa5ee7f82804dd52327043550d700f24d477b8969549ab6ff97de11,VERIFIED
+A005,PRODUCT,"[""A005""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB중진공 정책자금 전용통장 상품설명서,중진공정책자금전용통장_설명서.pdf,76cd60f84751b478017853de743c3a12ee9e4df68d1503c951ab607664fb4951,VERIFIED
+A008,PRODUCT,"[""A008""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,with KB통장 특약,withKB통장_특약.pdf,b0953002f6f9aad06c8dcb2548a7caec5ec93d6ebe6763a7913d74e71c2f3f06,VERIFIED
+A008,PRODUCT,"[""A008""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,with KB통장 상품설명서,withKB통장_상품설명서.pdf,8d6adef934b48a4566ac6687c6156486d6c244befaa21d79963796796b04249c,VERIFIED
+A001,PRODUCT,"[""A001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB사장님 파킹통장 특약,KB사장님파킹통장특약.pdf,a133dd5a59724d9b58f88ef8518c00c8659c444db7edc1c0cbdbd39dff485a36,VERIFIED
+A001,PRODUCT,"[""A001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB사장님 파킹통장 상품설명서,파킹통장상품설명서0701.pdf,892a10196751ab60df028aeb0736dd953269adcdae734cbeffc2097bf612baf1,VERIFIED
+A002,PRODUCT,"[""A002""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB사장님+통장 특약,KB사장님통장특약0408.pdf,dff7d98e5fa417868bd24726d81504ddb42967d06939c2fa6616b4eac793ec9d,VERIFIED
+A002,PRODUCT,"[""A002""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB사장님+통장 상품설명서,플러스통장상품설명서0701.pdf,3a34cd618a0d667432d0c90e536eb940ebc9df1006aa110b92bb3ed551e92bbe,VERIFIED
+A009,PRODUCT,"[""A009""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,KB스타통장 특약,KB스타통장특약_251205_.pdf,130c0b4bfa70c9a62d883dd4e8ca16a18f5445b16b54be3f33a62557fba1d56d,VERIFIED
+A009,PRODUCT,"[""A009""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062181,상품설명서,KB스타통장상품설명서_251205_.pdf,f87cc8be1a1290cb0f1966e0c2cc621a70e81e16f089b21504116c0f3d5ea745,VERIFIED
+SV002,PRODUCT,"[""SV002""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,KB가맹점우대적금 특약,KB가맹점우대적금특약240119개정.pdf,6b00cb3248d703f88fdde90059bfd7b969a9e0e9889271050453649773e08318,VERIFIED
+SV002,PRODUCT,"[""SV002""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,KB가맹점우대적금 상품설명서,KB가맹점우대적금_250901.pdf,e6ce780d466aa19c6647fa900e61910f5f3bf82d92726eb67e2bc7e4d63b20ce,VERIFIED
+SV005,PRODUCT,"[""SV005""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,상품설명서,KB상호부금_정액_250901.pdf,2c6e21cb4b0c3569a5a9b1a61a30637ea069c59f647f4006a7f6fbb5aeaf34a5,VERIFIED
+SV001,PRODUCT,"[""SV001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,KB사장님+적금 특약,KB사장님플러스적금특약.pdf,89c4ccbdde4625b99399afd9519aadb69ef5c4946b9b94cb88e5db36034ac5c7,VERIFIED
+SV001,PRODUCT,"[""SV001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,KB사장님+적금 상품설명서,플러스적금상품설명서0701.pdf,fea99713714af5511252077c128eed40bf231637805bb5dcb6032594d33a3698,VERIFIED
+SV004,PRODUCT,"[""SV004""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,일반정기적금 상품설명서,일반정기적금_250901.pdf,6da6a9967059315cfdc2cc1ff9a7f833860df8b6d345290d3f8232a048b3aa3e,VERIFIED
+SV006,PRODUCT,"[""SV006""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062182,상품설명서,KB상호부금_자유_250901.pdf,13302a9bff5b12ed7df7d7ac63d4f801842abb08854119d2c52517be33e203bb,VERIFIED
+TD001,PRODUCT,"[""TD001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,KB Star 정기예금 특약,KBStar예금특약20221215.pdf,13c4b0e82091eeef8f95a05234a289e4694e92430d114a6af7d1458b7cd60692,VERIFIED
+TD001,PRODUCT,"[""TD001""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,KB Star 정기예금 상품설명서,KBStar정기예금_250901.pdf,6c39e80f9abab4301359075450b053c4ae2af883b322a11dba25ac254967ffc3,VERIFIED
+TD003,PRODUCT,"[""TD003""]",DOCUMENT,https://obank.kbstar.com/quics?page=C062180,일반정기예금 상품설명서,일반정기예금_250901.pdf,22b438c4d28be5b3ecf8c68e74479df6845c5b7b07ebf1eff898920c774b92cf,VERIFIED
+L001,PRODUCT,"[""L001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C111884,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+L002,PRODUCT,"[""L002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C100265,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+L003,PRODUCT,"[""L003""]",RUNTIME_OFFICIAL_URL_V4,https://zloan.kbstar.com/quics?page=C109567,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=KB_STAR_BANKING,MOBILE; mode=DIRECT_MOBILE; role=DIRECT_CANDIDATE",,FINAL_V4
+L003,PRODUCT,"[""L003""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://zloan.kbstar.com/quics?page=C109567,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 KB소상공인 보증서대출 페이지에서 모바일 대출신청·보증신청·대출실행 절차 확인,,VERIFIED_2026-07-21
+L004,PRODUCT,"[""L004""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C110956,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+L005,PRODUCT,"[""L005""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=N&page=C016280&prcode=LN25001564,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=BRANCH,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+L006,PRODUCT,"[""L006""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C112610,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=KB_STAR_BANKING,MOBILE,STAR_BUSINESS_BANKING; mode=DIRECT_MOBILE; role=DIRECT_CANDIDATE",,FINAL_V4
+L007,PRODUCT,"[""L007""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C016280&cc=b035196:b035393&%EB%B8%8C%EB%9E%9C%EB%93%9C%EC%83%81%ED%92%88%EC%BD%94%EB%93%9C=LN25001273&QSL=F&prcode=LN25001273,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,KB_STAR_BANKING,MOBILE; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+D001,PRODUCT,"[""D001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001590,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_CONSULT; channels=BRANCH; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+D002,PRODUCT,"[""D002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001614,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_CONSULT; channels=BRANCH; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+D003,PRODUCT,"[""D003""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&isNew=Y&page=C016280&prcode=LN25001621,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_CONSULT; channels=BRANCH; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+S001,PRODUCT,"[""S001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C059034,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,MOBILE; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+S002,PRODUCT,"[""S002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C067219,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=BRANCH,INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+S003,PRODUCT,"[""S003""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C101744,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_CONSULT; channels=INTERNET_BANKING; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+S003,PRODUCT,"[""S003""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?page=C101744,OFFICIAL_CURRENT_SERVICE_MENU,KB기업뱅킹의 상담안내 및 신청 메뉴와 전자약정·건별대출 절차 확인,,VERIFIED_2026-07-21
+S004,PRODUCT,"[""S004""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?articleClass=1&articleId=137234&bbsMode=view&boardId=669&compId=b058334&page=C020721&searchCondition=title&searchStr=&viewPage=3,HOLDING_OR_LEGACY_REFERENCE,status=HOLDING_ONLY; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+S005,PRODUCT,"[""S005""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&page=C016280&%EB%B8%8C%EB%9E%9C%EB%93%9C%EC%83%81%ED%92%88%EC%BD%94%EB%93%9C=LN25001490,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=MOBILE; mode=DIRECT_MOBILE; role=DIRECT_CANDIDATE,,FINAL_V4
+S005,PRODUCT,"[""S005""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b035196%3Ab035393&page=C016280&%EB%B8%8C%EB%9E%9C%EB%93%9C%EC%83%81%ED%92%88%EC%BD%94%EB%93%9C=LN25001490,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품코드 LN25001490 페이지에서 판매 중 및 스마트폰 신청 안내 확인,,VERIFIED_2026-07-21
+SC001,PRODUCT,"[""SC001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C104470,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_CONSULT; channels=BRANCH; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+SC002,PRODUCT,"[""SC002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C101247,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+SC003,PRODUCT,"[""SC003""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C102419,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+SC004,PRODUCT,"[""SC004""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C110698,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_APPLY; channels=INTERNET_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE,,FINAL_V4
+SC005,PRODUCT,"[""SC005""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C110699,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+SC006,PRODUCT,"[""SC006""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C112735,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+B001,PRODUCT,"[""B001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C023638,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B002,PRODUCT,"[""B002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C023910,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=EXPANSION_REFERENCE,,FINAL_V4
+B003,PRODUCT,"[""B003""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C023911,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B004,PRODUCT,"[""B004""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C113310,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B005,PRODUCT,"[""B005""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C016293,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B006,PRODUCT,"[""B006""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C023912,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B007,PRODUCT,"[""B007""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C023916,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=NOT_CURRENTLY_RECOMMENDABLE,,FINAL_V4
+B008,PRODUCT,"[""B008""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C101745,LINKED_ACCOUNT_REQUIREMENT_SOURCE,status=CURRENT_SERVICE; channels=; mode=NOT_APPLICABLE; role=REQUIRED_LINKED_ACCOUNT,,FINAL_V4
+B008,PRODUCT,"[""B008""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?page=C101745,OFFICIAL_LINKED_ACCOUNT_REQUIREMENT,C101745는 KB매출더하기론 이용절차이며 B008은 필수 정산계좌로만 설명됨,,VERIFIED_2026-07-21
+A001,PRODUCT,"[""A001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?page=C016144&cc=b065687%3Ab065741&prcode=DP01001618&isNew=N,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_CONSULT; channels=BRANCH,STAR_BUSINESS_BANKING; mode=CONSULTATION; role=DIRECT_CANDIDATE",,FINAL_V4
+A002,PRODUCT,"[""A002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01001588,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=STAR_BUSINESS_BANKING,BRANCH; mode=ONLINE_OR_BRANCH; role=COMPANION_ACCOUNT",,FINAL_V4
+A002,PRODUCT,"[""A002""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01001588,OFFICIAL_PRODUCT_CODE_PLUS_CURRENT_TERMS,보존 raw의 정확한 상품코드 DP01001588 및 현재 KB사장님+통장 약관·거래방법 유지 확인,,VERIFIED_2026-07-21
+A003,PRODUCT,"[""A003""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01001479,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=STAR_BUSINESS_BANKING,BRANCH; mode=ONLINE_OR_BRANCH; role=COMPANION_ACCOUNT",,FINAL_V4
+A003,PRODUCT,"[""A003""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01001479,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 기업 예금상품 페이지에서 스타기업뱅킹·영업점 가입 경로 확인,,VERIFIED_2026-07-21
+A004,PRODUCT,"[""A004""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP000010,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
+A004,PRODUCT,"[""A004""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP000010,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품 페이지에서 가입가능경로 영업점 확인,,VERIFIED_2026-07-21
+A005,PRODUCT,"[""A005""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?articleClass=2&articleId=144823&bbsMode=view&boardId=669&compId=b058336&page=C020722,OFFICIAL_PRODUCT_LAUNCH_AND_BRANCH_OPENING_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=REQUIRED_LINKED_ACCOUNT,,FINAL_V4
+A005,PRODUCT,"[""A005""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?articleClass=2&articleId=144823&bbsMode=view&boardId=669&compId=b058336&page=C020722,OFFICIAL_CURRENT_LAUNCH_NOTICE,2026-06-05 공식 신상품 안내에서 신규·해지 거래방법을 지점으로 명시,,VERIFIED_2026-07-21
+A006,PRODUCT,"[""A006""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000866,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_CONSULT; channels=BRANCH; mode=CONSULTATION; role=DIRECT_CANDIDATE,,FINAL_V4
+A007,PRODUCT,"[""A007""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000785,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=DIRECT_CANDIDATE,,FINAL_V4
+A007,PRODUCT,"[""A007""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000785,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품 페이지에서 가입가능경로 영업점 및 신규 가능 확인,,VERIFIED_2026-07-21
+A008,PRODUCT,"[""A008""]",RUNTIME_OFFICIAL_URL_V4,https://otalk.kbstar.com/quics?articleId=141608&bbsMode=view&boardId=669&cc=b032271%3Ab032271&page=C019392,OFFICIAL_PRODUCT_LAUNCH_AND_BRANCH_OPENING_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=EXCLUDED_GENERAL,,FINAL_V4
+A008,PRODUCT,"[""A008""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://otalk.kbstar.com/quics?articleId=141608&bbsMode=view&boardId=669&cc=b032271%3Ab032271&page=C019392,OFFICIAL_CURRENT_LAUNCH_NOTICE,공식 with KB통장 출시 안내에서 신규·해지 거래방법을 영업점으로 명시,,VERIFIED_2026-07-21
+A009,PRODUCT,"[""A009""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01001565,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=KB_STAR_BANKING; mode=DIRECT_ONLINE; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
+A009,PRODUCT,"[""A009""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01001565,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품 페이지와 보존 live 신호에서 스타뱅킹 가입 확인,,VERIFIED_2026-07-21
+SV001,PRODUCT,"[""SV001""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01001615,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,"status=AVAILABLE_CONSULT; channels=BRANCH,STAR_BUSINESS_BANKING; mode=CONSULTATION; role=DIRECT_CANDIDATE",,FINAL_V4
+SV002,PRODUCT,"[""SV002""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000500,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+SV002,PRODUCT,"[""SV002""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000500,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 현재 상품 페이지에서 인터넷·스타기업뱅킹 가입 경로 확인,,VERIFIED_2026-07-21
+SV003,PRODUCT,"[""SV003""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000226,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=DIRECT_CANDIDATE,,FINAL_V4
+SV003,PRODUCT,"[""SV003""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000226,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품 페이지에서 가입가능경로 영업점 확인,,VERIFIED_2026-07-21
+SV004,PRODUCT,"[""SV004""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000021,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
+SV004,PRODUCT,"[""SV004""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000021,OFFICIAL_CURRENT_PRODUCT_LIST_PLUS_RAW_CODE,공식 기업 예금상품 목록에서 일반정기적금의 영업점 가입과 상품코드 확인,,VERIFIED_2026-07-21
+SV005,PRODUCT,"[""SV005""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000040,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=HOLDING_ANALYSIS_ONLY",,FINAL_V4
+SV005,PRODUCT,"[""SV005""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000040,OFFICIAL_CURRENT_PRODUCT_LIST_PLUS_RAW_CODE,공식 기업 예금상품 목록에서 법인 정액적립식 상품의 가입하기·인터넷·스타기업뱅킹 경로 확인,,VERIFIED_2026-07-21
+SV006,PRODUCT,"[""SV006""]",RUNTIME_OFFICIAL_URL_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000039,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,STAR_BUSINESS_BANKING; mode=DIRECT_ONLINE; role=HOLDING_ANALYSIS_ONLY",,FINAL_V4
+SV006,PRODUCT,"[""SV006""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obiz.kbstar.com/quics?cc=b065687%3Ab065741&isNew=N&page=C016144&prcode=DP01000039,OFFICIAL_CURRENT_PRODUCT_LIST_PLUS_RAW_CODE,공식 기업 예금상품 목록에서 법인 자유적립식 상품의 가입하기·인터넷·스타기업뱅킹 경로 확인,,VERIFIED_2026-07-21
+TD001,PRODUCT,"[""TD001""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000938,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,"status=AVAILABLE_APPLY; channels=INTERNET_BANKING,KB_STAR_BANKING,CUSTOMER_CENTER; mode=DIRECT_ONLINE; role=DIRECT_CANDIDATE",,FINAL_V4
+TD001,PRODUCT,"[""TD001""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000938,OFFICIAL_CURRENT_PRODUCT_PAGE,공식 상품 페이지에서 인터넷뱅킹·KB스타뱅킹·고객센터 가입 가능 확인,,VERIFIED_2026-07-21
+TD002,PRODUCT,"[""TD002""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000029,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
+TD003,PRODUCT,"[""TD003""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000014,OFFICIAL_PRODUCT_DETAIL_OR_APPLICATION_INFO,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
+TD003,PRODUCT,"[""TD003""]",CURRENT_STATUS_MANUAL_REVIEW_V4,https://obank.kbstar.com/quics?cc=b061496%3Ab061645&isNew=Y&page=C016613&prcode=DP01000014,OFFICIAL_CURRENT_PRODUCT_LIST_PLUS_RAW_CODE,공식 현재 정기예금 목록에서 일반정기예금 영업점 가입 및 raw 상품코드 확인,,VERIFIED_2026-07-21
+TD004,PRODUCT,"[""TD004""]",RUNTIME_OFFICIAL_URL_V4,https://obank.kbstar.com/quics?cc=b061761%3Ab061770&isNew=N&page=C020702&prcode=DP01000214,OFFICIAL_PRODUCT_DETAIL_OR_SERVICE_PAGE,status=AVAILABLE_APPLY; channels=BRANCH; mode=BRANCH_OPENING; role=HOLDING_ANALYSIS_ONLY,,FINAL_V4
