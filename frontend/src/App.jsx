@@ -12,6 +12,7 @@ export default function App() {
   const [industries, setIndustries] = useState([])
   const [meta, setMeta] = useState(null)
   const [code, setCode] = useState('')
+  const [areaType, setAreaType] = useState('')     // 상권유형 (선택)
   const [salesMan, setSalesMan] = useState('')     // 월 매출 (만원)
   const [expenseMan, setExpenseMan] = useState('') // 월 지출 (만원)
   const [weights, setWeights] = useState({ sales: 50, profit: 30, margin: 20 })
@@ -25,6 +26,8 @@ export default function App() {
     getIndustries().then(setIndustries).catch((e) => setError('업종 목록 로드 실패: ' + e.message))
     getMeta().then(setMeta).catch(() => {})
   }, [])
+
+  const selected = useMemo(() => industries.find((i) => i.code === code), [industries, code])
 
   const grouped = useMemo(() => {
     const g = {}
@@ -50,6 +53,7 @@ export default function App() {
           industryCode: code,
           monthlySales: sales,
           monthlyExpense: expense,
+          areaType: areaType || null,
           weights: { sales: weights.sales, profit: weights.profit, margin: weights.margin },
         }),
         getIndustry(code),
@@ -74,7 +78,7 @@ export default function App() {
       <form onSubmit={submit} className="card form">
         <label>
           업종
-          <select value={code} onChange={(e) => setCode(e.target.value)}>
+          <select value={code} onChange={(e) => { setCode(e.target.value); setAreaType('') }}>
             <option value="">-- 업종 선택 --</option>
             {Object.entries(grouped).map(([g, list]) => (
               <optgroup key={g} label={g}>
@@ -87,6 +91,18 @@ export default function App() {
             ))}
           </select>
         </label>
+
+        {selected && selected.areaTypes?.length > 0 && (
+          <label>
+            상권 유형 <span className="hint">선택하면 같은 유형 상권 내 순위도 함께 계산</span>
+            <select value={areaType} onChange={(e) => setAreaType(e.target.value)}>
+              <option value="">서울 전체 (기본)</option>
+              {selected.areaTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <div className="row">
           <label>
@@ -122,6 +138,15 @@ export default function App() {
             {result.industryName} 업종에서 <span className="big">상위 {result.topPercent}%</span>
           </h2>
           <p className="score">종합점수 {result.compositeScore}점 / 100점</p>
+
+          {result.areaRank && (
+            <p className="score">
+              같은 <b>{result.areaRank.areaType}</b>만 비교하면{' '}
+              <b>상위 {result.areaRank.topPercent}%</b> (종합 {result.areaRank.compositeScore}점 ·
+              매출 상위 {result.areaRank.salesTopPercent}% · 동일 유형 중위 매출 {fmtMan(result.areaRank.peerMedian)} ·
+              점포 {result.areaRank.nStores.toLocaleString()}개)
+            </p>
+          )}
 
           <Bar label={`매출 (상위 ${result.sales.topPercent}%)`}
                pct={result.sales.percentile}

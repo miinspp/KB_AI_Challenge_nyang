@@ -37,11 +37,13 @@ KO_COLS = {
     "서비스_업종_코드_명": "svc_nm",
     "당월_매출_금액": "q_sales",
     "점포수": "stores",
+    "상권_구분_코드_명": "area_type",
 }
 EN_COLS = {
     "STDR_YYQU_CD": "yyqu",
     "TRDAR_CD": "area_cd",
     "TRDAR_CD_NM": "area_nm",
+    "TRDAR_SE_CD_NM": "area_type",
     "SVC_INDUTY_CD": "svc_cd",
     "SVC_INDUTY_CD_NM": "svc_nm",
     "THSMON_SELNG_AMT": "q_sales",
@@ -110,10 +112,12 @@ def main():
     d["monthly_per_store"] = d["q_sales"] / 3.0 / d["stores"]
 
     # 상권×업종 단위: 여러 분기 → 평균 (계절성 완화)
-    grp = d.groupby(["svc_cd", "svc_nm", "area_cd"], as_index=False).agg(
-        monthly_per_store=("monthly_per_store", "mean"),
-        stores=("stores", "mean"),
-    )
+    # 상권유형(골목/발달/전통시장/관광특구)은 상권당 1개이므로 first 로 유지
+    has_area_type = "area_type" in d.columns
+    aggs = dict(monthly_per_store=("monthly_per_store", "mean"), stores=("stores", "mean"))
+    if has_area_type:
+        aggs["area_type"] = ("area_type", "first")
+    grp = d.groupby(["svc_cd", "svc_nm", "area_cd"], as_index=False).agg(**aggs)
 
     with open(args.benchmarks, encoding="utf-8") as f:
         bm = json.load(f)
@@ -134,6 +138,21 @@ def main():
         q = weighted_quantiles(g["monthly_per_store"].values, g["stores"].values, probs)
         gkey = group_of(svc_cd)
         ginfo = groups[gkey]
+
+        # 상권유형별 보조 분포 (표본 상권 수가 기준 이상인 유형만)
+        area_types = {}
+        if has_area_type:
+            for atype, gt in g.groupby("area_type"):
+                if len(gt) < args.min_areas:
+                    continue
+                qt = weighted_quantiles(gt["monthly_per_store"].values, gt["stores"].values, probs)
+                area_types[str(atype)] = {
+                    "nAreas": int(len(gt)),
+                    "nStores": int(round(gt["stores"].sum())),
+                    "medianMonthlySales": float(qt[50]),
+                    "quantiles": [float(x) for x in qt],
+                }
+
         industries.append({
             "code": svc_cd,
             "name": svc_nm,
@@ -145,6 +164,7 @@ def main():
             "medianMonthlySales": float(q[50]),
             "meanMonthlySales": float(np.average(g["monthly_per_store"], weights=g["stores"])),
             "quantiles": [float(x) for x in q],
+            "areaTypes": area_types,
         })
 
     quarters = sorted(d["yyqu"].unique().tolist())
