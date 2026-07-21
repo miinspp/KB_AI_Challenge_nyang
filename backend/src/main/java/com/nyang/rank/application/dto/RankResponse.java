@@ -28,11 +28,22 @@ public record RankResponse(
     public record MarginComponent(double value, double benchmark, double score) {}
 
     /**
-     * 비용 구조 건전성 — 임대료 부담률(임대료÷매출) 기반 점수.
-     * 10% 이하 건전 경험칙: 부담률 10% 이하 100점, 25% 이상 0점 (선형).
-     * laborRatio/purchaseRatio 는 점수에 반영하지 않는 참고 지표 (업종별 기준 분포 데이터 부재).
+     * 비용 구조 건전성 — 사용자 비용 비율을 업종 벤치마크와 비교한 점수.
+     * benchmark != null (public_benchmarks.json 로드됨): 임차료율·인건비율·원가율 중 입력된 항목을
+     *   각각 업종 실측 평균과 비교(평균이면 50, 절반이면 75, 2배면 0)해 평균낸 점수.
+     * benchmark == null (벤치마크 미로드): 임대료 부담률 10%이하 건전 경험칙(10%→100, 25%→0).
      */
-    public record CostHealth(double rentBurden, Double laborRatio, Double purchaseRatio, double score) {}
+    public record CostHealth(double rentBurden, Double laborRatio, Double purchaseRatio,
+                             double score, Benchmark benchmark) {
+        /**
+         * 업종 실측 비용 벤치마크(0~1 비율). 참고·비교 표기용.
+         * areaType/areaRentMultiplier/rentRatioAdjusted 는 상권유형 지역 보정이 적용된 경우에만 채워지며,
+         * 채워지면 임차료율 채점은 rentRatio 가 아니라 rentRatioAdjusted 기준으로 이뤄진 것이다.
+         */
+        public record Benchmark(String industryLabel, Double rentRatio, Double laborRatio,
+                                Double purchaseRatio, Integer monthlyRentManwon,
+                                String areaType, Double areaRentMultiplier, Double rentRatioAdjusted) {}
+    }
 
     /**
      * 매출 안정성 — 최근 월별 매출의 추세와 변동성.

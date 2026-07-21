@@ -1,5 +1,6 @@
 package com.nyang.rank.application;
 
+import com.nyang.industry.domain.CostBenchmark;
 import com.nyang.industry.domain.Industry;
 import com.nyang.rank.application.dto.RankRequest;
 import com.nyang.rank.application.dto.RankResponse;
@@ -75,9 +76,18 @@ public class RankService {
         return Math.min(100.0, 50.0 * userMargin / benchmark);
     }
 
-    /** 임대료 부담률 → 0~100 점수. 10% 이하 100점, 25% 이상 0점, 사이 선형. */
+    /** 임대료 부담률 → 0~100 점수. 10% 이하 100점, 25% 이상 0점, 사이 선형. (벤치마크 미로드 시 폴백) */
     public double rentBurdenScore(double rentBurden) {
         return clamp(100.0 * (RENT_CRITICAL - rentBurden) / (RENT_CRITICAL - RENT_HEALTHY));
+    }
+
+    /**
+     * 비용 비율을 업종 벤치마크 대비 0~100 점수로 환산 (비용은 낮을수록 좋음).
+     * 벤치마크와 같으면 50점, 절반이면 75점, 2배 이상이면 0점 (선형).
+     */
+    public double costRatioScore(double userRatio, double benchmark) {
+        if (benchmark <= 0) return 50.0;
+        return clamp(50.0 * (2.0 - userRatio / benchmark));
     }
 
     /** 월평균 성장률 → 0~100 점수. 0%/월 = 50점, ±5%/월에서 포화. */
@@ -90,14 +100,43 @@ public class RankService {
         return clamp(100.0 * (CV_CRITICAL - cv) / (CV_CRITICAL - CV_STABLE));
     }
 
-    /** 비용 구조 축 — rent 가 있어야 산출, 없으면 null. */
-    RankResponse.CostHealth costHealth(RankRequest.CostBreakdown cb, double sales) {
+    /**
+     * 비용 구조 축 — rent 가 있어야 산출, 없으면 null.
+     * bm(업종 벤치마크)이 있으면 임차료율·인건비율·원가율을 실측 평균과 비교해 평균낸 점수를,
+     * 없으면 임대료 부담률 경험칙 점수를 쓴다.
+     * areaRentMultiplier(상권유형 지역 보정, 골목=1.0)이 있으면 임차료율 벤치마크에 곱해 조정한다.
+     */
+    RankResponse.CostHealth costHealth(RankRequest.CostBreakdown cb, double sales,
+                                       CostBenchmark bm, String areaType, Double areaRentMultiplier) {
         if (cb == null || cb.rent() == null || sales <= 0) return null;
         double rentBurden = cb.rent() / sales;
         Double laborRatio = cb.laborCost() == null ? null : round4(cb.laborCost() / sales);
         Double purchaseRatio = cb.purchaseCost() == null ? null : round4(cb.purchaseCost() / sales);
+
+        double score;
+        RankResponse.CostHealth.Benchmark bmRef = null;
+        if (bm != null) {
+            // 상권유형 지역 보정: 선택된 상권유형이 있고 보정 배수가 있으면 임차료율 벤치마크를 조정
+            boolean adjusted = areaRentMultiplier != null && areaType != null && !areaType.isBlank();
+            double rentBenchmark = adjusted ? bm.rentRatio() * areaRentMultiplier : bm.rentRatio();
+
+            List<Double> subs = new ArrayList<>();
+            subs.add(costRatioScore(rentBurden, rentBenchmark));
+            if (laborRatio != null) subs.add(costRatioScore(laborRatio, bm.laborRatio()));
+            if (purchaseRatio != null) subs.add(costRatioScore(purchaseRatio, bm.purchaseRatio()));
+            score = subs.stream().mapToDouble(Double::doubleValue).average().orElse(50.0);
+
+            bmRef = new RankResponse.CostHealth.Benchmark(
+                    bm.industryLabel(), round4(bm.rentRatio()), round4(bm.laborRatio()),
+                    round4(bm.purchaseRatio()), bm.monthlyRentManwon(),
+                    adjusted ? areaType : null,
+                    adjusted ? areaRentMultiplier : null,
+                    adjusted ? round4(rentBenchmark) : null);
+        } else {
+            score = rentBurdenScore(rentBurden);
+        }
         return new RankResponse.CostHealth(
-                round4(rentBurden), laborRatio, purchaseRatio, round1(rentBurdenScore(rentBurden)));
+                round4(rentBurden), laborRatio, purchaseRatio, round1(score), bmRef);
     }
 
     /** 매출 안정성 축 — 유효 매출 3개월 이상이어야 산출, 없으면 null. */
@@ -131,7 +170,18 @@ public class RankService {
                 n, round4(growth), round4(cv), round1(ts), round1(vs), round1(0.5 * ts + 0.5 * vs));
     }
 
+    /** 벤치마크 없이(하위호환) — 비용 구조 축은 경험칙으로 동작. */
     public RankResponse rank(Industry ind, RankRequest req) {
+        return rank(ind, req, null, null);
+    }
+
+    /** 지역 보정 없이 — 비용 구조 축은 업종 벤치마크(전국)만 사용. */
+    public RankResponse rank(Industry ind, RankRequest req, CostBenchmark costBenchmark) {
+        return rank(ind, req, costBenchmark, null);
+    }
+
+    public RankResponse rank(Industry ind, RankRequest req, CostBenchmark costBenchmark,
+                             Double areaRentMultiplier) {
         double sales = req.monthlySales();
         double expense = req.monthlyExpense();
         double netProfit = sales - expense;
@@ -157,7 +207,8 @@ public class RankService {
         }
 
         // v2 보정축 — 입력이 있을 때만 활성화
-        RankResponse.CostHealth costHealth = costHealth(req.costBreakdown(), sales);
+        RankResponse.CostHealth costHealth = costHealth(
+                req.costBreakdown(), sales, costBenchmark, req.areaType(), areaRentMultiplier);
         RankResponse.Stability stability = stability(req.salesHistory());
         double extraW = (costHealth != null ? W_COST : 0) + (stability != null ? W_STABILITY : 0);
         double extraSum = (costHealth != null ? W_COST * costHealth.score() : 0)
@@ -191,10 +242,24 @@ public class RankService {
                 "비용 효율 점수는 업종 평균 이익률 대비 비율 환산 휴리스틱입니다(평균=50점)."
         ));
         if (costHealth != null) {
-            notes.add("비용 구조 점수는 임대료 부담률(임대료÷매출 = "
-                    + Math.round(costHealth.rentBurden() * 1000) / 10.0
-                    + "%) 기반 경험칙입니다 — 10% 이하 건전(100점), 25% 이상 위험(0점), 선형 환산. "
-                    + "매입·인건비 비율은 업종별 기준 분포 데이터가 없어 참고 지표로만 제공합니다.");
+            if (costHealth.benchmark() != null) {
+                RankResponse.CostHealth.Benchmark b = costHealth.benchmark();
+                String rentBench = b.rentRatioAdjusted() != null
+                        ? pct(b.rentRatioAdjusted()) + "(" + b.areaType() + " 보정: 전국 " + pct(b.rentRatio())
+                          + " × " + b.areaRentMultiplier() + ")"
+                        : pct(b.rentRatio());
+                notes.add("비용 구조 점수는 임차료율(" + pct(costHealth.rentBurden())
+                        + (costHealth.laborRatio() != null ? " · 인건비율 " + pct(costHealth.laborRatio()) : "")
+                        + (costHealth.purchaseRatio() != null ? " · 원가율 " + pct(costHealth.purchaseRatio()) : "")
+                        + ")을 소상공인실태조사 " + b.industryLabel() + " 업종 평균(임차료율 " + rentBench
+                        + " · 인건비율 " + pct(b.laborRatio()) + " · 원가율 " + pct(b.purchaseRatio())
+                        + ")과 비교한 점수입니다 — 업종 평균이면 50점, 절반이면 75점, 2배면 0점."
+                        + (b.rentRatioAdjusted() != null
+                           ? " 임차료율 기준은 한국부동산원 서울 상가유형별 임대료로 상권유형 보정했습니다." : ""));
+            } else {
+                notes.add("비용 구조 점수는 임대료 부담률(임대료÷매출 = " + pct(costHealth.rentBurden())
+                        + ") 기반 경험칙입니다 — 10% 이하 건전(100점), 25% 이상 위험(0점), 선형 환산.");
+            }
         }
         if (stability != null) {
             notes.add("매출 안정성 점수는 최근 " + stability.months() + "개월 매출의 월평균 성장률("
@@ -244,4 +309,5 @@ public class RankService {
     private static double clamp(double v) { return Math.max(0.0, Math.min(100.0, v)); }
     private static double round1(double v) { return Math.round(v * 10) / 10.0; }
     private static double round4(double v) { return Math.round(v * 10000) / 10000.0; }
+    private static String pct(double ratio) { return Math.round(ratio * 1000) / 10.0 + "%"; }
 }

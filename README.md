@@ -121,6 +121,18 @@ python3 build_distributions.py \
 분기별 자동 실행은 `pipeline/cron.example` 내용을 `crontab -e` 에 등록하면 됩니다
 (1·4·7·10월 새벽에 수집→가공→교체까지 자동).
 
+### 비용구조·임대료 벤치마크 (산출식 v2)
+
+```bash
+cd pipeline
+# 소상공인실태조사(업종 비용구조 스냅샷) + 한국부동산원 서울 상가 임대료(라이브) 수집
+# → backend/.../public_benchmarks.json (인증키 불필요)
+python3 collect_public_benchmarks.py
+```
+
+업종별 임차료율·인건비율·원가율 실측 평균 + 상권유형별 서울 임대료 보정으로 비용 구조 축을 산출합니다.
+데이터 출처·기간·수집 방식은 [`docs/DATA.md`](docs/DATA.md), 산출식 전체는 [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) 참고.
+
 ## 6. 파일 구조
 
 ```
