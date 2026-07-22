@@ -1,5 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fmtMan } from '../../shared/format';
+import { postTxnCorrection } from '../../api/txn';
+
+// 교정 시 고를 수 있는 카테고리(코드, 라벨) — taxonomy 주요 항목.
+const PICK = [
+  ['SALES_CASH', '현금·계좌 매출'], ['SALES_CARD', '카드매출'], ['SALES_DELIVERY', '배달매출'],
+  ['OTHER_INCOME', '기타수입'], ['RENT', '임대료(월세)'], ['LABOR', '인건비'],
+  ['SUPPLIES', '매입·원재료'], ['UTILITIES', '공과금'], ['COMMS', '통신비'],
+  ['INSURANCE', '보험료'], ['TAX', '세금·4대보험'], ['LOAN_INTEREST', '대출이자'],
+  ['MARKETING', '광고·마케팅'], ['PLATFORM_FEE', '수수료'], ['MISC_EXPENSE', '기타지출'],
+];
 
 // 카테고리 그룹별 색상 — 리포트 막대·라벨에 공통 사용.
 const GROUP_META = {
@@ -54,6 +64,29 @@ function GroupBlock({ group, cats, max }) {
 
 export default function CostReportScreen({ report }) {
   const [sel, setSel] = useState(null);
+  const [queue, setQueue] = useState([]);       // 확인필요 큐(교정하면 즉시 제거)
+  const [savingId, setSavingId] = useState(null);
+  const [resolved, setResolved] = useState(0);  // 이번 세션에 교정 완료한 건수
+
+  // report 로드/변경 시 확인필요 큐 동기화.
+  useEffect(() => {
+    setQueue(report?.reviewQueue ?? []);
+    setResolved(0);
+  }, [report]);
+
+  const saveCorrection = async (item, category) => {
+    if (!category) return;
+    setSavingId(item.txnId);
+    try {
+      await postTxnCorrection(item.merchant, category);
+      // 교정은 상호 기준이라 같은 상호 거래가 함께 정리된다(백엔드와 동일 의미).
+      const removed = queue.filter((x) => x.merchant === item.merchant).length;
+      setQueue((q) => q.filter((x) => x.merchant !== item.merchant));
+      setResolved((n) => n + removed);
+    } catch { /* 실패 시 큐 유지 — 사용자가 재시도 */ } finally {
+      setSavingId(null);
+    }
+  };
 
   if (!report) {
     return <div className="scr"><p style={{ color: '#8A8178', fontSize: 13 }}>비용 리포트를 불러오는 중이에요…</p></div>;
@@ -140,20 +173,34 @@ export default function CostReportScreen({ report }) {
         </div>
       )}
 
-      {/* 확인 필요 거래 */}
-      {report.reviewQueue?.length > 0 && (
+      {/* 확인 필요 거래 (레이어⑥ 교정) */}
+      {(queue.length > 0 || resolved > 0) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontSize: 13.5, fontWeight: 900, color: '#2B2825' }}>
-            확인이 필요한 거래 <span style={{ color: '#B08F3C' }}>{report.reviewQueue.length}건</span>
+            확인이 필요한 거래 <span style={{ color: '#B08F3C' }}>{queue.length}건</span>
+            {resolved > 0 && <span style={{ fontSize: 11.5, color: '#5C9A3A', marginLeft: 6 }}>· {resolved}건 정리됨</span>}
           </p>
-          <p style={{ fontSize: 11.5, color: '#8A8178', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목으로 바로잡아 주세요.</p>
-          {report.reviewQueue.map((r) => (
+          {queue.length > 0
+            ? <p style={{ fontSize: 11.5, color: '#8A8178', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
+            : <p style={{ fontSize: 12, color: '#5C9A3A', fontWeight: 700, marginTop: -4 }}>모두 확인했어요 🎉 다음부터 자동으로 분류돼요.</p>}
+          {queue.map((r) => (
             <div key={r.txnId} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '10px 13px' }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 12.5, fontWeight: 800, color: '#2B2825' }}>{r.merchant}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 12.5, fontWeight: 800, color: '#2B2825', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.merchant}</p>
                 <p style={{ fontSize: 11, color: '#A79C8E', marginTop: 2 }}>{r.date} · {fmtMan(r.amount)}</p>
               </div>
-              <span className="spec" style={{ fontSize: 10.5, color: '#B08F3C' }}>{r.guess}?</span>
+              <select
+                defaultValue=""
+                disabled={savingId === r.txnId}
+                onChange={(e) => saveCorrection(r, e.target.value)}
+                style={{
+                  flex: 'none', maxWidth: 130, padding: '7px 8px', borderRadius: 9,
+                  border: '1.5px solid #EADFC8', background: '#FBF7EE', color: '#8A6E2E',
+                  fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+                }}>
+                <option value="" disabled>{savingId === r.txnId ? '저장 중…' : `${r.guess} → 선택`}</option>
+                {PICK.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+              </select>
             </div>
           ))}
         </div>
