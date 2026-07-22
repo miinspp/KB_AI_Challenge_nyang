@@ -1,0 +1,146 @@
+{
+  "horizon_months": 12,
+  "monte_carlo_runs": 1000,
+  "random_seed": 42,
+  "industry_cv": 0.15,
+  "max_monthly_trend_ratio": 0.05,
+  "sales_shock_autocorrelation": 0.65,
+  "repayment_burden_limit": 0.3,
+  "excess_funding_ratio_limit": 0.3,
+  "default_tax_reserve_ratio": 0.08,
+  "default_buffer_months": 1.0,
+  "seasonality_source": "MVP_DEFAULT_1.0",
+  "max_sales_uplift_ratio": 0.15,
+  "max_cost_reduction_ratio": 0.2,
+  "kb_product_defaults": {
+    "L001": {
+      "type": "LOAN",
+      "amount": 10000000,
+      "max_amount": 100000000,
+      "annual_rate": 0.048,
+      "total_term_months": 12,
+      "grace_months": 0,
+      "repayment_type": "INTEREST_ONLY"
+    },
+    "L002": {
+      "type": "LOAN",
+      "amount": 20000000,
+      "annual_rate": 0.0464,
+      "total_term_months": 60,
+      "grace_months": 0,
+      "repayment_type": "EQUAL_PAYMENT"
+    },
+    "L003": {
+      "type": "LOAN",
+      "amount": 15000000,
+      "annual_rate": 0.04,
+      "total_term_months": 60,
+      "grace_months": 0,
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "fee_rate": 0.01
+    },
+    "L004": {
+      "type": "LOAN",
+      "amount": 15000000,
+      "annual_rate": 0.04,
+      "total_term_months": 60,
+      "grace_months": 12,
+      "repayment_type": "EQUAL_PRINCIPAL"
+    },
+    "L005": {
+      "type": "LOAN",
+      "amount": 15000000,
+      "annual_rate": 0.04,
+      "total_term_months": 60,
+      "grace_months": 12,
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "fee_rate": 0.01
+    },
+    "L006": {
+      "type": "LOAN",
+      "amount": 15000000,
+      "annual_rate": 0.035,
+      "total_term_months": 60,
+      "grace_months": 24,
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "fee_rate": 0.01
+    },
+    "D001": {
+      "type": "LOAN",
+      "amount": 5000000,
+      "annual_rate": 0.035,
+      "total_term_months": 24,
+      "grace_months": 0,
+      "repayment_type": "EQUAL_PAYMENT"
+    },
+    "D002": {
+      "type": "LOAN",
+      "amount": 10000000,
+      "annual_rate": 0.04,
+      "total_term_months": 60,
+      "grace_months": 12,
+      "repayment_type": "EQUAL_PAYMENT"
+    },
+    "D003": {
+      "type": "LOAN",
+      "amount": 10000000,
+      "annual_rate": 0.04,
+      "total_term_months": 12,
+      "grace_months": 0,
+      "repayment_type": "BULLET"
+    },
+    "A001": {
+      "type": "CASH_MANAGEMENT",
+      "cost_reduction_ratio": 0.01
+    },
+    "SV001": {
+      "type": "SAVINGS",
+      "monthly_contribution": 300000,
+      "min_monthly_contribution": 1000,
+      "max_monthly_contribution": 500000,
+      "asset_annual_rate": 0.02,
+      "maturity_month": 6
+    },
+    "SV002": {
+      "type": "CASH_MANAGEMENT"
+    },
+    "TD001": {
+      "type": "CASH_MANAGEMENT"
+    }
+  },
+  "policy_type_defaults": {
+    "GRANT": {
+      "type": "GRANT",
+      "amount": 5000000,
+      "disbursement_month": 3,
+      "payment_method": "REIMBURSEMENT",
+      "self_funding_ratio": 0.2
+    },
+    "LOAN": {
+      "type": "LOAN",
+      "amount": 10000000,
+      "annual_rate": 0.035,
+      "total_term_months": 60,
+      "grace_months": 12,
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "fee_rate": 0.005
+    },
+    "GUARANTEE": {
+      "type": "LOAN",
+      "amount": 10000000,
+      "annual_rate": 0.04,
+      "total_term_months": 60,
+      "grace_months": 12,
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "fee_rate": 0.01
+    },
+    "CONSULTING": {
+      "type": "COST_REDUCTION",
+      "cost_reduction_ratio": 0.05
+    },
+    "MARKETING": {
+      "type": "SALES_UPLIFT",
+      "sales_uplift_ratio": 0.05
+    }
+  }
+}

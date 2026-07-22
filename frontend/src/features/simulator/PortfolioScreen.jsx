@@ -1,12 +1,10 @@
 import { PRODUCTS } from '../recommend/products';
-import { sumEffects, sign } from './sim';
 
-export default function PortfolioScreen({ equipped, simRows, percentile }) {
+export default function PortfolioScreen({ equipped, simRows, percentile, simulation }) {
   const eq = equipped.map((id) => PRODUCTS.find((p) => p.id === id));
-  const d = sumEffects(equipped);
   const headline = eq.length === 0
     ? '상품을 장착하면 변화를 보여드려요'
-    : '상품 ' + eq.length + '개 장착 시, 월 현금흐름이 ' + sign(d.cash) + '만원 변해요';
+    : '상품 ' + eq.length + '개 조합의 12개월 계산 결과예요';
 
   return (
     <div className="scr">
@@ -41,14 +39,15 @@ export default function PortfolioScreen({ equipped, simRows, percentile }) {
                   <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: '#C98A00' }}>가입 ↗</span>
                 </div>
                 <div style={{ marginTop: 12, background: '#FFF9EA', borderRadius: 12, padding: '11px 13px' }}>
-                  <p style={{ fontSize: 12, color: '#8A7A55', lineHeight: 1.65 }}>{p.effectText}</p>
+                  <p style={{ fontSize: 12, color: '#8A7A55', lineHeight: 1.65 }}>{p.reason}</p>
                 </div>
               </a>
             ))}
           </div>
           <div style={{ background: '#EDF5E1', borderRadius: 16, padding: '14px 16px' }}>
             <p style={{ fontSize: 12.5, color: '#5E6E4A', lineHeight: 1.65, fontWeight: 600 }}>
-              사장님은 상위 {percentile}% 위치라 정책자금 우대 대상이에요. 대출성 상품은 부채비율 45%를 넘지 않는 선에서 이용하시길 권해드려요. 자세한 조건은 각 상품 페이지에서 확인하세요.
+              사장님은 상위 {percentile}% 위치예요. {simulation?.constraints?.violations?.[0]
+                || '현재 조합은 계산 엔진의 상환부담·중복수혜·초과조달 기준을 통과했어요.'} 실제 자격과 금리는 각 상품 페이지에서 확인하세요.
             </p>
           </div>
         </>
