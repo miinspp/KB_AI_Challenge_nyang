@@ -6,6 +6,7 @@ import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
 import { recommendProducts } from './features/recommend/recommend';
+import { fetchRecommendations, rankToProfile } from './api/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows } from './features/simulator/sim';
@@ -29,6 +30,8 @@ export default function App() {
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [equipped, setEquipped] = useState([]);
+  const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
+  const [riskTolerance, setRiskTolerance] = useState('stable');  // 'stable'(안정) | 'growth'(성장)
 
   // 업종 목록·메타 최초 로드
   useEffect(() => {
@@ -44,7 +47,11 @@ export default function App() {
     return () => { alive = false; };
   }, [diag.industryCode]);
 
-  const products = useMemo(() => recommendProducts(rank), [rank]);
+  // 추천 서비스(/api/recommend) 결과를 우선 사용, 없으면 기존 규칙기반으로 폴백
+  const products = useMemo(
+    () => apiProducts ?? recommendProducts(rank),
+    [apiProducts, rank],
+  );
   const topPercent = rank ? rank.topPercent : null;
   const baseCash = rank ? wonToMan(rank.profit.value) : undefined;
   const simRows = useMemo(() => buildSimRows(equipped, baseCash), [equipped, baseCash]);
@@ -80,6 +87,13 @@ export default function App() {
       setDetail(d);
       setScreen(1);
       window.scrollTo(0, 0);
+
+      // 진단 결과 → 맞춤 추천(비동기). 서비스 미가동/실패 시 조용히 규칙기반 폴백 유지.
+      const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
+      const profile = rankToProfile(r, { region: '서울', industry: industryName, riskTolerance });
+      fetchRecommendations(profile)
+        .then(setApiProducts)
+        .catch((err) => { console.warn('추천 서비스 폴백:', err.message); setApiProducts(null); });
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
@@ -102,7 +116,7 @@ export default function App() {
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError('');
+    setEquipped([]); setAnalyzeError(''); setApiProducts(null);
   };
 
   const next = () => {

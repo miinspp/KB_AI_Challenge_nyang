@@ -30,6 +30,13 @@ export default function RecommendScreen({ products, percentile }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 800, color: '#2B2825', letterSpacing: -.3 }}>{p.name}</p>
                 <span className="tag" style={{ color: p.tagColor, background: p.tagBg }}>{p.tag}</span>
+                {typeof p.daysLeft === 'number' && p.daysLeft >= 0 && (
+                  <span className="tag" style={{
+                    marginLeft: 6,
+                    color: p.daysLeft <= 7 ? '#D0564C' : '#8A7A55',
+                    background: p.daysLeft <= 7 ? '#FDE8E6' : '#FFF6DD',
+                  }}>{p.daysLeft === 0 ? '오늘 마감' : `D-${p.daysLeft}`}</span>
+                )}
               </div>
               <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: '#8DBB6C' }}>적합 {p.fit}%</span>
             </div>
