@@ -3,6 +3,12 @@
 .idea/
 .vscode/
 *.iml
+*.swp
+Thumbs.db
+
+# === Claude Code (로컬 설정) ===
+.claude/settings.local.json
+.claude/launch.json
 
 # === Java / Gradle (backend) ===
 backend/.gradle/
@@ -14,6 +20,8 @@ backend/out/
 # === Node / Vite (frontend) ===
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
+frontend/coverage/
 npm-debug.log*
 yarn-error.log*
 
@@ -22,6 +30,9 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 pipeline/raw/
 
 # === secrets ===

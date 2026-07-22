@@ -50,9 +50,9 @@ class RankServiceTest {
     @Test
     void rank_composite_and_top_percent_consistent() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
         // 매출 500만(=P50), 지출 389.65만 → 순수익 110.35만 = 500만*0.2207 → 유도분포 P50, 이익률 = 벤치마크 → 50점
-        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, null);
+        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, null, null);
         RankResponse res = svc.rank(ind, req);
         assertEquals(50.0, res.sales().percentile(), 0.01);
         assertEquals(50.0, res.profit().percentile(), 0.01);
@@ -65,9 +65,9 @@ class RankServiceTest {
     @Test
     void rank_custom_weights_normalized() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
         // 매출 100% 가중치 → 종합 = 매출 퍼센타일
-        RankRequest req = new RankRequest("CS100001", 8_000_000, 8_000_000,
+        RankRequest req = new RankRequest("CS100001", 8_000_000, 8_000_000, null,
                 new RankRequest.Weights(2, 0, 0));
         RankResponse res = svc.rank(ind, req);
         assertEquals(res.sales().percentile(), res.compositeScore(), 1e-9);
@@ -75,12 +75,131 @@ class RankServiceTest {
     }
 
     @Test
+    void area_type_rank_uses_area_distribution() {
+        // 골목상권 격자 = 전체 격자 × 0.5 → 같은 매출이면 골목상권 내 퍼센타일이 더 높아야 함
+        List<Double> alley = linearGrid().stream().map(x -> x * 0.5).toList();
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(),
+                java.util.Map.of("골목상권", new Industry.AreaTypeDist(920, 16256, 2_500_000, alley)));
+        RankRequest req = new RankRequest("CS100001", 5_000_000, 3_896_500, "골목상권", null);
+        RankResponse res = svc.rank(ind, req);
+        assertNotNull(res.areaRank());
+        assertEquals("골목상권", res.areaRank().areaType());
+        assertEquals(100.0, res.areaRank().salesPercentile(), 1e-9); // 500만 = 골목 격자 최댓값
+        assertTrue(res.areaRank().compositeScore() > res.compositeScore());
+        assertTrue(res.notes().stream().anyMatch(n -> n.contains("상권유형 비교")));
+    }
+
+    @Test
+    void area_type_absent_or_unknown_yields_null_area_rank() {
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        // areaType 미지정 → null
+        assertNull(svc.rank(ind, new RankRequest("CS100001", 5_000_000, 0, null, null)).areaRank());
+        // 표본 없는 유형 지정 → null + 안내 note
+        RankResponse res = svc.rank(ind, new RankRequest("CS100001", 5_000_000, 0, "관광특구", null));
+        assertNull(res.areaRank());
+        assertTrue(res.notes().stream().anyMatch(n -> n.contains("표본 상권이 부족")));
+    }
+
+    @Test
     void negative_profit_lands_at_bottom() {
         Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
-                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid());
-        RankRequest req = new RankRequest("CS100001", 3_000_000, 5_000_000, null);
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        RankRequest req = new RankRequest("CS100001", 3_000_000, 5_000_000, null, null);
         RankResponse res = svc.rank(ind, req);
         assertEquals(0.0, res.profit().percentile(), 1e-9);
         assertEquals(0.0, res.margin().score(), 1e-9);
+    }
+
+    // ── v2 보정축 ──────────────────────────────────────────────
+
+    @Test
+    void rent_burden_score_encodes_ten_percent_rule() {
+        assertEquals(100.0, svc.rentBurdenScore(0.05), 1e-9);   // 10% 이하 → 만점
+        assertEquals(100.0, svc.rentBurdenScore(0.10), 1e-9);
+        assertEquals(50.0, svc.rentBurdenScore(0.175), 1e-9);   // 중간
+        assertEquals(0.0, svc.rentBurdenScore(0.25), 1e-9);     // 25% 이상 → 0점
+        assertEquals(0.0, svc.rentBurdenScore(0.40), 1e-9);
+    }
+
+    @Test
+    void trend_and_volatility_score_mapping() {
+        assertEquals(50.0, svc.trendScore(0.0), 1e-9);          // 성장률 0 → 중립
+        assertEquals(100.0, svc.trendScore(0.05), 1e-9);        // +5%/월 → 포화
+        assertEquals(0.0, svc.trendScore(-0.05), 1e-9);
+        assertEquals(75.0, svc.trendScore(0.025), 1e-9);
+        assertEquals(100.0, svc.volatilityScore(0.05), 1e-9);   // CV 5% 이하 → 만점
+        assertEquals(0.0, svc.volatilityScore(0.30), 1e-9);
+        assertEquals(50.0, svc.volatilityScore(0.175), 1e-9);
+    }
+
+    @Test
+    void v2_composite_blends_extras_and_stays_v1_without_them() {
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        // 기본 3축이 전부 50이 되는 시나리오 (기존 rank_composite 테스트와 동일)
+        double sales = 5_000_000, expense = 3_896_500;
+
+        // 보정 없음 → v1 그대로 50점
+        RankResponse v1 = svc.rank(ind, new RankRequest("CS100001", sales, expense, null, null));
+        assertEquals(50.0, v1.compositeScore(), 0.05);
+        assertNull(v1.costHealth());
+        assertNull(v1.stability());
+
+        // 임대료 50만(부담률 10% → 100점) + 평탄한 6개월 매출(성장 0 → 50, CV 0 → 100 ⇒ 안정성 75)
+        var cb = new RankRequest.CostBreakdown(null, null, 500_000.0, null);
+        var history = java.util.stream.IntStream.range(0, 6)
+                .mapToObj(i -> new RankRequest.MonthlyAmount("2026-0" + (i + 1), sales)).toList();
+        RankResponse v2 = svc.rank(ind, new RankRequest("CS100001", sales, expense, null, null, cb, history));
+
+        assertNotNull(v2.costHealth());
+        assertEquals(0.10, v2.costHealth().rentBurden(), 1e-9);
+        assertEquals(100.0, v2.costHealth().score(), 1e-9);
+        assertNotNull(v2.stability());
+        assertEquals(6, v2.stability().months());
+        assertEquals(75.0, v2.stability().score(), 1e-9);
+        // 종합 = 0.7×50 + 0.15×100 + 0.15×75 = 61.25
+        assertEquals(61.3, v2.compositeScore(), 0.05);
+        assertEquals(38.8, v2.topPercent(), 0.05);
+        // 가중치 재배분: sales 0.5×0.7 = 0.35
+        assertEquals(0.35, v2.weightsUsed().get("sales"), 1e-9);
+        assertEquals(0.15, v2.weightsUsed().get("cost"), 1e-9);
+        assertEquals(0.15, v2.weightsUsed().get("stability"), 1e-9);
+        assertTrue(v2.notes().stream().anyMatch(n -> n.contains("임대료 부담률")));
+        assertTrue(v2.notes().stream().anyMatch(n -> n.contains("매출 안정성")));
+    }
+
+    @Test
+    void extras_skipped_without_required_inputs() {
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        // rent 없는 breakdown → 비용 축 미산출, 2개월 이력 → 안정성 축 미산출
+        var cb = new RankRequest.CostBreakdown(1_000_000.0, 500_000.0, null, null);
+        var shortHistory = List.of(
+                new RankRequest.MonthlyAmount("2026-05", 5_000_000.0),
+                new RankRequest.MonthlyAmount("2026-06", 5_000_000.0));
+        RankResponse res = svc.rank(ind,
+                new RankRequest("CS100001", 5_000_000, 3_896_500, null, null, cb, shortHistory));
+        assertNull(res.costHealth());
+        assertNull(res.stability());
+        assertEquals(50.0, res.compositeScore(), 0.05); // v1 과 동일
+        assertFalse(res.weightsUsed().containsKey("cost"));
+    }
+
+    @Test
+    void stability_detects_growth_and_volatility() {
+        Industry ind = new Industry("CS100001", "한식음식점", "food", "숙박·음식점업",
+                0.2207, 1444, 38233, 5_000_000, 5_000_000, linearGrid(), null);
+        // 매달 +5% 성장하는 매출 (기하 성장 ≈ 월 5% 기울기) → 추세 점수 상단
+        List<RankRequest.MonthlyAmount> growing = new ArrayList<>();
+        double v = 4_000_000;
+        for (int i = 0; i < 6; i++) { growing.add(new RankRequest.MonthlyAmount("2026-0" + (i + 1), v)); v *= 1.05; }
+        RankResponse res = svc.rank(ind,
+                new RankRequest("CS100001", 5_000_000, 0, null, null, null, growing));
+        assertNotNull(res.stability());
+        assertTrue(res.stability().trendPerMonth() > 0.04, "성장률 " + res.stability().trendPerMonth());
+        assertTrue(res.stability().trendScore() > 90);
+        assertTrue(res.stability().volatilityScore() > 50); // 완만한 성장의 CV 는 크지 않음
     }
 }

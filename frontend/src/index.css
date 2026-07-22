@@ -1,0 +1,55 @@
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+body { font-family: 'Pretendard Variable', 'Pretendard', sans-serif; background: #F1EDE2; }
+a { color: #C98A00; text-decoration: none; }
+a:hover { color: #A87200; }
+input { font-family: inherit; }
+input::placeholder { color: #C4BAAD; }
+button { font-family: inherit; }
+
+@keyframes sway { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes scrIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; background: #FFF9EF; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 60px rgba(60,45,10,.12); }
+.app-body { flex: 1; }
+.scr { animation: scrIn .4s ease both; padding: 6px 22px 130px; display: flex; flex-direction: column; gap: 16px; }
+.pop { animation: popIn .3s ease both; }
+.sway { animation: sway 3.2s ease-in-out infinite; transform-origin: 50% 95%; }
+.sway.rev { animation-direction: reverse; }
+.bob { animation: bob 3.6s ease-in-out infinite; }
+.spinner { flex: none; width: 22px; height: 22px; border: 3px solid #F0E7D6; border-top-color: #FFBC00; border-radius: 50%; animation: spin .8s linear infinite; }
+
+.hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
+.hdr-back { width: 38px; height: 38px; border: none; background: #FFF1CC; border-radius: 12px; font-size: 20px; color: #2B2825; cursor: pointer; line-height: 1; }
+.hdr-title { font-size: 16px; font-weight: 800; color: #2B2825; letter-spacing: -.3px; }
+.hdr-dots { display: flex; gap: 5px; align-items: center; width: 38px; justify-content: flex-end; }
+.dot { height: 6px; border-radius: 3px; transition: all .3s; display: inline-block; }
+
+.h1 { font-size: 24px; font-weight: 900; color: #2B2825; line-height: 1.4; letter-spacing: -.5px; }
+.sub { margin-top: 8px; font-size: 13.5px; color: #8A8178; line-height: 1.6; }
+.label-sm { font-size: 13px; font-weight: 800; color: #8A8178; }
+.card { background: #fff; border: 1.5px solid #F0E7D6; border-radius: 20px; padding: 18px; }
+
+.input-row { background: #fff; border: 1.5px solid #F0E7D6; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+.input-row.warm { background: #FBF7EE; border-radius: 12px; padding: 11px 14px; }
+.input-row .k { flex: none; font-size: 13px; font-weight: 700; color: #8A8178; }
+.input-row input { flex: 1; border: none; outline: none; background: transparent; font-size: 15px; font-weight: 700; color: #2B2825; min-width: 0; }
+.input-row .u { font-size: 13px; color: #C4BAAD; }
+
+.select-wrap { position: relative; }
+.select { width: 100%; appearance: none; -webkit-appearance: none; background: #fff; border: 1.5px solid #F0E7D6; border-radius: 14px; padding: 14px 40px 14px 16px; font-size: 15px; font-weight: 700; color: #2B2825; cursor: pointer; outline: none; }
+.select:focus { border-color: #E8B93E; }
+.select:invalid, .select:has(option[value=""]:checked) { color: #C4BAAD; font-weight: 500; }
+.select-caret { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #C4BAAD; font-size: 12px; }
+
+.toggle { flex: none; width: 52px; height: 30px; border: none; border-radius: 15px; cursor: pointer; position: relative; transition: background .25s; }
+.toggle .knob { position: absolute; top: 3px; width: 24px; height: 24px; background: #fff; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,.2); transition: left .25s; }
+
+.cta-wrap { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 480px; padding: 14px 22px 26px; background: linear-gradient(180deg, rgba(255,249,239,0), #FFF9EF 45%); }
+.cta { width: 100%; height: 56px; border: none; border-radius: 18px; background: #FFBC00; color: #2B2825; font-size: 16.5px; font-weight: 900; letter-spacing: -.3px; cursor: pointer; box-shadow: 0 8px 20px -8px rgba(255,188,0,.55); }
+
+.spec { font-size: 11.5px; font-weight: 700; color: #6B6259; background: #F7F1E4; padding: 5px 10px; border-radius: 9px; }
+.tag { display: inline-block; margin-top: 3px; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 8px; }
+.icon-badge { flex: none; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-weight: 900; }
