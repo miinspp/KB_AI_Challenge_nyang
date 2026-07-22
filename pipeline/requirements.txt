@@ -1,3 +1,10 @@
 pandas>=2.0
 numpy>=1.24
 python-dotenv>=1.0   # .env 자동 로드 (collect_seoul_sales.py)
+sentence-transformers[train]>=3.0   # 임베딩·contrastive 학습 (enrich/recommend_match/train_matcher)
+keybert>=0.8                 # 키워드 추출 (enrich_recommendables.py)
+kiwipiepy>=0.18              # 한국어 형태소 분석 — 명사 후보 (enrich_recommendables.py)
+transformers>=4.40           # KoBART 요약 파인튜닝 (train_summarizer.py)
+torch>=2.1                   # 학습 백엔드 (MPS/CPU)
+datasets>=2.0                # sentence-transformers 학습 유틸
+accelerate>=0.30             # 학습 가속

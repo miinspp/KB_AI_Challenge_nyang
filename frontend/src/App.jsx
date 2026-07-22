@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from './shared/Header';
 import { manToWon, wonToMan } from './shared/format';
 import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
+import { postRecommend } from './api/recommend';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
@@ -25,6 +26,7 @@ export default function App() {
   const [hometax, setHometax] = useState(null);  // 홈택스 연동 결과 financials (salesHistory → 안정성 축)
   const [detail, setDetail] = useState(null);   // 선택 업종 상세(분포 격자)
   const [rank, setRank] = useState(null);        // /api/rank 결과
+  const [reco, setReco] = useState(null);        // /api/recommend 결과 (AI 정책·KB상품 추천)
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
 
@@ -80,6 +82,14 @@ export default function App() {
       setDetail(d);
       setScreen(1);
       window.scrollTo(0, 0);
+      // AI 추천은 화면 전환을 막지 않도록 비동기로 — 실패해도 진단 흐름은 유지
+      setReco(null);
+      postRecommend({
+        topPercent: r.topPercent,
+        rentBurden: r.costHealth?.rentBurden ?? null,
+        trendPerMonth: r.stability?.trendPerMonth ?? null,
+        region: '서울',
+      }).then(setReco).catch(() => setReco(null));
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
@@ -102,7 +112,7 @@ export default function App() {
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError('');
+    setReco(null); setEquipped([]); setAnalyzeError('');
   };
 
   const next = () => {
@@ -124,7 +134,7 @@ export default function App() {
             onHometaxLinked={onHometaxLinked} />
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
-        {screen === 2 && <RecommendScreen products={products} percentile={topPercent} />}
+        {screen === 2 && <RecommendScreen products={products} percentile={topPercent} reco={reco} />}
         {screen === 3 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows} />}
         {screen === 4 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent} />}
       </div>
