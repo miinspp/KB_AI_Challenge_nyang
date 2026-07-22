@@ -109,3 +109,6 @@ button { font-family: inherit; }
 /* ── 자동 채움 배지 · 직접 수정 링크 ── */
 .filled-badge { font-size: 10px; font-weight: 800; color: #4F7139; background: #EAF3DC; border: 1px solid #CFE3B8; border-radius: 7px; padding: 2px 7px; }
 .edit-link { font-size: 11.5px; font-weight: 700; color: #4F7139; background: none; border: none; cursor: pointer; padding: 0; }
+
+/* ── 세부 정보 토글(아코디언) ── */
+.detail-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 4px; background: #fff; border: 1.5px solid #F0E7D6; border-radius: 14px; padding: 14px 16px; cursor: pointer; }

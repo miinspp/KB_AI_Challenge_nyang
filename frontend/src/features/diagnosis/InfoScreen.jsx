@@ -37,6 +37,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
   // 어떤 필드가 어떤 연동으로 채워졌는지: { [key]: 'kb' | 'hometax' }
   const [sources, setSources] = useState({});
   const [chMode, setChMode] = useState('channel'); // channel | ratio
+  const [showDetail, setShowDetail] = useState(false); // 세부 정보 토글(접힘 기본)
 
   const clearSource = (key) => setSources((s) => {
     if (!s[key]) return s;
@@ -68,6 +69,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
   const handleKbLinked = (f) => {
     onKbLinked(f);
     setSources((s) => ({ ...s, salesMan: 'kb', expenseMan: 'kb', existingMonthlyPaymentMan: 'kb', cardCashRatio: 'kb' }));
+    setShowDetail(true);  // 연동으로 세부 필드가 채워졌으니 펼쳐서 보여준다
   };
   const unlinkKb = () => setSources((s) => {
     const n = { ...s };
@@ -90,6 +92,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       salesMan: 'hometax', expenseMan: 'hometax',
       rentMan: 'hometax', laborMan: 'hometax', purchaseMan: 'hometax',
     }));
+    setShowDetail(true);  // 홈택스 연동 시 지출세부·개업시기가 채워지니 펼쳐서 보여준다
   };
   const unlinkHometax = () => setSources((s) => {
     const n = { ...s };
@@ -183,57 +186,65 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       {field('areaText', { label: '사업장 지역(자치구·동)', ph: '예: 강남구 역삼동', unit: '', text: true, required: true })}
       {field('salesMan', { label: '월 평균 매출', ph: '예: 2,500', required: true })}
       {field('expenseMan', { label: '월 평균 지출', ph: '예: 1,900', required: true })}
-
-      {/* ── 선택 입력 ── */}
-      <p className="label-sm" style={{ marginTop: 4 }}>
-        선택 입력 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 넣을수록 진단이 정밀해져요</span>
-      </p>
-
-      <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>지출 세부 (임대료 · 인건비 · 재료비)</p>
-      {field('rentMan', { label: '월 임대료', ph: '예: 250' })}
-      {field('laborMan', { label: '월 인건비', ph: '예: 400' })}
-      {field('purchaseMan', { label: '월 재료비(매입)', ph: '예: 900' })}
-
-      <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>개업 시기</p>
-      {field('bizAge', { label: '개업 시기(업력)', ph: '예: 2021년 3월', unit: '', text: true })}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E' }}>주 매출 채널 또는 카드·현금 비율</p>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className={`ind-tab${chMode === 'channel' ? ' on' : ''}`} onClick={() => setChMode('channel')}>홀·포장·배달 비중</button>
-          <button className={`ind-tab${chMode === 'ratio' ? ' on' : ''}`} onClick={() => setChMode('ratio')}>카드·현금 비율</button>
-        </div>
-        {chMode === 'ratio' && ratioSourced && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="filled-badge">KB 불러옴</span>
-            <button className="edit-link" onClick={() => clearSource('cardCashRatio')}>직접 수정</button>
-          </div>
-        )}
-        {chMode === 'channel' ? (
-          <div className="input-row">
-            <input value={diag.salesChannel ?? ''} onChange={(e) => set({ salesChannel: e.target.value })}
-              placeholder="예: 홀 60 · 포장 30 · 배달 10" />
-          </div>
-        ) : (
-          <div className={`input-row${ratioSourced ? ' filled' : ''}`}>
-            <input value={diag.cardCashRatio ?? ''} readOnly={ratioSourced}
-              onChange={(e) => set({ cardCashRatio: e.target.value })}
-              placeholder="예: 카드 70 · 현금 30" />
-          </div>
-        )}
-      </div>
-
-      <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>
-        사업 자금 · 기존 대출 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 시뮬레이션 기준값</span>
-      </p>
       {field('currentCashMan', { label: '현재 보유 현금', ph: '예: 1,500', required: true })}
-      {field('existingDebtMan', { label: '기존 대출 잔액', ph: '없으면 0' })}
-      {field('existingMonthlyPaymentMan', { label: '월 대출 상환액', ph: '없으면 0' })}
-      {field('existingLoanRatePct', { label: '기존 대출 금리', ph: '예: 5.2', unit: '%', decimal: true })}
-      {field('existingLoanRemainingMonths', { label: '남은 상환기간', ph: '예: 24', unit: '개월', decimal: true })}
       <p style={{ fontSize: 11.5, color: '#A79C8E', lineHeight: 1.55 }}>
         현재 보유 현금은 월 순이익과 다른 값이에요. 실제 통장·현금 잔액을 입력해야 현금 부족 위험이 정확해져요.
       </p>
+
+      {/* ── 세부 정보 (토글) — 화면이 길어지지 않도록 기본 접힘 ── */}
+      <button className="detail-toggle" onClick={() => setShowDetail((v) => !v)}>
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#2B2825' }}>세부 정보 입력</span>
+          <span style={{ fontSize: 11.5, color: '#C4BAAD', fontWeight: 500 }}>넣을수록 진단이 정밀해져요 · 지출세부 · 개업시기 · 기존대출</span>
+        </span>
+        <span style={{ fontSize: 13, color: '#8A8178', transform: showDetail ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+      </button>
+
+      {showDetail && (
+        <>
+          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>지출 세부 (임대료 · 인건비 · 재료비)</p>
+          {field('rentMan', { label: '월 임대료', ph: '예: 250' })}
+          {field('laborMan', { label: '월 인건비', ph: '예: 400' })}
+          {field('purchaseMan', { label: '월 재료비(매입)', ph: '예: 900' })}
+
+          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>개업 시기</p>
+          {field('bizAge', { label: '개업 시기(업력)', ph: '예: 2021년 3월', unit: '', text: true })}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E' }}>주 매출 채널 또는 카드·현금 비율</p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className={`ind-tab${chMode === 'channel' ? ' on' : ''}`} onClick={() => setChMode('channel')}>홀·포장·배달 비중</button>
+              <button className={`ind-tab${chMode === 'ratio' ? ' on' : ''}`} onClick={() => setChMode('ratio')}>카드·현금 비율</button>
+            </div>
+            {chMode === 'ratio' && ratioSourced && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="filled-badge">KB 불러옴</span>
+                <button className="edit-link" onClick={() => clearSource('cardCashRatio')}>직접 수정</button>
+              </div>
+            )}
+            {chMode === 'channel' ? (
+              <div className="input-row">
+                <input value={diag.salesChannel ?? ''} onChange={(e) => set({ salesChannel: e.target.value })}
+                  placeholder="예: 홀 60 · 포장 30 · 배달 10" />
+              </div>
+            ) : (
+              <div className={`input-row${ratioSourced ? ' filled' : ''}`}>
+                <input value={diag.cardCashRatio ?? ''} readOnly={ratioSourced}
+                  onChange={(e) => set({ cardCashRatio: e.target.value })}
+                  placeholder="예: 카드 70 · 현금 30" />
+              </div>
+            )}
+          </div>
+
+          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>
+            기존 대출 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 시뮬레이션 기준값</span>
+          </p>
+          {field('existingDebtMan', { label: '기존 대출 잔액', ph: '없으면 0' })}
+          {field('existingMonthlyPaymentMan', { label: '월 대출 상환액', ph: '없으면 0' })}
+          {field('existingLoanRatePct', { label: '기존 대출 금리', ph: '예: 5.2', unit: '%', decimal: true })}
+          {field('existingLoanRemainingMonths', { label: '남은 상환기간', ph: '예: 24', unit: '개월', decimal: true })}
+        </>
+      )}
 
       {livePreview != null && (
         <div className="pop" style={{
