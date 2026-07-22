@@ -17,8 +17,11 @@ import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
 const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
+// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
 const DIAG_INIT = {
-  industryCode: '', areaType: '', salesMan: '', expenseMan: '',
+  industryCode: '', areaType: '', areaText: '', bizAge: '',
+  salesMan: '', expenseMan: '',
+  salesChannel: '', cardCashRatio: '',
   rentMan: '', laborMan: '', purchaseMan: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
@@ -141,6 +144,17 @@ export default function App() {
     }));
   };
 
+  // KB 계좌 마이데이터 연동 완료 → 계좌 흐름 기반 매출·지출·대출상환·카드현금 비율을 채운다
+  const onKbLinked = (f) => {
+    setDiag((d) => ({
+      ...d,
+      salesMan: String(wonToMan(f.monthlySalesAvg)),
+      expenseMan: String(wonToMan(f.totalMonthlyExpense)),
+      existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
+      cardCashRatio: f.cardCashRatio,
+    }));
+  };
+
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
     setReco(null); setEquipped([]); setSimulation(null); setSimulationError(''); setAnalyzeError('');
@@ -155,6 +169,7 @@ export default function App() {
 
   const ctaDisabled = screen === 0 && (!canAnalyze || analyzing);
   const ctaLabel = screen === 0 && analyzing ? '분석 중…' : CTAS[screen];
+  const ctaGreen = screen === 0 && !ctaDisabled;  // 온보딩 CTA는 초록 포인트
 
   return (
     <div className="app">
@@ -162,7 +177,7 @@ export default function App() {
       <div className="app-body">
         {screen === 0 && (
           <InfoScreen industries={industries} diag={diag} setDiag={setDiag} detail={detail}
-            onHometaxLinked={onHometaxLinked} />
+            onHometaxLinked={onHometaxLinked} onKbLinked={onKbLinked} />
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
@@ -180,7 +195,11 @@ export default function App() {
           </p>
         )}
         <button className="cta" onClick={next} disabled={ctaDisabled}
-          style={ctaDisabled ? { background: '#EFE6D4', color: '#C4BAAD', boxShadow: 'none', cursor: 'default' } : undefined}>
+          style={ctaDisabled
+            ? { background: '#EFE6D4', color: '#C4BAAD', boxShadow: 'none', cursor: 'default' }
+            : ctaGreen
+              ? { background: '#3F6B2E', color: '#fff', boxShadow: '0 8px 20px -8px rgba(63,107,46,.45)' }
+              : undefined}>
           {ctaLabel}
         </button>
       </div>
