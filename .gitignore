@@ -42,3 +42,4 @@ pipeline/raw/
 
 # === misc ===
 *.log
+recommend-service/data/doc_vectors.npy
