@@ -1,0 +1,439 @@
+{
+  "meta": {
+    "generatedFor": "mock",
+    "months": [
+      "2026-05",
+      "2026-06",
+      "2026-07"
+    ],
+    "txnCount": 140
+  },
+  "months": [
+    {
+      "month": "2026-05",
+      "income": 9129600,
+      "expense": 12825900,
+      "profit": -3696300,
+      "cashIn": 9468200,
+      "cashOut": 15128100,
+      "netCash": -5659900,
+      "categories": [
+        {
+          "code": "SALES_CARD",
+          "label": "카드매출 정산",
+          "group": "수입",
+          "amount": 7157900,
+          "count": 20
+        },
+        {
+          "code": "SALES_DELIVERY",
+          "label": "배달매출 정산",
+          "group": "수입",
+          "amount": 1971700,
+          "count": 4
+        },
+        {
+          "code": "LABOR",
+          "label": "인건비",
+          "group": "고정비",
+          "amount": 3950000,
+          "count": 2
+        },
+        {
+          "code": "RENT",
+          "label": "임대료(월세)",
+          "group": "고정비",
+          "amount": 2800000,
+          "count": 1
+        },
+        {
+          "code": "INSURANCE",
+          "label": "보험료",
+          "group": "고정비",
+          "amount": 142000,
+          "count": 1
+        },
+        {
+          "code": "COMMS",
+          "label": "통신비",
+          "group": "고정비",
+          "amount": 91400,
+          "count": 1
+        },
+        {
+          "code": "SUPPLIES",
+          "label": "매입·원재료",
+          "group": "변동비",
+          "amount": 4606900,
+          "count": 7
+        },
+        {
+          "code": "UTILITIES",
+          "label": "공과금(전기·가스·수도)",
+          "group": "변동비",
+          "amount": 435400,
+          "count": 2
+        },
+        {
+          "code": "TAX",
+          "label": "세금·4대보험",
+          "group": "변동비",
+          "amount": 295300,
+          "count": 1
+        },
+        {
+          "code": "PLATFORM_FEE",
+          "label": "플랫폼·결제 수수료",
+          "group": "변동비",
+          "amount": 222400,
+          "count": 1
+        },
+        {
+          "code": "MARKETING",
+          "label": "광고·마케팅",
+          "group": "변동비",
+          "amount": 159800,
+          "count": 1
+        },
+        {
+          "code": "LOAN_PRINCIPAL",
+          "label": "대출원금 상환",
+          "group": "금융",
+          "amount": 650000,
+          "count": 1
+        },
+        {
+          "code": "LOAN_INTEREST",
+          "label": "대출이자",
+          "group": "금융",
+          "amount": 122700,
+          "count": 1
+        },
+        {
+          "code": "INTERNAL_TRANSFER",
+          "label": "내부이체(본인 계좌)",
+          "group": "중립",
+          "amount": 1000000,
+          "count": 1
+        },
+        {
+          "code": "CARD_BILL",
+          "label": "카드대금 결제",
+          "group": "중립",
+          "amount": 574600,
+          "count": 1
+        },
+        {
+          "code": "UNKNOWN",
+          "label": "미분류",
+          "group": "중립",
+          "amount": 416200,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "month": "2026-06",
+      "income": 9849700,
+      "expense": 12573300,
+      "profit": -2723600,
+      "cashIn": 10282400,
+      "cashOut": 14854700,
+      "netCash": -4572300,
+      "categories": [
+        {
+          "code": "SALES_CARD",
+          "label": "카드매출 정산",
+          "group": "수입",
+          "amount": 7732300,
+          "count": 20
+        },
+        {
+          "code": "SALES_DELIVERY",
+          "label": "배달매출 정산",
+          "group": "수입",
+          "amount": 2117400,
+          "count": 4
+        },
+        {
+          "code": "LABOR",
+          "label": "인건비",
+          "group": "고정비",
+          "amount": 3950000,
+          "count": 2
+        },
+        {
+          "code": "RENT",
+          "label": "임대료(월세)",
+          "group": "고정비",
+          "amount": 2800000,
+          "count": 1
+        },
+        {
+          "code": "INSURANCE",
+          "label": "보험료",
+          "group": "고정비",
+          "amount": 142000,
+          "count": 1
+        },
+        {
+          "code": "COMMS",
+          "label": "통신비",
+          "group": "고정비",
+          "amount": 89600,
+          "count": 1
+        },
+        {
+          "code": "SUPPLIES",
+          "label": "매입·원재료",
+          "group": "변동비",
+          "amount": 4446500,
+          "count": 7
+        },
+        {
+          "code": "UTILITIES",
+          "label": "공과금(전기·가스·수도)",
+          "group": "변동비",
+          "amount": 471900,
+          "count": 2
+        },
+        {
+          "code": "TAX",
+          "label": "세금·4대보험",
+          "group": "변동비",
+          "amount": 358900,
+          "count": 1
+        },
+        {
+          "code": "PLATFORM_FEE",
+          "label": "플랫폼·결제 수수료",
+          "group": "변동비",
+          "amount": 193100,
+          "count": 1
+        },
+        {
+          "code": "LOAN_PRINCIPAL",
+          "label": "대출원금 상환",
+          "group": "금융",
+          "amount": 650000,
+          "count": 1
+        },
+        {
+          "code": "LOAN_INTEREST",
+          "label": "대출이자",
+          "group": "금융",
+          "amount": 121300,
+          "count": 1
+        },
+        {
+          "code": "INTERNAL_TRANSFER",
+          "label": "내부이체(본인 계좌)",
+          "group": "중립",
+          "amount": 1000000,
+          "count": 1
+        },
+        {
+          "code": "CARD_BILL",
+          "label": "카드대금 결제",
+          "group": "중립",
+          "amount": 570000,
+          "count": 1
+        },
+        {
+          "code": "UNKNOWN",
+          "label": "미분류",
+          "group": "중립",
+          "amount": 494100,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "month": "2026-07",
+      "income": 9286700,
+      "expense": 12569900,
+      "profit": -3283200,
+      "cashIn": 9505400,
+      "cashOut": 14820600,
+      "netCash": -5315200,
+      "categories": [
+        {
+          "code": "SALES_CARD",
+          "label": "카드매출 정산",
+          "group": "수입",
+          "amount": 7401200,
+          "count": 20
+        },
+        {
+          "code": "SALES_DELIVERY",
+          "label": "배달매출 정산",
+          "group": "수입",
+          "amount": 1885500,
+          "count": 4
+        },
+        {
+          "code": "LABOR",
+          "label": "인건비",
+          "group": "고정비",
+          "amount": 3950000,
+          "count": 2
+        },
+        {
+          "code": "RENT",
+          "label": "임대료(월세)",
+          "group": "고정비",
+          "amount": 2800000,
+          "count": 1
+        },
+        {
+          "code": "INSURANCE",
+          "label": "보험료",
+          "group": "고정비",
+          "amount": 142000,
+          "count": 1
+        },
+        {
+          "code": "COMMS",
+          "label": "통신비",
+          "group": "고정비",
+          "amount": 91600,
+          "count": 1
+        },
+        {
+          "code": "SUPPLIES",
+          "label": "매입·원재료",
+          "group": "변동비",
+          "amount": 4219700,
+          "count": 7
+        },
+        {
+          "code": "UTILITIES",
+          "label": "공과금(전기·가스·수도)",
+          "group": "변동비",
+          "amount": 499400,
+          "count": 2
+        },
+        {
+          "code": "TAX",
+          "label": "세금·4대보험",
+          "group": "변동비",
+          "amount": 363600,
+          "count": 1
+        },
+        {
+          "code": "PLATFORM_FEE",
+          "label": "플랫폼·결제 수수료",
+          "group": "변동비",
+          "amount": 207200,
+          "count": 1
+        },
+        {
+          "code": "MARKETING",
+          "label": "광고·마케팅",
+          "group": "변동비",
+          "amount": 170600,
+          "count": 1
+        },
+        {
+          "code": "LOAN_PRINCIPAL",
+          "label": "대출원금 상환",
+          "group": "금융",
+          "amount": 650000,
+          "count": 1
+        },
+        {
+          "code": "LOAN_INTEREST",
+          "label": "대출이자",
+          "group": "금융",
+          "amount": 125800,
+          "count": 1
+        },
+        {
+          "code": "INTERNAL_TRANSFER",
+          "label": "내부이체(본인 계좌)",
+          "group": "중립",
+          "amount": 1000000,
+          "count": 1
+        },
+        {
+          "code": "CARD_BILL",
+          "label": "카드대금 결제",
+          "group": "중립",
+          "amount": 546500,
+          "count": 1
+        },
+        {
+          "code": "UNKNOWN",
+          "label": "미분류",
+          "group": "중립",
+          "amount": 272900,
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "reviewQueue": [
+    {
+      "txnId": "T0025",
+      "date": "2026-05-15",
+      "amount": 338600,
+      "merchant": "현금입금",
+      "guess": "미분류"
+    },
+    {
+      "txnId": "T0047",
+      "date": "2026-05-23",
+      "amount": 77600,
+      "merchant": "(주)케이지이니시스",
+      "guess": "미분류"
+    },
+    {
+      "txnId": "T0072",
+      "date": "2026-06-15",
+      "amount": 432700,
+      "merchant": "현금입금",
+      "guess": "미분류"
+    },
+    {
+      "txnId": "T0093",
+      "date": "2026-06-23",
+      "amount": 61400,
+      "merchant": "(주)케이지이니시스",
+      "guess": "미분류"
+    },
+    {
+      "txnId": "T0118",
+      "date": "2026-07-15",
+      "amount": 218700,
+      "merchant": "현금입금",
+      "guess": "미분류"
+    },
+    {
+      "txnId": "T0140",
+      "date": "2026-07-23",
+      "amount": 54200,
+      "merchant": "(주)케이지이니시스",
+      "guess": "미분류"
+    }
+  ],
+  "suggestions": [
+    {
+      "metric": "인건비 부담률",
+      "value": 41.9,
+      "status": "ok",
+      "message": "업종평균 대비 비교 필요"
+    },
+    {
+      "metric": "임대료 부담률",
+      "value": 29.7,
+      "status": "warn",
+      "message": "매출 대비 높음(임대료 10% 초과)"
+    },
+    {
+      "metric": "매입 원가율",
+      "value": 47.0,
+      "status": "warn",
+      "message": "원가 관리 점검 권장"
+    }
+  ]
+}
