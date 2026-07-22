@@ -20,6 +20,8 @@ from engine import classify_all, aggregate_monthly
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_PATH = ROOT / "backend/src/main/resources/data/txn/monthly_report.json"
+# 백엔드 교정 저장소(레이어⑥). 백엔드가 append, 여기서 읽어 personal_rules로 반영.
+CORRECTIONS_PATH = Path(__file__).resolve().parent / "data" / "corrections.jsonl"
 
 # 카테고리 그룹 표시 순서.
 GROUP_ORDER = {INCOME: 0, FIXED: 1, VARIABLE: 2, FINANCING: 3}
@@ -99,9 +101,31 @@ def build_diagnostics(monthly: dict) -> list[dict]:
     return out
 
 
+def load_corrections() -> dict:
+    """백엔드가 쌓은 사용자 교정(corrections.jsonl)을 {norm_key: code}로 로드.
+
+    저장은 원문 상호(merchant)로, 매칭 키는 norm_key로 — engine과 동일 정규화라
+    다음 분류부터 규칙보다 먼저 확정된다(레이어⑥ 재사용). 이 로그가 곧 학습 라벨.
+    """
+    from normalize import norm_key
+    rules: dict[str, str] = {}
+    if not CORRECTIONS_PATH.exists():
+        return rules
+    for line in CORRECTIONS_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            r = json.loads(line)
+            rules[norm_key(r["merchant"])] = r["category"]
+        except Exception:
+            continue  # 깨진 줄은 건너뜀
+    return rules
+
+
 def main() -> None:
     txns = build_mock_transactions()
-    classify_all(txns, personal_rules={"스마트스토어": "SUPPLIES"})
+    personal_rules = {"스마트스토어": "SUPPLIES", **load_corrections()}
+    classify_all(txns, personal_rules=personal_rules)
     report = build_report(txns)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

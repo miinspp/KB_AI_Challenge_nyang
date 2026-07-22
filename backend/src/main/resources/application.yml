@@ -6,6 +6,11 @@ spring:
     serialization:
       indent-output: true
 
+# 거래 분류 사용자 교정 저장소(레이어⑥). 파이프라인(report.py)이 읽어 다음 분류에 반영한다.
+# dev 기준 backend/ 에서 실행 → 리포 내 pipeline/txn/data 로 정렬. 배포 시 절대경로로 교체.
+txn:
+  corrections-file: ../pipeline/txn/data/corrections.jsonl
+
 # 크론 파이프라인이 갱신하는 외부 데이터 파일을 쓰려면 주석 해제 (기본: 클래스패스 내장 데이터)
 # app:
 #   data-file: /opt/nyang/backend/src/main/resources/data/industry_distributions.json
