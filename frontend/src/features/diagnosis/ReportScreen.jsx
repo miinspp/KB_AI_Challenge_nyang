@@ -128,11 +128,20 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
   );
 }
 
-/** 임대료 부담률 게이지 — 0~25% 스케일에 10% 건전선 표시. */
+/**
+ * 비용 구조 건전성. benchmark 가 있으면 임차료율·인건비율·원가율을 소상공인실태조사
+ * 업종 평균과 나란히 비교(막대)한다. 없으면 임대료 부담률 10% 경험칙 게이지로 폴백.
+ */
 function CostHealthCard({ ch }) {
-  const burden = ch.rentBurden * 100;                       // %
-  const pos = Math.min(100, (burden / 25) * 100);           // 게이지 상 위치 (25% = 끝)
-  const healthy = burden <= 10;
+  const b = ch.benchmark;
+  const rentAdjusted = b && b.rentRatioAdjusted != null;
+  const rows = b ? [
+    { label: '임차료율', mine: ch.rentBurden, avg: rentAdjusted ? b.rentRatioAdjusted : b.rentRatio,
+      badge: rentAdjusted ? b.areaType : null },
+    ch.laborRatio != null && b.laborRatio != null ? { label: '인건비율', mine: ch.laborRatio, avg: b.laborRatio } : null,
+    ch.purchaseRatio != null && b.purchaseRatio != null ? { label: '원가율', mine: ch.purchaseRatio, avg: b.purchaseRatio } : null,
+  ].filter(Boolean) : [];
+
   return (
     <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -140,13 +149,71 @@ function CostHealthCard({ ch }) {
           비용 구조 건전성
           <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{ch.score}점 / 100</span>
         </span>
+        {b && <span style={{ fontSize: 11, color: '#B9B0A4' }}>{b.industryLabel} 평균 대비</span>}
+      </div>
+
+      {b ? (
+        <>
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 11 }}>
+            {rows.map((r) => <CostCompareBar key={r.label} {...r} />)}
+          </div>
+          <p style={{ marginTop: 10, fontSize: 10.5, color: '#C4BAAD', lineHeight: 1.5 }}>
+            소상공인실태조사(2023) 업종 평균 대비 · 낮을수록 좋아요 · 업종 평균이면 50점
+            {rentAdjusted && (
+              <><br />임차료율 기준은 <b style={{ color: '#B08A2E' }}>{b.areaType}</b> 임대료로 보정
+                (전국 {(b.rentRatio * 100).toFixed(1)}% × {b.areaRentMultiplier} · 한국부동산원 서울 상가 임대료)</>
+            )}
+          </p>
+        </>
+      ) : (
+        <FlatRentGauge burden={ch.rentBurden * 100} laborRatio={ch.laborRatio} purchaseRatio={ch.purchaseRatio} />
+      )}
+    </div>
+  );
+}
+
+/** 내 비율 vs 업종 평균 비교 막대. 업종 평균 위치에 기준선 표시. badge 있으면 상권유형 보정 표시. */
+function CostCompareBar({ label, mine, avg, badge }) {
+  const scale = Math.max(mine, avg) * 1.5 || 1;             // 축 상한
+  const minePct = Math.min(100, (mine / scale) * 100);
+  const avgPct = Math.min(100, (avg / scale) * 100);
+  const good = mine <= avg;
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
+        <span style={{ color: '#8A8178', fontWeight: 700 }}>
+          {label}
+          {badge && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 800, color: '#B08A2E',
+            background: '#FFF6DD', borderRadius: 6, padding: '1px 5px' }}>{badge} 보정</span>}
+        </span>
+        <span>
+          <b style={{ color: good ? '#5E8A3E' : '#D0564C' }}>{(mine * 100).toFixed(1)}%</b>
+          <span style={{ color: '#C4BAAD' }}> vs {badge ? '' : '평균 '}{(avg * 100).toFixed(1)}%</span>
+        </span>
+      </div>
+      <div style={{ height: 8, background: '#F5EFE3', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, height: 8, borderRadius: 4,
+          width: `${Math.max(2, minePct)}%`, background: good ? '#8DBB6C' : '#E8896C', transition: 'width .5s' }} />
+        {/* 업종 평균 기준선 */}
+        <div style={{ position: 'absolute', left: `${avgPct}%`, top: -2, width: 2, height: 12, background: '#8A8178', borderRadius: 1 }} />
+      </div>
+    </div>
+  );
+}
+
+/** 벤치마크 미로드 시 폴백 — 임대료 부담률 10% 경험칙 게이지. */
+function FlatRentGauge({ burden, laborRatio, purchaseRatio }) {
+  const pos = Math.min(100, (burden / 25) * 100);
+  const healthy = burden <= 10;
+  return (
+    <>
+      <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
         <span style={{ fontSize: 15, fontWeight: 900, color: healthy ? '#5E8A3E' : '#D0564C' }}>
           임대료 부담률 {burden.toFixed(1)}%
         </span>
       </div>
-      <div style={{ marginTop: 12, height: 8, borderRadius: 4, position: 'relative',
+      <div style={{ marginTop: 10, height: 8, borderRadius: 4, position: 'relative',
         background: 'linear-gradient(90deg,#DCEBC6 0%,#DCEBC6 40%,#F3E4C0 40%,#F3E4C0 70%,#F5D9D6 70%)' }}>
-        {/* 10% 건전선 (게이지의 40% 지점) */}
         <div style={{ position: 'absolute', left: '40%', top: -3, width: 2, height: 14, background: '#8DBB6C', borderRadius: 1 }} />
         <div style={{ position: 'absolute', left: `calc(${pos}% - 6px)`, top: -2, width: 12, height: 12,
           borderRadius: '50%', background: healthy ? '#8DBB6C' : '#D0564C', border: '2.5px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
@@ -154,12 +221,12 @@ function CostHealthCard({ ch }) {
       <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#B9B0A4' }}>
         <span>10% 이하 건전 · 25% 이상 위험 (경험칙)</span>
         <span>
-          {ch.purchaseRatio != null && `재료비 ${(ch.purchaseRatio * 100).toFixed(0)}%`}
-          {ch.purchaseRatio != null && ch.laborRatio != null && ' · '}
-          {ch.laborRatio != null && `인건비 ${(ch.laborRatio * 100).toFixed(0)}%`}
+          {purchaseRatio != null && `재료비 ${(purchaseRatio * 100).toFixed(0)}%`}
+          {purchaseRatio != null && laborRatio != null && ' · '}
+          {laborRatio != null && `인건비 ${(laborRatio * 100).toFixed(0)}%`}
         </span>
       </div>
-    </div>
+    </>
   );
 }
 
