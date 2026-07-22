@@ -78,6 +78,36 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <p className="label-sm">
+          사업 자금·기존 대출
+          <span style={{ fontWeight: 500, color: '#C4BAAD' }}> · 시뮬레이션 기준값</span>
+        </p>
+        {[
+          ['currentCashMan', '현재 보유 현금', '예: 1,500', true, '만원'],
+          ['existingDebtMan', '기존 대출 잔액', '없으면 0', false, '만원'],
+          ['existingMonthlyPaymentMan', '월 상환액', '없으면 0', false, '만원'],
+          ['existingLoanRatePct', '기존 대출 금리', '예: 5.2', false, '%'],
+          ['existingLoanRemainingMonths', '남은 상환기간', '예: 24', false, '개월'],
+        ].map(([key, label, ph, required, unit]) => (
+          <div key={key} className="input-row">
+            <span className="k" style={{ width: 122 }}>
+              {label}{required && <span style={{ color: '#D0564C' }}> *</span>}
+            </span>
+            <input
+              value={diag[key]}
+              onChange={(e) => set({ [key]: e.target.value.replace(/[^\d.]/g, '') })}
+              placeholder={ph}
+              inputMode="decimal"
+            />
+            <span className="u">{unit}</span>
+          </div>
+        ))}
+        <p style={{ fontSize: 11.5, color: '#A79C8E', lineHeight: 1.55 }}>
+          현재 보유 현금은 월 순이익과 다른 값이에요. 실제 통장·현금 잔액을 입력해야 현금 부족 위험이 정확해져요.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p className="label-sm">
           지출 세부 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 선택 · 넣을수록 진단이 정밀해져요</span>
         </p>
         {[

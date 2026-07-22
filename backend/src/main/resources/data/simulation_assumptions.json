@@ -4,6 +4,7 @@
   "random_seed": 42,
   "industry_cv": 0.15,
   "max_monthly_trend_ratio": 0.05,
+  "sales_shock_autocorrelation": 0.65,
   "repayment_burden_limit": 0.3,
   "excess_funding_ratio_limit": 0.3,
   "default_tax_reserve_ratio": 0.08,
@@ -15,6 +16,7 @@
     "L001": {
       "type": "LOAN",
       "amount": 10000000,
+      "max_amount": 100000000,
       "annual_rate": 0.048,
       "total_term_months": 12,
       "grace_months": 0,
@@ -92,7 +94,12 @@
       "cost_reduction_ratio": 0.01
     },
     "SV001": {
-      "type": "CASH_MANAGEMENT"
+      "type": "SAVINGS",
+      "monthly_contribution": 300000,
+      "min_monthly_contribution": 1000,
+      "max_monthly_contribution": 500000,
+      "asset_annual_rate": 0.02,
+      "maturity_month": 6
     },
     "SV002": {
       "type": "CASH_MANAGEMENT"
