@@ -2,18 +2,24 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from './shared/Header';
 import { manToWon, wonToMan } from './shared/format';
 import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
+import { postSimulation } from './api/simulation';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
 import { recommendProducts } from './features/recommend/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows } from './features/simulator/sim';
+import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
 
 const TITLES = ['우리 가게 위치', '진단 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
-const DIAG_INIT = { industryCode: '', areaType: '', salesMan: '', expenseMan: '', rentMan: '', laborMan: '', purchaseMan: '' };
+const DIAG_INIT = {
+  industryCode: '', areaType: '', salesMan: '', expenseMan: '',
+  rentMan: '', laborMan: '', purchaseMan: '',
+  currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
+  existingLoanRatePct: '', existingLoanRemainingMonths: '',
+};
 
 export default function App() {
   const [screen, setScreen] = useState(0);
@@ -29,6 +35,9 @@ export default function App() {
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [equipped, setEquipped] = useState([]);
+  const [simulation, setSimulation] = useState(null);
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationError, setSimulationError] = useState('');
 
   // 업종 목록·메타 최초 로드
   useEffect(() => {
@@ -46,13 +55,31 @@ export default function App() {
 
   const products = useMemo(() => recommendProducts(rank), [rank]);
   const topPercent = rank ? rank.topPercent : null;
-  const baseCash = rank ? wonToMan(rank.profit.value) : undefined;
-  const simRows = useMemo(() => buildSimRows(equipped, baseCash), [equipped, baseCash]);
+  const simulationPayload = useMemo(
+    () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null,
+    [rank, diag, hometax, equipped],
+  );
+  const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
 
-  const canAnalyze = diag.industryCode && Number(diag.salesMan) > 0;
+  useEffect(() => {
+    if (!simulationPayload || screen < 3) return undefined;
+    let alive = true;
+    setSimulationLoading(true);
+    setSimulationError('');
+    postSimulation(simulationPayload)
+      .then((result) => { if (alive) setSimulation(result); })
+      .catch((error) => { if (alive) setSimulationError(error.message); })
+      .finally(() => { if (alive) setSimulationLoading(false); });
+    return () => { alive = false; };
+  }, [simulationPayload, screen]);
+
+  const canAnalyze = diag.industryCode
+    && Number(diag.salesMan) > 0
+    && diag.currentCashMan !== ''
+    && Number(diag.currentCashMan) >= 0;
 
   const toggle = (id) => setEquipped((eq) =>
-    eq.includes(id) ? eq.filter((x) => x !== id) : eq.length >= 3 ? eq : [...eq, id]);
+    eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
 
   const analyze = async () => {
     setAnalyzeError('');
@@ -102,7 +129,7 @@ export default function App() {
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError('');
+    setEquipped([]); setSimulation(null); setSimulationError(''); setAnalyzeError('');
   };
 
   const next = () => {
@@ -125,8 +152,10 @@ export default function App() {
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <RecommendScreen products={products} percentile={topPercent} />}
-        {screen === 3 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows} />}
-        {screen === 4 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent} />}
+        {screen === 3 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
+          simulation={simulation} loading={simulationLoading} error={simulationError} />}
+        {screen === 4 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
+          simulation={simulation} />}
       </div>
 
       <div className="cta-wrap">

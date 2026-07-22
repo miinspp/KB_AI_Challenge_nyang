@@ -1,5 +1,6 @@
 package com.nyang.simulation.application.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,9 @@ public record SimulationResponse(
         FinancingResult financingResult,
         ConstraintResult constraints,
         AssumptionsUsed assumptions,
+        InputAssumptions inputAssumptions,
+        ProtectionResult protection,
+        SalesForecastInfo salesForecast,
         Confidence confidence,
         String status,
         List<String> warnings,
@@ -36,7 +40,8 @@ public record SimulationResponse(
     public record ScenarioResult(
             DeterministicResult deterministic,
             StochasticResult stochastic,
-            List<MonthlyCashFlow> monthlyCashFlows
+            List<MonthlyCashFlow> monthlyCashFlows,
+            ScenarioMetrics metrics
     ) {}
 
     public record MonthlyCashFlow(
@@ -55,14 +60,19 @@ public record SimulationResponse(
             double operatingCashFlow,
             double closingCash,
             boolean bufferBreached,
-            boolean negativeCash
+            boolean negativeCash,
+            double financialAssetContribution,
+            double financialAssetInterest,
+            double financialAssetMaturityInflow,
+            double financialAssetBalance
     ) {}
 
     public record DeterministicResult(
             Integer firstBufferBreachMonth,
             Integer firstNegativeCashMonth,
             double endingCash,
-            double minimumCashBalance
+            double minimumCashBalance,
+            double financialAssetBalance
     ) {}
 
     public record StochasticResult(
@@ -71,7 +81,19 @@ public record SimulationResponse(
             double bufferBreachProbability,
             double negativeCashProbability,
             double endingCashP50,
-            double endingCashP5
+            double endingCashP5,
+            List<MonthlyRisk> monthlyRisks,
+            int bufferBreachProbabilityDisplayPercent,
+            int negativeCashProbabilityDisplayPercent
+    ) {}
+
+    /** 해당 월까지 한 번이라도 안전자금선/0원 아래로 내려간 누적 확률. */
+    public record MonthlyRisk(
+            int month,
+            double bufferBreachProbability,
+            double negativeCashProbability,
+            double bufferBreachAtMonthProbability,
+            double negativeCashAtMonthProbability
     ) {}
 
     public record BaselineComparison(
@@ -106,14 +128,65 @@ public record SimulationResponse(
     public record AssumptionsUsed(
             double taxReserveRatio,
             double minimumCashBuffer,
+            String safetyThresholdType,
             double industryCv,
             double mixedCv,
             double personalCv,
             double personalCvWeight,
             double maxMonthlyTrendRatio,
+            double salesShockAutocorrelation,
             double repaymentBurdenLimit,
             double excessFundingRatioLimit,
             String seasonalitySource
+    ) {}
+
+    public record ScenarioMetrics(
+            BigDecimal averageMonthlyNetCashFlow,
+            BigDecimal finalCashBalance,
+            BigDecimal minimumCashBalance,
+            Integer firstCashShortageMonth,
+            double cashShortageProbability,
+            int cashShortageProbabilityDisplayPercent,
+            BigDecimal p5FinalCashBalance,
+            BigDecimal maximumMonthlyDebtPayment,
+            BigDecimal financialAssetBalance
+    ) {}
+
+    public record InputAssumptions(
+            boolean currentCashAssumed,
+            boolean existingDebtAssumed,
+            boolean existingMonthlyPaymentAssumed,
+            boolean legacyCostModelUsed,
+            List<String> messages
+    ) {}
+
+    public record ProtectionResult(
+            boolean protectionSelected,
+            Double protectionScore,
+            String scoreStatus,
+            List<ProtectionItem> items
+    ) {}
+
+    public record ProtectionItem(
+            String id,
+            String name,
+            String protectionType,
+            String basis
+    ) {}
+
+    public record SalesForecastInfo(
+            String provider,
+            String modelVersion,
+            String dataSource,
+            boolean fallback,
+            List<SalesForecastPoint> monthlyForecasts
+    ) {}
+
+    public record SalesForecastPoint(
+            int month,
+            BigDecimal p10,
+            BigDecimal p50,
+            BigDecimal p90
     ) {}
 
     public record Confidence(

@@ -44,6 +44,10 @@ public class SimulationAssumptionRepository {
         return root.path("max_monthly_trend_ratio").asDouble(0.05);
     }
 
+    public double salesShockAutocorrelation() {
+        return root.path("sales_shock_autocorrelation").asDouble(0.65);
+    }
+
     public double repaymentBurdenLimit() {
         return root.path("repayment_burden_limit").asDouble(0.3);
     }
