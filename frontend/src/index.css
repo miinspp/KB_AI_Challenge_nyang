@@ -6,8 +6,22 @@ input { font-family: inherit; }
 input::placeholder { color: #C4BAAD; }
 button { font-family: inherit; }
 
-@keyframes sway { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
-@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes ownerBearIdle {
+  0%, 100% { transform: translateY(0) rotate(-.55deg) scale(1); }
+  50% { transform: translateY(-3px) rotate(.45deg) scale(1.008); }
+}
+@keyframes ownerRabbitIdle {
+  0%, 100% { transform: translateY(-1px) rotate(.55deg) scale(1.003); }
+  50% { transform: translateY(2px) rotate(-.45deg) scale(.996); }
+}
+@keyframes ownerBearHead {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-.8px) rotate(.3deg); }
+}
+@keyframes ownerRabbitHead {
+  0%, 100% { transform: translateY(.3px) rotate(0); }
+  50% { transform: translateY(-1px) rotate(-.4deg); }
+}
 @keyframes scrIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes popIn { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -16,10 +30,31 @@ button { font-family: inherit; }
 .app-body { flex: 1; }
 .scr { animation: scrIn .4s ease both; padding: 6px 22px 130px; display: flex; flex-direction: column; gap: 16px; }
 .pop { animation: popIn .3s ease both; }
-.sway { animation: sway 3.2s ease-in-out infinite; transform-origin: 50% 95%; }
-.sway.rev { animation-direction: reverse; }
-.bob { animation: bob 3.6s ease-in-out infinite; }
 .spinner { flex: none; width: 22px; height: 22px; border: 3px solid #F0E7D6; border-top-color: #FFBC00; border-radius: 50%; animation: spin .8s linear infinite; }
+
+/* Character-only layers: the simulator landscape remains a separate parent background. */
+.owner-couple { position: absolute; left: 9px; bottom: 20px; width: 188px; display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.owner-couple__characters { display: flex; align-items: flex-end; gap: 3px; height: 136px; }
+.owner-character { position: relative; height: 136px; flex: none; }
+.owner-character--bear { width: 85px; }
+/* Rabbit source is taller because of its ears: lift it 3px to align both foot baselines. */
+.owner-character--rabbit { width: 73px; height: 132px; margin-bottom: 3px; }
+.owner-character__motion { position: relative; width: 100%; height: 100%; transform-origin: 50% 100%; will-change: transform; }
+.owner-character--bear .owner-character__motion { animation: ownerBearIdle 3.8s ease-in-out infinite; }
+.owner-character--rabbit .owner-character__motion { animation: ownerRabbitIdle 4.6s ease-in-out infinite -1.4s; }
+.owner-character__layer { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; transform-origin: 50% 100%; }
+/* Soft-mask overlap keeps the stationary layer from flashing at the animated seam. */
+.owner-character__body { z-index: 1; -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent var(--body-mask-start), #000 var(--body-mask-end), #000 100%); mask-image: linear-gradient(to bottom, transparent 0, transparent var(--body-mask-start), #000 var(--body-mask-end), #000 100%); }
+.owner-character__head { z-index: 2; -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 var(--head-mask-end), transparent var(--head-mask-fade-end), transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 var(--head-mask-end), transparent var(--head-mask-fade-end), transparent 100%); will-change: transform; }
+.owner-character--bear { --body-mask-start: 50%; --body-mask-end: 58%; --head-mask-end: 52%; --head-mask-fade-end: 60%; }
+.owner-character--rabbit { --body-mask-start: 54%; --body-mask-end: 62%; --head-mask-end: 56%; --head-mask-fade-end: 64%; }
+.owner-character--bear .owner-character__head { animation: ownerBearHead 3.15s ease-in-out infinite -.35s; }
+.owner-character--rabbit .owner-character__head { animation: ownerRabbitHead 4.1s ease-in-out infinite -2.1s; }
+.owner-couple__label { margin-top: -4px; padding: 3px 10px; border-radius: 9px; background: rgba(255,255,255,.82); color: #6F685E; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.owner-couple__label.is-nice { color: #4F7139; }
+@media (prefers-reduced-motion: reduce) {
+  .owner-character__motion, .owner-character__head { animation: none; }
+}
 
 .hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
 .hdr-back { width: 38px; height: 38px; border: none; background: #FFF1CC; border-radius: 12px; font-size: 20px; color: #2B2825; cursor: pointer; line-height: 1; }
