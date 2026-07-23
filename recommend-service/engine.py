@@ -9,7 +9,8 @@ from __future__ import annotations
 import numpy as np
 
 W_RULE, W_EMB = 0.55, 0.45
-TH_DEBT, TH_AREA_RISK, TH_CASH_GAP = 0.4, 0.6, 0.3
+TH_DEBT, TH_CASH_GAP = 0.4, 0.3
+# 상권위험은 등급(LOW/MEDIUM/HIGH)으로 통일 — 시뮬레이션 marketRiskLevel과 동일 표기
 
 
 # ── A. 하드필터 ──────────────────────────────────────────────
@@ -36,8 +37,8 @@ def rule_score(policy: dict, profile: dict):
     elif profile["debt_ratio"] < TH_DEBT and ("융자" in stypes):
         hits += 0.3
 
-    total += 1  # 2) 상권위험 높음 → 컨설팅/보조금/판로
-    if profile["area_risk"] >= TH_AREA_RISK and (stypes & {"컨설팅", "보조금", "판로"}):
+    total += 1  # 2) 상권위험 HIGH → 컨설팅/보조금/판로
+    if profile.get("market_risk_level") == "HIGH" and (stypes & {"컨설팅", "보조금", "판로"}):
         hits += 1
         evidence.append("상권 침체 위험이 높아 컨설팅·판로 지원이 도움이 돼요")
 
@@ -50,15 +51,6 @@ def rule_score(policy: dict, profile: dict):
     if profile["sales_percentile"] <= 30 and "융자" in stypes:
         hits += 1
         evidence.append(f"매출 상위 {profile['sales_percentile']}%로 우대 정책자금 대상이 될 수 있어요")
-
-    total += 1  # 5) 위험성향
-    risk = profile.get("risk_tolerance", "stable")
-    if risk == "stable" and (stypes & {"보증", "컨설팅", "보조금", "교육"}):
-        hits += 1
-        evidence.append("안정추구 성향에 맞는 상환부담 낮은 지원이에요")
-    elif risk == "growth" and (stypes & {"융자", "R&D", "판로"}):
-        hits += 1
-        evidence.append("성장추구 성향에 맞는 확장·자금형 지원이에요")
 
     return (hits / total if total else 0.0), evidence
 

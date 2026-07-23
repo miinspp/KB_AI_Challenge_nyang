@@ -43,11 +43,10 @@ class Profile(BaseModel):
     biz_age_years: float = 2
     industry: str = ""
     debt_ratio: float = 0.3
-    area_risk: float = 0.5
+    market_risk_level: str = "MEDIUM"   # LOW | MEDIUM | HIGH (시뮬 marketRiskLevel과 통일)
     cash_flow_gap_prob: float = 0.2
     sales_percentile: float = 50
     need_keywords: str = ""
-    risk_tolerance: str = "stable"   # "stable" | "growth"
     top_k: int = 6
 
 
@@ -136,7 +135,7 @@ def llm_reasons(items, profile: Profile):
             f'- id={it["policy"]["id"]} | {it["policy"]["title"]} | 근거:{"; ".join(it["evidence"]) or "의미유사"}'
             for it in items)
         prompt = (
-            f"사용자: {engine.profile_text(profile.dict())}, 위험성향={profile.risk_tolerance}\n\n"
+            f"사용자: {engine.profile_text(profile.dict())}\n\n"
             f"추천 후보:\n{brief}\n\n"
             "각 후보마다 이 사장님에게 왜 맞는지 한 문장(존댓말, 40자 내외)으로 근거를 써주세요. "
             "마감일·금액은 새로 지어내지 마세요. "

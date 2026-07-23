@@ -71,8 +71,15 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
             placeholder="예: 1,900" inputMode="numeric" />
           <span className="u">만원</span>
         </div>
+        <div className="input-row">
+          <span className="k" style={{ width: 96 }}>사업 운영 기간</span>
+          <input value={diag.bizAgeYears} onChange={(e) => set({ bizAgeYears: e.target.value.replace(/[^\d.]/g, '') })}
+            placeholder="예: 2" inputMode="decimal" />
+          <span className="u">년</span>
+        </div>
         <p style={{ fontSize: 11.5, color: '#C4BAAD', lineHeight: 1.55 }}>
           지출(재료비·인건비·임대료 등)을 넣으면 순수익·비용효율까지 함께 진단해요.
+          운영 기간은 창업 초기 전용 지원사업 매칭에 쓰여요.
         </p>
       </div>
 
