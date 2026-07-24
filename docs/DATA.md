@@ -123,6 +123,67 @@
 
 > 산출식 전체 흐름·가중치는 [`METHODOLOGY.md`](METHODOLOGY.md) 참고.
 
+## 4-2. AI 추천 보강 데이터 (정책·KB상품 키워드/임베딩)
+
+정책 공고(`seoul_policies_sosangongin.json` 37건)와 KB상품(`kb-products/recommendable_products.json` 24건)은
+긴 프로즈(`summary`, `public_conditions_summary`) 위주라 그대로는 매칭·노출이 어렵다.
+오프라인 배치로 두 데이터를 공통 스키마로 정규화하고 AI 보강을 붙인다.
+
+- **배치**: `pipeline/enrich_recommendables.py`
+  - 키워드 추출: KeyBERT + kiwipiepy 명사 후보(단일어·연속 2-gram), 공고문 일반어 불용어 제거,
+    금융 용어(대출·보증·이차보전 등) 화이트리스트 가산(+0.15) → 항목당 상위 5개
+  - 임베딩: `ko-sroberta-reco`(B단계 파인튜닝, 없으면 베이스 `jhgan/ko-sroberta-multitask`),
+    768차원 정규화 — 제목+요약+카테고리+지원유형 텍스트. 키워드용 백본은 베이스 모델로 분리.
+  - 산출물: `backend/src/main/resources/data/reco/enriched_items.json` (61건, 키워드+임베딩+앵커 포함)
+- **매칭 프로토타입**: `pipeline/recommend_match.py`
+  - 진단 신호(상위 %·임대료 부담률·매출 추세·업력)를 자연어 프로필 문장으로 변환 → 임베딩 코사인 유사도 랭킹
+  - 하드 필터: 마감일 경과·`max_biz_age` 초과·지역 불일치 제외
+  - 규칙 가드: 폐업·재기류 항목은 심각한 위기 신호(하위 25% + 하락) 또는 명시 언급 없으면 감점(−0.10)
+  - 샘플 프로필 `struggling`/`growth`/`startup`으로 결과 분화 검증 완료
+- **3줄 요약 (자체 파인튜닝 모델)**: `pipeline/train_summarizer.py` + `pipeline/summarize_items.py`
+  - 태스크: 공고 원문 → "지원:/대상:/신청:" 구조화 3줄 요약 (금융 핵심정보 중심)
+  - 학습 데이터: `pipeline/data/policy_summaries.jsonl` — 전체 공고 439건 중 200건에 대해
+    Claude가 teacher로 gold 요약을 작성한 지식 증류(distillation) 데이터셋.
+    서비스 노출분(소상공인 37건)은 학습에서 제외하고 검증셋으로 사용 → unseen 일반화 측정
+  - 베이스 모델: `EbanLee/kobart-summary-v3` (KoBART 요약 체크포인트) → 163건으로 6 epoch
+    도메인·형식 적응 (MPS 로컬 학습, best val_loss 0.918 @ epoch 3)
+  - 검증 성능(unseen 37건): 형식 준수 0%→92%, 형태소 ROUGE-1 F1 0.235→0.727,
+    gold 대비 임베딩 유사도 0.752→0.942 (zero-shot 대비)
+  - 적용: 생성 결과 후처리(중복 토큰 정리) 후 형식 검증 실패 시 gold 폴백(37건 중 3건)
+    → `enriched_items.json`의 `summary_short` 필드
+  - 모델 가중치는 `pipeline/models/`(git 미추적), `train_summarizer.py`로 재생성 가능
+- **추천 임베딩 (contrastive 파인튜닝)**: `pipeline/train_matcher.py` + `pipeline/eval_matcher.py`
+  - 문제: 진단 프로필과 정책·상품을 매칭하는 학습 데이터가 없음.
+  - 학습 데이터: 업종×위치×임대료×추세×업력×관심사를 조합한 **사장님 프로필 60개**를 생성하고,
+    Claude teacher가 각 프로필에 적합한 항목을 라벨링(`pipeline/data/reco_pairs.jsonl`, 442 양성 쌍).
+    프로필 id 기준 8:2 분할 → 검증 12개(`reco_val_profiles.json`)는 학습에서 제외.
+  - 방식: 베이스 `jhgan/ko-sroberta-multitask` → `MultipleNegativesRankingLoss`(배치 내 자동 음성)로
+    4 epoch 학습 (MPS, 약 3분). 소량 데이터에 강한 in-batch negative 대비 학습.
+  - 검증 성능(unseen 프로필 12개, 정답=teacher 라벨): **Recall@5 0.133→0.467, MRR 0.252→0.667,
+    NDCG@5 0.127→0.460** (베이스 대비 3배 이상 개선)
+  - 반영: 파인튜닝 모델로 항목·앵커 임베딩을 재생성 → 백엔드(앵커 합성)와 동일 공간이라 코드 변경 없이 호환.
+- **백엔드 서빙 (`POST /api/recommend`)**: `com.nyang.reco` — 배치가 사전계산한 **니즈 앵커
+  임베딩 8종**(하위권·상위권·임대료 부담·매출 하락·창업 초기·자금 조달·판로 확대 등)을
+  진단 신호에 따라 가중 합성해 프로필 벡터를 만들고 코사인 매칭. 하드 필터(마감·지역·업력)와
+  폐업류 감점 규칙 포함. **런타임 모델 추론이 전혀 없어** Java 단독으로 동작(내적 61회).
+- **프론트 노출**: 추천 화면(`RecommendScreen`)에 "🤖 AI 맞춤 추천" 섹션 — 진단 신호 배지 +
+  정책 카드 5·KB상품 카드 3, 각 카드에 3줄 요약·키워드 칩·매칭%·추천 사유.
+- **런타임 비용**: 무거운 연산(키워드·문서 임베딩·3줄 요약 생성·앵커 인코딩)은 전부 배치에서 사전계산.
+- **한계**: 자격요건이 프로즈에 묻혀 있어 하드 필터가 불완전(업력·지역만 구조화됨). 유사도 혼동
+  (위기지원 vs 폐업지원)은 규칙 가드로 보완. 파인튜닝 라벨은 Claude teacher 판단이라 실제 심사기준과
+  다를 수 있음(합성 데이터의 근본 한계). 향후 KB-ALBERT(금융특화 인코더) 수령 시 베이스 교체 예정.
+
+### 파이프라인 실행 순서 (추천 기능 재생성)
+
+```
+.venv/bin/python pipeline/train_summarizer.py   # 1. KoBART 3줄 요약 모델 학습 (선택)
+.venv/bin/python pipeline/train_matcher.py       # 2. 추천 임베딩 contrastive 학습 (선택)
+.venv/bin/python pipeline/enrich_recommendables.py  # 3. 키워드·임베딩·앵커 생성
+.venv/bin/python pipeline/summarize_items.py     # 4. 3줄 요약 필드 채우기
+# → backend/src/main/resources/data/reco/enriched_items.json 갱신, 백엔드 재시작 시 반영
+```
+학습(1·2)은 모델 가중치가 `pipeline/models/`에 있으면 건너뛸 수 있고, 없으면 3단계가 베이스 모델로 폴백한다.
+
 ## 5. 데이터가 "말할 수 없는 것" (한계)
 
 1. **전국 순위** — 분포가 서울 한정. 전국 확장 시 상권정보시스템(소진공) 등 별도 소스 필요.

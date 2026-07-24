@@ -14,7 +14,7 @@ export default function RecommendScreen({ products, percentile }) {
       <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'center' }}>
         <span style={{ flex: 'none', fontSize: 16 }}>💡</span>
         <p style={{ fontSize: 12.5, color: '#8A7A55', lineHeight: 1.55, fontWeight: 600 }}>
-          상품을 탭하면 간략한 정보를 볼 수 있어요.<br />다음 화면에서 직접 <b style={{ color: '#2B2825' }}>장착해 보며 체험</b>할 수 있어요!
+          아래 체험 상품을 탭하면 간략한 정보를 볼 수 있어요.<br />다음 화면에서 직접 <b style={{ color: '#2B2825' }}>장착해 보며 체험</b>할 수 있어요!
         </p>
       </div>
 

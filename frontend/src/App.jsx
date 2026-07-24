@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from './shared/Header';
 import { manToWon, wonToMan } from './shared/format';
 import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
+import { getTxnReport } from './api/txn';
 import { postSimulation } from './api/simulation';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
+import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
 import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
@@ -12,11 +14,13 @@ import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
 
-const TITLES = ['우리 가게 위치', '진단 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
-const CTAS = ['우리 가게 분석하기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
+const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
+const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
+// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
 const DIAG_INIT = {
   industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
+
   rentMan: '', laborMan: '', purchaseMan: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
@@ -32,6 +36,7 @@ export default function App() {
   const [hometax, setHometax] = useState(null);  // 홈택스 연동 결과 financials (salesHistory → 안정성 축)
   const [detail, setDetail] = useState(null);   // 선택 업종 상세(분포 격자)
   const [rank, setRank] = useState(null);        // /api/rank 결과
+  const [txnReport, setTxnReport] = useState(null);  // /api/txn/report 결과 (마이데이터 비용 분류 리포트)
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
 
@@ -45,6 +50,7 @@ export default function App() {
   useEffect(() => {
     getIndustries().then(setIndustries).catch((e) => setLoadError('업종 목록을 불러오지 못했어요: ' + e.message));
     getMeta().then(setMeta).catch(() => {});
+    getTxnReport().then(setTxnReport).catch(() => {});  // 마이데이터 비용 리포트(현재 mock)
   }, []);
 
   // 업종 선택 시 상세(분포 격자) 로드 — 입력 화면 실시간 미리보기 + 리포트 차트에 사용
@@ -68,7 +74,7 @@ export default function App() {
   const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
 
   useEffect(() => {
-    if (!simulationPayload || screen < 3) return undefined;
+    if (!simulationPayload || screen < 4) return undefined;  // 시뮬레이터 화면(비용 리포트 삽입으로 3→4)
     let alive = true;
     setSimulationLoading(true);
     setSimulationError('');
@@ -128,6 +134,7 @@ export default function App() {
       fetchRecommendations(profile)
         .then(setApiProducts)
         .catch((err) => { console.warn('추천 서비스 폴백:', err.message); setApiProducts(null); });
+
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
@@ -148,21 +155,34 @@ export default function App() {
     }));
   };
 
+  // KB 계좌 마이데이터 연동 완료 → 계좌 흐름 기반 매출·지출·대출상환·카드현금 비율을 채운다
+  const onKbLinked = (f) => {
+    setDiag((d) => ({
+      ...d,
+      salesMan: String(wonToMan(f.monthlySalesAvg)),
+      expenseMan: String(wonToMan(f.totalMonthlyExpense)),
+      existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
+      cardCashRatio: f.cardCashRatio,
+    }));
+  };
+
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError('');
+
   };
 
   const next = () => {
     if (screen === 0) return analyze();
-    if (screen === 4) return reset();
+    if (screen === 5) return reset();
     setScreen((s) => s + 1);
     window.scrollTo(0, 0);
   };
 
   const ctaDisabled = screen === 0 && (!canAnalyze || analyzing);
   const ctaLabel = screen === 0 && analyzing ? '분석 중…' : CTAS[screen];
+  const ctaGreen = screen === 0 && !ctaDisabled;  // 온보딩 CTA는 초록 포인트
 
   return (
     <div className="app">
@@ -170,13 +190,14 @@ export default function App() {
       <div className="app-body">
         {screen === 0 && (
           <InfoScreen industries={industries} diag={diag} setDiag={setDiag} detail={detail}
-            onHometaxLinked={onHometaxLinked} />
+            onHometaxLinked={onHometaxLinked} onKbLinked={onKbLinked} />
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
-        {screen === 2 && <RecommendScreen products={products} percentile={topPercent} />}
-        {screen === 3 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
+        {screen === 2 && <CostReportScreen report={txnReport} />}
+        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} />}
+        {screen === 4 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
           simulation={simulation} loading={simulationLoading} error={simulationError} />}
-        {screen === 4 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
+        {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}
       </div>
 
@@ -187,7 +208,11 @@ export default function App() {
           </p>
         )}
         <button className="cta" onClick={next} disabled={ctaDisabled}
-          style={ctaDisabled ? { background: '#EFE6D4', color: '#C4BAAD', boxShadow: 'none', cursor: 'default' } : undefined}>
+          style={ctaDisabled
+            ? { background: '#EFE6D4', color: '#C4BAAD', boxShadow: 'none', cursor: 'default' }
+            : ctaGreen
+              ? { background: '#3F6B2E', color: '#fff', boxShadow: '0 8px 20px -8px rgba(63,107,46,.45)' }
+              : undefined}>
           {ctaLabel}
         </button>
       </div>

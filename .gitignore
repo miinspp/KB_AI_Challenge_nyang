@@ -34,6 +34,10 @@ venv/
 .mypy_cache/
 .ruff_cache/
 pipeline/raw/
+# 파인튜닝 모델 가중치(수백 MB) — train_summarizer.py·train_matcher.py로 재생성
+pipeline/models/
+# mock 거래내역 — seed 고정, mock_data.py로 재생성
+pipeline/txn/data/
 
 # === secrets ===
 .env

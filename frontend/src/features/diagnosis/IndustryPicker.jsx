@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fmtMan } from '../../shared/format';
 
 // 서비스_업종_코드 앞자리 → 소비자 친화 대분류
@@ -9,10 +9,11 @@ const GROUPS = [
 ];
 
 /**
- * 업종 선택 — 서울시 상권분석서비스에 존재하는 60개 업종을 대분류로 묶어 제공.
+ * 업종 선택 — 서울시 상권분석서비스에 존재하는 업종을 대분류 탭 + 칩(토글)으로 제공.
  * 선택 시 해당 업종의 실측 표본(서울 점포 수·중위 월매출)을 바로 보여준다.
+ * 홈택스 연동으로 채워진 경우 '홈택스 불러옴' 배지를 노출하고, 다른 칩을 고르면 직접 수정으로 전환된다.
  */
-export default function IndustryPicker({ industries, value, selected, onChange }) {
+export default function IndustryPicker({ industries, value, selected, onChange, sourced }) {
   const grouped = useMemo(() => {
     return GROUPS.map((g) => ({
       ...g,
@@ -22,36 +23,40 @@ export default function IndustryPicker({ industries, value, selected, onChange }
     })).filter((g) => g.items.length > 0);
   }, [industries]);
 
+  const groupOfSelected = selected ? GROUPS.find((g) => selected.code.startsWith(g.prefix))?.prefix : null;
+  const [tab, setTab] = useState(groupOfSelected || grouped[0]?.prefix || 'CS1');
+
+  // 선택 업종이 (연동 등으로) 바뀌면 그 업종의 대분류 탭으로 이동
+  useEffect(() => { if (groupOfSelected) setTab(groupOfSelected); }, [groupOfSelected]);
+
+  const activeGroup = grouped.find((g) => g.prefix === tab) || grouped[0];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <p className="label-sm">업종 <span style={{ color: '#D0564C' }}>*</span></p>
-        <p style={{ fontSize: 11.5, color: '#C4BAAD', marginTop: 3 }}>
-          같은 업종 점포들의 실제 매출 분포와 비교해요
-        </p>
+        {sourced && <span className="filled-badge">홈택스 불러옴</span>}
       </div>
 
-      <div className="select-wrap">
-        <select
-          className="select"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          <option value="">업종을 선택해 주세요</option>
-          {grouped.map((g) => (
-            <optgroup key={g.prefix} label={g.label}>
-              {g.items.map((i) => (
-                <option key={i.code} value={i.code}>{i.name}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        <span className="select-caret">▾</span>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {grouped.map((g) => (
+          <button key={g.prefix} className={`ind-tab${tab === g.prefix ? ' on' : ''}`} onClick={() => setTab(g.prefix)}>
+            {g.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+        {activeGroup?.items.map((i) => (
+          <button key={i.code} className={`chip${value === i.code ? ' on' : ''}`} onClick={() => onChange(i.code)}>
+            {i.name}
+          </button>
+        ))}
       </div>
 
       {selected && (
         <div className="pop" style={{
-          background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14,
+          background: '#EDF5E1', border: '1.5px solid #CFE3B8', borderRadius: 14,
           padding: '12px 15px', display: 'flex', flexDirection: 'column', gap: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
