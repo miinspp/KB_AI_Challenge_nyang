@@ -1,15 +1,17 @@
 {
+  "assumption_version": "2026-07-25.1",
+  "official_terms_as_of": "2026-07-21",
   "horizon_months": 12,
   "monte_carlo_runs": 5000,
   "random_seed": 42,
-  "industry_cv": 0.15,
+  "industry_cv": 0.0,
   "max_monthly_trend_ratio": 0.05,
   "sales_shock_autocorrelation": 0.65,
   "fixed_cost_cv": 0.04,
   "variable_cost_cv": 0.08,
   "repayment_burden_limit": 0.3,
   "excess_funding_ratio_limit": 0.3,
-  "default_tax_reserve_ratio": 0.08,
+  "default_tax_reserve_ratio": 0.0,
   "default_buffer_months": 1.0,
   "seasonality_source": "MVP_DEFAULT_1.0",
   "max_sales_uplift_ratio": 0.15,
@@ -19,10 +21,13 @@
       "type": "LOAN",
       "amount": 10000000,
       "max_amount": 100000000,
-      "annual_rate": 0.048,
+      "annual_rate": 0.0605,
       "total_term_months": 12,
       "grace_months": 0,
-      "repayment_type": "INTEREST_ONLY"
+      "repayment_type": "INTEREST_ONLY",
+      "terms_source": "KB_OFFICIAL_C111884",
+      "terms_as_of": "2026-07-21",
+      "rate_basis": "PUBLIC_RANGE_UPPER_BOUND"
     },
     "L002": {
       "type": "LOAN",
@@ -44,10 +49,15 @@
     "L004": {
       "type": "LOAN",
       "amount": 15000000,
-      "annual_rate": 0.04,
+      "min_amount": 5000000,
+      "max_amount": 30000000,
+      "annual_rate": 0.0482,
       "total_term_months": 60,
       "grace_months": 12,
-      "repayment_type": "EQUAL_PRINCIPAL"
+      "repayment_type": "EQUAL_PRINCIPAL",
+      "terms_source": "KB_OFFICIAL_C110956",
+      "terms_as_of": "2026-07-21",
+      "rate_basis": "PUBLIC_LOWEST_RATE_NOT_GUARANTEED"
     },
     "L005": {
       "type": "LOAN",
@@ -61,11 +71,15 @@
     "L006": {
       "type": "LOAN",
       "amount": 15000000,
+      "max_amount": 70000000,
       "annual_rate": 0.035,
       "total_term_months": 60,
       "grace_months": 24,
       "repayment_type": "EQUAL_PRINCIPAL",
-      "fee_rate": 0.01
+      "fee_rate": 0.01,
+      "terms_source": "KB_OFFICIAL_POLICY_FUND_GUIDE",
+      "terms_as_of": "2026-07-21",
+      "rate_basis": "MVP_ESTIMATE_REQUIRES_SUBPROGRAM_CONFIRMATION"
     },
     "D001": {
       "type": "LOAN",
@@ -78,18 +92,26 @@
     "D002": {
       "type": "LOAN",
       "amount": 10000000,
-      "annual_rate": 0.04,
+      "annual_rate": 0.0661,
       "total_term_months": 60,
-      "grace_months": 12,
-      "repayment_type": "EQUAL_PAYMENT"
+      "grace_months": 0,
+      "repayment_type": "EQUAL_PAYMENT",
+      "duplicate_group": "KB_119PLUS_RESTRUCTURING",
+      "terms_source": "KB_OFFICIAL_LN25001614",
+      "terms_as_of": "2026-07-21",
+      "rate_basis": "EXISTING_RATE_USED_WHEN_SUPPLIED"
     },
     "D003": {
       "type": "LOAN",
       "amount": 10000000,
-      "annual_rate": 0.04,
+      "annual_rate": 0.0661,
       "total_term_months": 12,
       "grace_months": 0,
-      "repayment_type": "BULLET"
+      "repayment_type": "BULLET",
+      "duplicate_group": "KB_119PLUS_RESTRUCTURING",
+      "terms_source": "KB_OFFICIAL_LN25001621",
+      "terms_as_of": "2026-07-21",
+      "rate_basis": "EXISTING_RATE_USED_WHEN_SUPPLIED"
     },
     "A001": {
       "type": "CASH_MANAGEMENT",
@@ -101,10 +123,19 @@
       "min_monthly_contribution": 1000,
       "max_monthly_contribution": 500000,
       "asset_annual_rate": 0.02,
-      "maturity_month": 6
+      "maturity_month": 6,
+      "terms_source": "KB_OFFICIAL_DP01001615",
+      "terms_as_of": "2026-07-21"
     },
     "SV002": {
-      "type": "CASH_MANAGEMENT"
+      "type": "SAVINGS",
+      "monthly_contribution": 300000,
+      "min_monthly_contribution": 10000,
+      "max_monthly_contribution": 10000000,
+      "asset_annual_rate": 0.0325,
+      "maturity_month": 12,
+      "terms_source": "KB_OFFICIAL_C016127",
+      "terms_as_of": "2026-07-21"
     },
     "TD001": {
       "type": "CASH_MANAGEMENT"
@@ -113,10 +144,11 @@
   "policy_type_defaults": {
     "GRANT": {
       "type": "GRANT",
-      "amount": 5000000,
-      "disbursement_month": 3,
-      "payment_method": "REIMBURSEMENT",
-      "self_funding_ratio": 0.2
+      "amount": 0,
+      "disbursement_month": 1,
+      "payment_method": "DIRECT",
+      "self_funding_ratio": 0,
+      "evidence_level": "NOT_MONETIZED_WITHOUT_STRUCTURED_NOTICE_TERMS"
     },
     "LOAN": {
       "type": "LOAN",
@@ -125,7 +157,8 @@
       "total_term_months": 60,
       "grace_months": 12,
       "repayment_type": "EQUAL_PRINCIPAL",
-      "fee_rate": 0.005
+      "fee_rate": 0.005,
+      "evidence_level": "MVP_ESTIMATE_REQUIRES_OFFICIAL_NOTICE_TERMS"
     },
     "GUARANTEE": {
       "type": "LOAN",
@@ -138,11 +171,13 @@
     },
     "CONSULTING": {
       "type": "COST_REDUCTION",
-      "cost_reduction_ratio": 0.05
+      "cost_reduction_ratio": 0,
+      "evidence_level": "NOT_MONETIZED"
     },
     "MARKETING": {
       "type": "SALES_UPLIFT",
-      "sales_uplift_ratio": 0.05
+      "sales_uplift_ratio": 0,
+      "evidence_level": "NOT_MONETIZED"
     }
   }
 }

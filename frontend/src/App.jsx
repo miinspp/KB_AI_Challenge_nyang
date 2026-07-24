@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from './shared/Header';
 import { manToWon, wonToMan } from './shared/format';
 import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
-import { postRecommend } from './api/recommend';
 import { getTxnReport } from './api/txn';
 import { postSimulation } from './api/simulation';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
-import { recommendProducts } from './features/recommend/recommend';
+import { fetchRecommendations, rankToProfile } from './api/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
@@ -17,24 +16,16 @@ import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './
 const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
-// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
+// areaText/bizAgeYears는 추천·시뮬레이션까지 동일한 계약으로 전달한다.
 const DIAG_INIT = {
-  industryCode: '', areaType: '', areaText: '', bizAge: '',
-  salesMan: '', expenseMan: '',
-  salesChannel: '', cardCashRatio: '',
+  industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
+
   rentMan: '', laborMan: '', purchaseMan: '',
+  hasExistingDebt: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
-};
-
-// 홈택스 목업과 실제 API의 월별 매출 형식을 분석 API 입력으로 통일한다.
-const normalizeSalesHistory = (history) => {
-  if (!Array.isArray(history) || history.length === 0) return null;
-  return history.map((item, index) => (
-    typeof item === 'number'
-      ? { month: `history-${index + 1}`, amount: item }
-      : item
-  ));
+  annualTaxPaidMan: '', desiredFundingMan: '1000', desiredGrantUseMan: '500', desiredSavingsMan: '30',
+  fundingPurpose: 'OPERATING',
 };
 
 export default function App() {
@@ -47,12 +38,13 @@ export default function App() {
   const [hometax, setHometax] = useState(null);  // 홈택스 연동 결과 financials (salesHistory → 안정성 축)
   const [detail, setDetail] = useState(null);   // 선택 업종 상세(분포 격자)
   const [rank, setRank] = useState(null);        // /api/rank 결과
-  const [reco, setReco] = useState(null);        // /api/recommend 결과 (AI 정책·KB상품 추천)
   const [txnReport, setTxnReport] = useState(null);  // /api/txn/report 결과 (마이데이터 비용 분류 리포트)
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [equipped, setEquipped] = useState([]);
+  const [apiProducts, setApiProducts] = useState([]);
+  const [recommendationError, setRecommendationError] = useState('');
   const [simulation, setSimulation] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState('');
@@ -72,8 +64,8 @@ export default function App() {
     return () => { alive = false; };
   }, [diag.industryCode]);
 
-  const products = useMemo(() => recommendProducts(rank), [rank]);
-  const simulationOptions = useMemo(() => buildSimulationOptions(reco), [reco]);
+  const products = apiProducts;
+  const simulationOptions = useMemo(() => buildSimulationOptions(apiProducts), [apiProducts]);
   const topPercent = rank ? rank.topPercent : null;
   const simulationPayload = useMemo(
     () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null,
@@ -94,19 +86,39 @@ export default function App() {
   }, [simulationPayload, screen]);
 
   const canAnalyze = diag.industryCode
+    && String(diag.areaText || '').trim()
     && Number(diag.salesMan) > 0
+    && diag.expenseMan !== ''
+    && Number(diag.expenseMan) >= 0
+    && diag.bizAgeYears !== ''
+    && Number(diag.bizAgeYears) >= 0
     && diag.currentCashMan !== ''
-    && Number(diag.currentCashMan) >= 0;
+    && Number(diag.currentCashMan) >= 0
+    && (diag.hasExistingDebt === 'NONE'
+      || (diag.hasExistingDebt === 'YES'
+        && Number(diag.existingDebtMan) > 0
+        && Number(diag.existingMonthlyPaymentMan) > 0
+        && Number(diag.existingLoanRatePct) > 0
+        && Number(diag.existingLoanRemainingMonths) > 0));
 
   const toggle = (optionOrId) => {
     const option = typeof optionOrId === 'string'
-      ? simulationOptions.find((item) => item.id === optionOrId || item.legacyId === optionOrId)
+      ? simulationOptions.find((item) => item.id === optionOrId)
       : optionOrId;
     if (!option) return;
     if (option.requiresExistingDebt && Number(diag.existingDebtMan || 0) <= 0) {
       setSimulationError('대환 상품은 기존 대출잔액을 입력한 경우에만 시뮬레이션할 수 있어요.');
       return;
     }
+    const conflict = equipped.find((item) =>
+      item.key !== option.key
+      && item.duplicateGroup
+      && item.duplicateGroup === option.duplicateGroup);
+    if (conflict && !equipped.some((item) => item.key === option.key)) {
+      setSimulationError(`${option.short}과(와) ${conflict.short}은(는) 중복 가입할 수 없어요.`);
+      return;
+    }
+    setSimulationError('');
     setEquipped((eq) => eq.some((item) => item.key === option.key)
       ? eq.filter((item) => item.key !== option.key)
       : [...eq, option]);
@@ -114,6 +126,9 @@ export default function App() {
 
   const analyze = async () => {
     setAnalyzeError('');
+    setRecommendationError('');
+    setApiProducts([]);
+    setEquipped([]);
     setAnalyzing(true);
     try {
       // 선택 입력(임대료·인건비·재료비)이 하나라도 있으면 비용 세부를 전달 — rent 가 있으면 비용구조 축 활성화
@@ -123,6 +138,18 @@ export default function App() {
         laborCost: diag.laborMan ? manToWon(diag.laborMan) : null,
         purchaseCost: diag.purchaseMan ? manToWon(diag.purchaseMan) : null,
       } : null;
+      // 매출이력 형식 정규화: 백엔드는 [{month:"YYYY-MM", amount}] 를 기대.
+      // 홈택스 연동 mock 이 숫자 배열([23800000,...])을 줄 수 있어 {month,amount} 로 변환한다(과거→최근).
+      const rawHistory = hometax?.salesHistory;
+      const salesHistory = Array.isArray(rawHistory) && rawHistory.length
+        ? rawHistory.map((v, i, arr) => {
+            if (v && typeof v === 'object') return v;   // 이미 {month, amount}
+            const dt = new Date();
+            dt.setMonth(dt.getMonth() - (arr.length - 1 - i));
+            const month = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+            return { month, amount: Number(v) };
+          })
+        : null;
       const [r, d] = await Promise.all([
         postRank({
           industryCode: diag.industryCode,
@@ -130,7 +157,7 @@ export default function App() {
           monthlyExpense: manToWon(diag.expenseMan || 0),
           areaType: diag.areaType || null,
           costBreakdown,
-          salesHistory: normalizeSalesHistory(hometax?.salesHistory),
+          salesHistory,
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
@@ -138,14 +165,27 @@ export default function App() {
       setDetail(d);
       setScreen(1);
       window.scrollTo(0, 0);
-      // AI 추천은 화면 전환을 막지 않도록 비동기로 — 실패해도 진단 흐름은 유지
-      setReco(null);
-      postRecommend({
-        topPercent: r.topPercent,
-        rentBurden: r.costHealth?.rentBurden ?? null,
-        trendPerMonth: r.stability?.trendPerMonth ?? null,
-        region: '서울',
-      }).then(setReco).catch(() => setReco(null));
+
+      // 진단 결과 → 맞춤 추천(비동기). 서비스 미가동/실패 시 조용히 규칙기반 폴백 유지.
+      const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
+      // 실입력값으로 프로필 보정: 업력 + 실부채비율(부채잔액/연매출). 비어 있으면 rankToProfile이 근사로 폴백.
+      const salesMonthly = Number(diag.salesMan) || 0;
+      const debtRatio = salesMonthly > 0 && diag.hasExistingDebt
+        ? Number(diag.existingDebtMan || 0) / (salesMonthly * 12)
+        : null;
+      const bizAgeYears = diag.bizAgeYears ? Number(diag.bizAgeYears) : null;
+      const profile = rankToProfile(r, {
+        region: diag.areaText || '서울', industry: industryName, bizAgeYears, debtRatio,
+      });
+      setRecommendationError('');
+      fetchRecommendations(profile)
+        .then(setApiProducts)
+        .catch((err) => {
+          console.warn('추천 서비스 요청 실패:', err.message);
+          setApiProducts([]);
+          setRecommendationError(err.message);
+        });
+
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
@@ -163,6 +203,8 @@ export default function App() {
       rentMan: String(wonToMan(f.rent)),
       laborMan: String(wonToMan(f.laborCost)),
       purchaseMan: String(wonToMan(f.purchaseCost)),
+      bizAgeYears: f.bizAgeYears == null ? d.bizAgeYears : String(f.bizAgeYears),
+      annualTaxPaidMan: f.annualTaxPaid == null ? d.annualTaxPaidMan : String(wonToMan(f.annualTaxPaid)),
     }));
   };
 
@@ -172,14 +214,21 @@ export default function App() {
       ...d,
       salesMan: String(wonToMan(f.monthlySalesAvg)),
       expenseMan: String(wonToMan(f.totalMonthlyExpense)),
+      hasExistingDebt: f.existingDebtBalance > 0 ? 'YES' : 'NONE',
+      existingDebtMan: String(wonToMan(f.existingDebtBalance || 0)),
       existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
+      existingLoanRatePct: f.existingLoanRatePct == null ? d.existingLoanRatePct : String(f.existingLoanRatePct),
+      existingLoanRemainingMonths: f.existingLoanRemainingMonths == null
+        ? d.existingLoanRemainingMonths : String(f.existingLoanRemainingMonths),
       cardCashRatio: f.cardCashRatio,
     }));
   };
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setReco(null); setEquipped([]); setSimulation(null); setSimulationError(''); setAnalyzeError('');
+    setEquipped([]); setAnalyzeError(''); setApiProducts([]); setRecommendationError('');
+    setSimulation(null); setSimulationError('');
+
   };
 
   const next = () => {
@@ -203,8 +252,9 @@ export default function App() {
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
-        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} reco={reco} />}
-        {screen === 4 && <SimulatorScreen equipped={equipped} options={simulationOptions} toggle={toggle} simRows={simRows}
+        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} error={recommendationError} />}
+        {screen === 4 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
+          options={simulationOptions}
           simulation={simulation} loading={simulationLoading} error={simulationError} />}
         {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}

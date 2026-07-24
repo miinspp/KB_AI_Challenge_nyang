@@ -33,7 +33,7 @@ class SimulationServiceTest {
         SimulationResponse result = service.simulate(baseRequest(List.of(item("KB_PRODUCT", "L001", "LOAN", bd(10_000_000)))));
 
         SimulationResponse.MonthlyCashFlow maturity = result.selectedScenario().monthlyCashFlows().get(11);
-        assertEquals(10_040_000, maturity.newRepayment(), 1);
+        assertEquals(10_050_417, maturity.newRepayment(), 1);
     }
 
     @Test
@@ -54,6 +54,7 @@ class SimulationServiceTest {
         SimulationResponse low = service.simulate(request(List.of(), bd(500_000), bd(900_000), null, "ONE_MONTH_FIXED_COST"));
         SimulationResponse high = service.simulate(request(List.of(), bd(20_000_000), bd(900_000), null, "ONE_MONTH_FIXED_COST"));
 
+        assertTrue(low.baseline().stochastic().bufferBreachProbability() > 0);
         assertTrue(high.baseline().stochastic().bufferBreachProbability()
                 < low.baseline().stochastic().bufferBreachProbability());
     }
@@ -69,22 +70,51 @@ class SimulationServiceTest {
     }
 
     @Test
-    void existingDebtDerivesPaymentFromBalanceRateAndRemainingTermWhenPaymentIsMissing() {
-        SimulationRequest shortTerm = new SimulationRequest(
+    void missingExistingMonthlyPaymentIsRejectedInsteadOfAssumingZero() {
+        SimulationRequest missingPayment = new SimulationRequest(
                 sales(), bd(4_200_000), .38, bd(6_000_000), null, bd(12_000_000),
                 .12, 12, null, .08, null, "ONE_MONTH_FIXED_COST", null,
                 12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
-        SimulationRequest longTerm = new SimulationRequest(
-                sales(), bd(4_200_000), .38, bd(6_000_000), null, bd(12_000_000),
-                .12, 24, null, .08, null, "ONE_MONTH_FIXED_COST", null,
-                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
 
-        SimulationResponse shortResult = service.simulate(shortTerm);
-        SimulationResponse longResult = service.simulate(longTerm);
-        assertTrue(shortResult.baseline().monthlyCashFlows().get(0).existingRepayment()
-                > longResult.baseline().monthlyCashFlows().get(0).existingRepayment());
-        assertTrue(shortResult.baseline().deterministic().endingCash()
-                < longResult.baseline().deterministic().endingCash());
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(missingPayment));
+        assertTrue(error.getMessage().contains("existingMonthlyPayment is required"));
+    }
+
+    @Test
+    void missingDebtDeclarationIsRejectedInsteadOfAssumingZero() {
+        SimulationRequest missingDebt = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), ZERO, null,
+                null, 0, null, null, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(null, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(missingDebt));
+        assertTrue(error.getMessage().contains("existingDebtBalance is required"));
+    }
+
+    @Test
+    void missingTaxHistoryDoesNotApplyTheOldEightPercentDefault() {
+        SimulationRequest noTaxHistory = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), bd(900_000), bd(12_000_000),
+                .08, 24, null, null, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(null, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse result = service.simulate(noTaxHistory);
+        assertEquals(0, result.assumptions().taxReserveRatio(), 1e-9);
+        assertTrue(result.warnings().stream().anyMatch(message -> message.contains("Tax reserve was not estimated")));
+    }
+
+    @Test
+    void missingIndustryVolatilityUsesOnlyObservedStoreHistory() {
+        SimulationRequest noIndustryCv = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), bd(900_000), bd(12_000_000),
+                .08, 24, null, .07, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(null, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse result = service.simulate(noIndustryCv);
+        assertEquals(result.assumptions().personalCv(), result.assumptions().industryCv(), 1e-9);
+        assertEquals(1, result.assumptions().personalCvWeight(), 1e-9);
     }
 
     @Test
@@ -104,6 +134,17 @@ class SimulationServiceTest {
     }
 
     @Test
+    void recommendedPolicyUsesCatalogTermsAndCapsItsDefaultAmountAtThePublishedLimit() {
+        SimulationRequest.SelectedItem policy = item("SEOUL_POLICY", "PBLN_000000000123842", null, null);
+
+        SimulationResponse result = service.simulate(baseRequest(List.of(policy)));
+
+        SimulationResponse.ItemResult selected = result.selectedItems().get(0);
+        assertEquals("LOAN", selected.type());
+        assertEquals(0, bd(3_000_000).compareTo((BigDecimal) selected.verifiedInputs().get("amount")));
+    }
+
+    @Test
     void closedPolicyIsRejectedBeforeCalculation() {
         SimulationRequest.SelectedItem closed = item(
                 "SEOUL_POLICY", "PBLN_000000000124321", "GRANT", bd(1_000_000));
@@ -117,6 +158,16 @@ class SimulationServiceTest {
         SimulationRequest.SelectedItem loan = item("KB_PRODUCT", "L001", "LOAN", bd(10_000_000));
         assertThrows(IllegalArgumentException.class,
                 () -> service.simulate(baseRequest(List.of(loan, loan))));
+    }
+
+    @Test
+    void mutuallyExclusiveDebtRestructuringProductsAreRejected() {
+        SimulationRequest.SelectedItem installment = item("KB_PRODUCT", "D002", "LOAN", bd(6_000_000));
+        SimulationRequest.SelectedItem extension = item("KB_PRODUCT", "D003", "LOAN", bd(6_000_000));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(baseRequest(List.of(installment, extension))));
+        assertTrue(error.getMessage().contains("KB_119PLUS_RESTRUCTURING"));
     }
 
     @Test
@@ -188,6 +239,7 @@ class SimulationServiceTest {
         assertEquals(12, risks.size());
         for (int i = 1; i < risks.size(); i++) {
             assertTrue(risks.get(i).bufferBreachProbability() >= risks.get(i - 1).bufferBreachProbability());
+            assertTrue(risks.get(i).bufferBreachProbability() >= risks.get(i).bufferBreachAtMonthProbability());
         }
     }
 

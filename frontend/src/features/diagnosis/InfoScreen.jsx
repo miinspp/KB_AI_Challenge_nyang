@@ -8,13 +8,17 @@ import { manToWon, fmtMan } from '../../shared/format';
 const KB_FINANCIALS = {
   monthlySalesAvg: 24_800_000,
   totalMonthlyExpense: 18_500_000,
+  existingDebtBalance: 43_200_000,
   monthlyLoanPayment: 1_800_000,
+  existingLoanRatePct: 5.2,
+  existingLoanRemainingMonths: 24,
   cardCashRatio: '카드 72% · 현금 28%',
 };
 const HOMETAX_FINANCIALS = {
   industryName: '한식음식점',
   address: '강남구 역삼동',
   businessStart: '2021.03 (5년차)',
+  bizAgeYears: 5,
   monthlySalesAvg: 25_000_000,
   totalMonthlyExpense: 19_000_000,
   rent: 2_500_000,
@@ -24,6 +28,7 @@ const HOMETAX_FINANCIALS = {
   maskedBusinessNumber: '123-45-6****',
   basisPeriod: '2025.07~2025.12',
   salesHistory: [23_800_000, 24_100_000, 25_600_000, 24_900_000, 26_200_000, 25_400_000],
+  annualTaxPaid: 21_000_000,
 };
 
 /**
@@ -68,12 +73,19 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
   // ── 연동 완료 핸들러: 상위(App)로 재무값 전달 + 로컬로 소스(배지) 표시 ──
   const handleKbLinked = (f) => {
     onKbLinked(f);
-    setSources((s) => ({ ...s, salesMan: 'kb', expenseMan: 'kb', existingMonthlyPaymentMan: 'kb', cardCashRatio: 'kb' }));
+    setSources((s) => ({
+      ...s,
+      salesMan: 'kb', expenseMan: 'kb', existingDebtMan: 'kb',
+      existingMonthlyPaymentMan: 'kb', existingLoanRatePct: 'kb',
+      existingLoanRemainingMonths: 'kb', cardCashRatio: 'kb',
+    }));
     setShowDetail(true);  // 연동으로 세부 필드가 채워졌으니 펼쳐서 보여준다
   };
   const unlinkKb = () => setSources((s) => {
     const n = { ...s };
-    ['salesMan', 'expenseMan', 'existingMonthlyPaymentMan', 'cardCashRatio'].forEach((k) => { if (n[k] === 'kb') delete n[k]; });
+    ['salesMan', 'expenseMan', 'existingDebtMan', 'existingMonthlyPaymentMan',
+      'existingLoanRatePct', 'existingLoanRemainingMonths', 'cardCashRatio']
+      .forEach((k) => { if (n[k] === 'kb') delete n[k]; });
     return n;
   });
 
@@ -84,13 +96,14 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       ...d,
       industryCode: ind ? ind.code : d.industryCode,
       areaText: f.address,
-      bizAge: f.businessStart,
+      bizAgeYears: String(f.bizAgeYears),
     }));
     setSources((s) => ({
       ...s,
-      industryCode: 'hometax', areaText: 'hometax', bizAge: 'hometax',
+      industryCode: 'hometax', areaText: 'hometax', bizAgeYears: 'hometax',
       salesMan: 'hometax', expenseMan: 'hometax',
       rentMan: 'hometax', laborMan: 'hometax', purchaseMan: 'hometax',
+      annualTaxPaidMan: 'hometax',
     }));
     setShowDetail(true);  // 홈택스 연동 시 지출세부·개업시기가 채워지니 펼쳐서 보여준다
   };
@@ -191,14 +204,19 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
         현재 보유 현금은 월 순이익과 다른 값이에요. 실제 통장·현금 잔액을 입력해야 현금 부족 위험이 정확해져요.
       </p>
 
-      {/* ── 세부 정보 (토글) — 화면이 길어지지 않도록 기본 접힘 ── */}
-      <button className="detail-toggle" onClick={() => setShowDetail((v) => !v)}>
-        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#2B2825' }}>세부 정보 입력</span>
-          <span style={{ fontSize: 11.5, color: '#C4BAAD', fontWeight: 500 }}>넣을수록 진단이 정밀해져요 · 지출세부 · 개업시기 · 기존대출</span>
-        </span>
-        <span style={{ fontSize: 13, color: '#8A8178', transform: showDetail ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+      {field('bizAgeYears', {
+        label: '사업 운영 기간', ph: '예: 2', unit: '년', decimal: true, required: true,
+      })}
+
+      <button
+        type="button"
+        className="ind-tab"
+        style={{ minHeight: 42 }}
+        onClick={() => setShowDetail((open) => !open)}
+      >
+        {showDetail ? '지출 세부 입력 닫기' : '지출 세부 입력'}
       </button>
+
 
       {showDetail && (
         <>
@@ -206,9 +224,6 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
           {field('rentMan', { label: '월 임대료', ph: '예: 250' })}
           {field('laborMan', { label: '월 인건비', ph: '예: 400' })}
           {field('purchaseMan', { label: '월 재료비(매입)', ph: '예: 900' })}
-
-          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>개업 시기</p>
-          {field('bizAge', { label: '개업 시기(업력)', ph: '예: 2021년 3월', unit: '', text: true })}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E' }}>주 매출 채널 또는 카드·현금 비율</p>
@@ -236,15 +251,66 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
             )}
           </div>
 
-          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>
-            기존 대출 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 시뮬레이션 기준값</span>
-          </p>
-          {field('existingDebtMan', { label: '기존 대출 잔액', ph: '없으면 0' })}
-          {field('existingMonthlyPaymentMan', { label: '월 대출 상환액', ph: '없으면 0' })}
-          {field('existingLoanRatePct', { label: '기존 대출 금리', ph: '예: 5.2', unit: '%', decimal: true })}
-          {field('existingLoanRemainingMonths', { label: '남은 상환기간', ph: '예: 24', unit: '개월', decimal: true })}
         </>
       )}
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p className="label-sm">기존 대출 <span style={{ color: '#D0564C' }}>*</span></p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[
+            ['YES', '대출 있음'],
+            ['NONE', '내역 없음'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`ind-tab${diag.hasExistingDebt === value ? ' on' : ''}`}
+              style={{ minHeight: 42 }}
+              onClick={() => set(value === 'NONE'
+                ? {
+                    hasExistingDebt: value,
+                    existingDebtMan: '0',
+                    existingMonthlyPaymentMan: '0',
+                    existingLoanRatePct: '0',
+                    existingLoanRemainingMonths: '0',
+                  }
+                : {
+                    hasExistingDebt: value,
+                    existingDebtMan: diag.hasExistingDebt === 'NONE' ? '' : diag.existingDebtMan,
+                    existingMonthlyPaymentMan: diag.hasExistingDebt === 'NONE' ? '' : diag.existingMonthlyPaymentMan,
+                    existingLoanRatePct: diag.hasExistingDebt === 'NONE' ? '' : diag.existingLoanRatePct,
+                    existingLoanRemainingMonths: diag.hasExistingDebt === 'NONE' ? '' : diag.existingLoanRemainingMonths,
+                  })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {diag.hasExistingDebt === 'YES' && (
+          <>
+            {field('existingDebtMan', { label: '기존 대출 잔액', ph: '예: 4,320', required: true })}
+            {field('existingMonthlyPaymentMan', { label: '월 대출 상환액', ph: '예: 180', required: true })}
+            {field('existingLoanRatePct', { label: '기존 대출 금리', ph: '예: 5.2', unit: '%', decimal: true, required: true })}
+            {field('existingLoanRemainingMonths', { label: '남은 상환기간', ph: '예: 24', unit: '개월', decimal: true, required: true })}
+          </>
+        )}
+        {diag.hasExistingDebt === '' && (
+          <p style={{ fontSize: 11.5, color: '#D0564C', fontWeight: 700 }}>
+            대출 내역을 입력하거나 ‘내역 없음’을 선택해 주세요.
+          </p>
+        )}
+      </section>
+
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p className="label-sm">시뮬레이션 선택 입력</p>
+        {field('annualTaxPaidMan', { label: '최근 1년 실제 납부 세금', ph: '연동 데이터가 없으면 비워두세요' })}
+        {field('desiredFundingMan', { label: '희망 대출 금액', ph: '예: 2,000' })}
+        {field('desiredGrantUseMan', { label: '지원금 사용 예정액', ph: '예: 500' })}
+        {field('desiredSavingsMan', { label: '적금에 매달 넣을 금액', ph: '예: 30' })}
+        <p style={{ fontSize: 11.5, color: '#A79C8E', lineHeight: 1.55 }}>
+          세금 납부액이 있으면 최근 매출 대비 개인 적립률을 계산합니다. 값이 없으면 세금 항목은 위험 계산에서 제외하고 신뢰 수준에 표시합니다.
+        </p>
+      </section>
 
       {livePreview != null && (
         <div className="pop" style={{
