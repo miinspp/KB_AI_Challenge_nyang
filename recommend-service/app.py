@@ -19,8 +19,8 @@ from pydantic import BaseModel
 
 import engine
 
-DATA = Path(__file__).parent / "data" / "seoul_policies_enriched.json"
-CACHE = Path(__file__).parent / "data" / "doc_vectors.npy"
+DATA = Path(__file__).parent / "data" / "reco_pool.json"   # 정책(정제) + KB상품 통합 풀 (build_reco_pool.py 산출)
+CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
 
 app = FastAPI(title="소상공인 추천 서비스")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -114,6 +114,7 @@ def to_product(item: dict, reason: str) -> dict:
         "deadline": p.get("deadline"),
         "daysLeft": dleft,          # 프론트 D-day 뱃지용
         "isFinance": p.get("is_finance", False),
+        "source": p.get("source", "GOV"),   # "KB"(자체상품) | "GOV"(정책·지원제도)
         "link": p.get("url"),
         "details": details,
         # 디버그/발표용 — 왜 추천됐는지 축별 점수

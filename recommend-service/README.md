@@ -7,12 +7,25 @@
 ```
 recommend-service/
   engine.py        # 하드필터 · 규칙점수 · 임베딩 · 하이브리드 정렬
-  app.py           # FastAPI (POST /api/recommend), 정책→카드 스키마 변환, Haiku 근거
+  app.py           # FastAPI (POST /api/recommend), 항목→카드 스키마 변환, Haiku 근거
+  build_reco_pool.py  # 정책(정제) + KB상품 → reco_pool.json 생성
   requirements.txt
   data/
-    seoul_policies_enriched.json   # enrich_policies.py 산출물 (439건)
-    doc_vectors.npy                # bge-m3 임베딩 캐시 (최초 실행 시 자동 생성, git 미포함)
+    seoul_policies_enriched.json   # enrich_policies.py 산출물 (439건, 원본)
+    reco_pool.json                 # 추천 대상 풀 = 서울정책 34 + 전국 소상공인 20 + KB상품 24 = 78건 (app.py가 로드)
+    reco_vectors.npy               # bge-m3 임베딩 캐시 (최초 실행 시 자동 생성, git 미포함)
 ```
+
+## 추천 풀 데이터 (reco_pool.json)
+**서울 + 소상공인** 대상만 추린 추천 풀. 정책과 KB 금융상품을 한 스키마로 합친다. `build_reco_pool.py`로 생성한다.
+```bash
+python build_reco_pool.py     # data/reco_pool.json 재생성
+```
+정제 기준 (439 → 78건):
+- **1차 정제**: 접수마감 + 수출·기타 분야 + 기술 R&D/학회/전시성 공고 제거
+- **지역·대상**: 서울 지역 정책(34)은 유지, **전국 정책은 제목에 소상공인이 명시된 것(20)만** 유지(요약문 보일러플레이트 오탐 방지). 서울·전국 외 타지역은 애초에 없음.
+- **KB 상품(24)**: `backend/.../kb-products/recommendable_products.json`의 추천가능 상품 편입 (전국 = 서울 사장님도 이용 가능)
+- 각 항목에 `source` = `"KB"`(자체상품) | `"GOV"`(정책) 마커. 응답 product에도 그대로 전달돼 프론트에서 KB 뱃지 등에 사용 가능.
 
 ---
 
