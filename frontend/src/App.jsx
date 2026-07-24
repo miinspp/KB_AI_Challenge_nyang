@@ -104,6 +104,18 @@ export default function App() {
         laborCost: diag.laborMan ? manToWon(diag.laborMan) : null,
         purchaseCost: diag.purchaseMan ? manToWon(diag.purchaseMan) : null,
       } : null;
+      // 매출이력 형식 정규화: 백엔드는 [{month:"YYYY-MM", amount}] 를 기대.
+      // 홈택스 연동 mock 이 숫자 배열([23800000,...])을 줄 수 있어 {month,amount} 로 변환한다(과거→최근).
+      const rawHistory = hometax?.salesHistory;
+      const salesHistory = Array.isArray(rawHistory) && rawHistory.length
+        ? rawHistory.map((v, i, arr) => {
+            if (v && typeof v === 'object') return v;   // 이미 {month, amount}
+            const dt = new Date();
+            dt.setMonth(dt.getMonth() - (arr.length - 1 - i));
+            const month = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+            return { month, amount: Number(v) };
+          })
+        : null;
       const [r, d] = await Promise.all([
         postRank({
           industryCode: diag.industryCode,
@@ -111,7 +123,7 @@ export default function App() {
           monthlyExpense: manToWon(diag.expenseMan || 0),
           areaType: diag.areaType || null,
           costBreakdown,
-          salesHistory: hometax?.salesHistory ?? null,   // 홈택스 연동 시 6개월 이력 → 안정성 축
+          salesHistory,   // 홈택스 연동 시 6개월 이력 → 안정성 축 (형식 정규화됨)
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
