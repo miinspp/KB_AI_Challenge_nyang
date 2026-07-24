@@ -191,14 +191,35 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
         현재 보유 현금은 월 순이익과 다른 값이에요. 실제 통장·현금 잔액을 입력해야 현금 부족 위험이 정확해져요.
       </p>
 
-      {/* ── 세부 정보 (토글) — 화면이 길어지지 않도록 기본 접힘 ── */}
-      <button className="detail-toggle" onClick={() => setShowDetail((v) => !v)}>
-        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#2B2825' }}>세부 정보 입력</span>
-          <span style={{ fontSize: 11.5, color: '#C4BAAD', fontWeight: 500 }}>넣을수록 진단이 정밀해져요 · 지출세부 · 개업시기 · 기존대출</span>
-        </span>
-        <span style={{ fontSize: 13, color: '#8A8178', transform: showDetail ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p className="label-sm">
+          우리 가게 월 매출·지출 <span style={{ color: '#D0564C', fontWeight: 800 }}>*</span>
+          <span style={{ fontWeight: 500, color: '#C4BAAD' }}> · 최근 월평균 기준</span>
+        </p>
+        <div className="input-row">
+          <span className="k" style={{ width: 96 }}>월 평균 매출</span>
+          <input value={diag.salesMan} onChange={(e) => set({ salesMan: e.target.value.replace(/[^\d]/g, '') })}
+            placeholder="예: 2,500" inputMode="numeric" />
+          <span className="u">만원</span>
+        </div>
+        <div className="input-row">
+          <span className="k" style={{ width: 96 }}>월 평균 지출</span>
+          <input value={diag.expenseMan} onChange={(e) => set({ expenseMan: e.target.value.replace(/[^\d]/g, '') })}
+            placeholder="예: 1,900" inputMode="numeric" />
+          <span className="u">만원</span>
+        </div>
+        <div className="input-row">
+          <span className="k" style={{ width: 96 }}>사업 운영 기간</span>
+          <input value={diag.bizAgeYears} onChange={(e) => set({ bizAgeYears: e.target.value.replace(/[^\d.]/g, '') })}
+            placeholder="예: 2" inputMode="decimal" />
+          <span className="u">년</span>
+        </div>
+        <p style={{ fontSize: 11.5, color: '#C4BAAD', lineHeight: 1.55 }}>
+          지출(재료비·인건비·임대료 등)을 넣으면 순수익·비용효율까지 함께 진단해요.
+          운영 기간은 창업 초기 전용 지원사업 매칭에 쓰여요.
+        </p>
+      </div>
+
 
       {showDetail && (
         <>
