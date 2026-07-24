@@ -17,7 +17,36 @@ export const sign = (value) => `${value > 0 ? '+' : ''}${f1(value)}`;
 const man = (won) => f1((Number(won) || 0) / 10_000);
 const avg = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 const sum = (values) => values.reduce((total, value) => total + value, 0);
-function selectedItem(id, existingDebtTotal) {
+export function buildSimulationOptions(reco) {
+  const recommended = [
+    ...(reco?.products || []).map((item) => ({
+      key: `KB_PRODUCT:${item.id}`, sourceType: 'KB_PRODUCT', id: item.id,
+      name: item.title, short: item.title, category: item.category, link: item.url,
+      icon: 'W', iconBg: '#FFF1CC', iconColor: '#C98A00',
+      requiresExistingDebt: /debt|restructur|refi|대환|만기연장|분할상환|햇살론119/i.test(`${item.category || ''} ${item.title || ''}`),
+    })),
+    ...(reco?.policies || []).map((item) => ({
+      key: `SEOUL_POLICY:${item.id}`, sourceType: 'SEOUL_POLICY', id: item.id,
+      name: item.title, short: item.title, category: item.category, link: item.url,
+      icon: 'P', iconBg: '#E4EEF9', iconColor: '#4A79B8', requiresExistingDebt: false,
+    })),
+  ].filter((item) => item.id);
+  if (recommended.length > 0) return recommended;
+  return PRODUCTS.map((product) => ({ ...product, key: `LEGACY:${product.id}`, legacyId: product.id }));
+}
+
+function selectedItem(option, existingDebtTotal) {
+  if (!option) return null;
+  if (!option.legacyId) {
+    return {
+      sourceType: option.sourceType,
+      id: option.id,
+      name: option.name,
+      eligibilityStatus: 'UNKNOWN',
+    };
+  }
+
+  const id = option.legacyId;
   const product = PRODUCTS.find((candidate) => candidate.id === id);
   if (!product) return null;
 
@@ -92,10 +121,10 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
     fixedCost,
     variableCostRatio,
     currentCash,
-    existingMonthlyPayment,
-    existingDebtBalance: existingDebtTotal,
-    existingLoanInterestRate: Math.max(0, Number(diag.existingLoanRatePct || 0) / 100),
-    existingLoanRemainingMonths: Math.max(0, Number(diag.existingLoanRemainingMonths || 0)),
+    existingMonthlyPayment: diag.existingMonthlyPaymentMan === '' ? null : existingMonthlyPayment,
+    existingDebtBalance: diag.existingDebtMan === '' ? null : existingDebtTotal,
+    existingLoanInterestRate: diag.existingLoanRatePct === '' ? null : Math.max(0, Number(diag.existingLoanRatePct || 0) / 100),
+    existingLoanRemainingMonths: diag.existingLoanRemainingMonths === '' ? null : Math.max(0, Number(diag.existingLoanRemainingMonths || 0)),
     costStructure: hasCostBreakdown ? {
       totalExpense,
       rent,
@@ -107,7 +136,7 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
     taxReserveRatio: 0.08,
     safetyThresholdType: 'FIXED_COST_PLUS_DEBT_PAYMENT',
     horizonMonths: HORIZON,
-    simulationCount: 1000,
+    simulationCount: 5000,
     randomSeed: 42,
     diagnosis: {
       industryCv: null,
@@ -115,7 +144,7 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
       industryCode: diag.industryCode || null,
       region: diag.areaType || 'SEOUL',
     },
-    selectedItems: equipped.map((id) => selectedItem(id, existingDebtTotal)).filter(Boolean),
+    selectedItems: equipped.map((option) => selectedItem(option, existingDebtTotal)).filter(Boolean),
   };
 }
 
@@ -130,10 +159,12 @@ function tone(delta, goodUp) {
 function row(name, before, after, unit, goodUp) {
   const delta = after - before;
   const colors = tone(delta, goodUp);
+  const beforeDisplay = unit === '%' && before === 0 ? '<0.1%' : `${f1(before)}${unit}`;
+  const afterDisplay = unit === '%' && after === 0 ? '<0.1%' : `${f1(after)}${unit}`;
   return {
     name,
-    before: `${f1(before)}${unit}`,
-    after: `${f1(after)}${unit}`,
+    before: beforeDisplay,
+    after: afterDisplay,
     delta: Math.abs(delta) < 0.0001 ? '변화 없음' : `${sign(delta)}${unit}`,
     strike: Math.abs(delta) < 0.0001 ? 'none' : 'line-through',
     deltaColor: colors.color,
@@ -162,6 +193,13 @@ export function buildSimRows(simulation) {
     row('현금부족 확률', beforeRisk, afterRisk, '%', false),
     row('금융자산 잔액', man(simulation.baseline.metrics?.financialAssetBalance), man(simulation.selectedScenario.metrics?.financialAssetBalance), '만원', true),
   ];
+}
+
+function riskProbabilityLabel(stochastic) {
+  const probability = stochastic?.bufferBreachProbability || 0;
+  if (probability > 0) return `${f1(probability * 100)}%`;
+  const upperBound = (3 / Math.max(1, stochastic?.simulationCount || 1)) * 100;
+  return `<${f1(upperBound)}%`;
 }
 
 function emptyDetail() {
@@ -202,6 +240,8 @@ export function buildSimulationDetail(simulation, equipped = []) {
   const afterRiskSeries = simulation.selectedScenario.stochastic.monthlyRisks || [];
   const riskBefore = simulation.baseline.stochastic.bufferBreachProbability * 100;
   const riskAfter = simulation.selectedScenario.stochastic.bufferBreachProbability * 100;
+  const riskBeforeLabel = riskProbabilityLabel(simulation.baseline.stochastic);
+  const riskAfterLabel = riskProbabilityLabel(simulation.selectedScenario.stochastic);
   const beforeRepayment = beforeFlows.map((flow) => flow.existingRepayment + flow.newRepayment);
   const afterRepayment = afterFlows.map((flow) => flow.existingRepayment + flow.newRepayment);
 
@@ -268,7 +308,7 @@ export function buildSimulationDetail(simulation, equipped = []) {
   };
 
   const contributions = simulation.selectedItems.map((item, index) => {
-    const product = PRODUCTS.find((candidate) => candidate.id === equipped[index]);
+    const product = equipped[index] || PRODUCTS.find((candidate) => candidate.id === equipped[index]);
     return {
       id: `${item.sourceType}-${item.id}`,
       icon: product?.icon || '·', iconBg: product?.iconBg || '#F5EFE3', iconColor: product?.iconColor || '#8A8178',
@@ -289,7 +329,7 @@ export function buildSimulationDetail(simulation, equipped = []) {
   ];
 
   return {
-    views, contributions, summary, riskBefore, riskAfter,
+    views, contributions, summary, riskBefore, riskAfter, riskBeforeLabel, riskAfterLabel,
     warnings: simulation.warnings,
     violations: simulation.constraints.violations,
     confidence: simulation.confidence,

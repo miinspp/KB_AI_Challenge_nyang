@@ -29,6 +29,14 @@ class SimulationServiceTest {
     }
 
     @Test
+    void interestOnlyLoanRepaysPrincipalAtMaturity() {
+        SimulationResponse result = service.simulate(baseRequest(List.of(item("KB_PRODUCT", "L001", "LOAN", bd(10_000_000)))));
+
+        SimulationResponse.MonthlyCashFlow maturity = result.selectedScenario().monthlyCashFlows().get(11);
+        assertEquals(10_040_000, maturity.newRepayment(), 1);
+    }
+
+    @Test
     void reimbursementGrantSpendsBeforeSubsidyArrives() {
         SimulationRequest.SelectedItem grant = new SimulationRequest.SelectedItem(
                 "CUSTOM", "GRANT_DEMO", "Reimbursement grant", "GRANT", bd(4_000_000),
@@ -58,6 +66,25 @@ class SimulationServiceTest {
         assertEquals(900_000, withPayment.baseline().monthlyCashFlows().get(0).existingRepayment(), 1);
         assertTrue(withPayment.baseline().deterministic().endingCash()
                 < withoutPayment.baseline().deterministic().endingCash());
+    }
+
+    @Test
+    void existingDebtDerivesPaymentFromBalanceRateAndRemainingTermWhenPaymentIsMissing() {
+        SimulationRequest shortTerm = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), null, bd(12_000_000),
+                .12, 12, null, .08, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
+        SimulationRequest longTerm = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), null, bd(12_000_000),
+                .12, 24, null, .08, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse shortResult = service.simulate(shortTerm);
+        SimulationResponse longResult = service.simulate(longTerm);
+        assertTrue(shortResult.baseline().monthlyCashFlows().get(0).existingRepayment()
+                > longResult.baseline().monthlyCashFlows().get(0).existingRepayment());
+        assertTrue(shortResult.baseline().deterministic().endingCash()
+                < longResult.baseline().deterministic().endingCash());
     }
 
     @Test

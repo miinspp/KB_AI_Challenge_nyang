@@ -12,7 +12,7 @@ import RecommendScreen from './features/recommend/RecommendScreen';
 import { recommendProducts } from './features/recommend/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
+import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
 
 const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
@@ -25,6 +25,16 @@ const DIAG_INIT = {
   rentMan: '', laborMan: '', purchaseMan: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
+};
+
+// 홈택스 목업과 실제 API의 월별 매출 형식을 분석 API 입력으로 통일한다.
+const normalizeSalesHistory = (history) => {
+  if (!Array.isArray(history) || history.length === 0) return null;
+  return history.map((item, index) => (
+    typeof item === 'number'
+      ? { month: `history-${index + 1}`, amount: item }
+      : item
+  ));
 };
 
 export default function App() {
@@ -63,6 +73,7 @@ export default function App() {
   }, [diag.industryCode]);
 
   const products = useMemo(() => recommendProducts(rank), [rank]);
+  const simulationOptions = useMemo(() => buildSimulationOptions(reco), [reco]);
   const topPercent = rank ? rank.topPercent : null;
   const simulationPayload = useMemo(
     () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null,
@@ -87,8 +98,19 @@ export default function App() {
     && diag.currentCashMan !== ''
     && Number(diag.currentCashMan) >= 0;
 
-  const toggle = (id) => setEquipped((eq) =>
-    eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
+  const toggle = (optionOrId) => {
+    const option = typeof optionOrId === 'string'
+      ? simulationOptions.find((item) => item.id === optionOrId || item.legacyId === optionOrId)
+      : optionOrId;
+    if (!option) return;
+    if (option.requiresExistingDebt && Number(diag.existingDebtMan || 0) <= 0) {
+      setSimulationError('대환 상품은 기존 대출잔액을 입력한 경우에만 시뮬레이션할 수 있어요.');
+      return;
+    }
+    setEquipped((eq) => eq.some((item) => item.key === option.key)
+      ? eq.filter((item) => item.key !== option.key)
+      : [...eq, option]);
+  };
 
   const analyze = async () => {
     setAnalyzeError('');
@@ -108,7 +130,7 @@ export default function App() {
           monthlyExpense: manToWon(diag.expenseMan || 0),
           areaType: diag.areaType || null,
           costBreakdown,
-          salesHistory: hometax?.salesHistory ?? null,   // 홈택스 연동 시 6개월 이력 → 안정성 축
+          salesHistory: normalizeSalesHistory(hometax?.salesHistory),
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
@@ -182,7 +204,7 @@ export default function App() {
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
         {screen === 3 && <RecommendScreen products={products} percentile={topPercent} reco={reco} />}
-        {screen === 4 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
+        {screen === 4 && <SimulatorScreen equipped={equipped} options={simulationOptions} toggle={toggle} simRows={simRows}
           simulation={simulation} loading={simulationLoading} error={simulationError} />}
         {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}

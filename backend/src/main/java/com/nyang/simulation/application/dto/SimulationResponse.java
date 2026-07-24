@@ -135,6 +135,8 @@ public record SimulationResponse(
             double personalCvWeight,
             double maxMonthlyTrendRatio,
             double salesShockAutocorrelation,
+            double fixedCostCv,
+            double variableCostCv,
             double repaymentBurdenLimit,
             double excessFundingRatioLimit,
             String seasonalitySource

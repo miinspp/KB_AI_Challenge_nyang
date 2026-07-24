@@ -48,6 +48,14 @@ public class SimulationAssumptionRepository {
         return root.path("sales_shock_autocorrelation").asDouble(0.65);
     }
 
+    public double fixedCostCv() {
+        return root.path("fixed_cost_cv").asDouble(0.04);
+    }
+
+    public double variableCostCv() {
+        return root.path("variable_cost_cv").asDouble(0.08);
+    }
+
     public double repaymentBurdenLimit() {
         return root.path("repayment_burden_limit").asDouble(0.3);
     }

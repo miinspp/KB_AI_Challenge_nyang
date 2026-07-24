@@ -29,7 +29,9 @@ public class RuleBasedSalesForecastProvider implements SalesForecastProvider {
 
         List<SalesForecast.MonthlyForecast> months = new ArrayList<>();
         for (int month = 1; month <= input.horizonMonths(); month++) {
-            BigDecimal p50 = won(Math.max(0, average + slope * month));
+            // Forecast from the month after the final observation, not from the regression origin.
+            double forecastIndex = (n - 1) + month;
+            BigDecimal p50 = won(Math.max(0, average + slope * (forecastIndex - xAverage)));
             BigDecimal p10 = won(Math.max(0, p50.doubleValue() * (1 - spread)));
             BigDecimal p90 = won(Math.max(p50.doubleValue(), p50.doubleValue() * (1 + spread)));
             months.add(new SalesForecast.MonthlyForecast(month, p10, p50, p90));
