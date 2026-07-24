@@ -1,7 +1,5 @@
-import { PRODUCTS } from '../recommend/products';
-
 export default function PortfolioScreen({ equipped, simRows, percentile, simulation }) {
-  const eq = equipped.map((id) => PRODUCTS.find((p) => p.id === id));
+  const eq = equipped;
   const headline = eq.length === 0
     ? '상품을 장착하면 변화를 보여드려요'
     : '상품 ' + eq.length + '개 조합의 12개월 계산 결과예요';

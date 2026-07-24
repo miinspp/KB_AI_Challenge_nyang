@@ -8,22 +8,24 @@ import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
-import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
+import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
 
 const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
-// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
+// areaText/bizAgeYears는 추천·시뮬레이션까지 동일한 계약으로 전달한다.
 const DIAG_INIT = {
   industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
 
   rentMan: '', laborMan: '', purchaseMan: '',
+  hasExistingDebt: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
+  annualTaxPaidMan: '', desiredFundingMan: '1000', desiredGrantUseMan: '500', desiredSavingsMan: '30',
+  fundingPurpose: 'OPERATING',
 };
 
 export default function App() {
@@ -41,7 +43,8 @@ export default function App() {
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [equipped, setEquipped] = useState([]);
-  const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
+  const [apiProducts, setApiProducts] = useState([]);
+  const [recommendationError, setRecommendationError] = useState('');
   const [simulation, setSimulation] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState('');
@@ -61,11 +64,8 @@ export default function App() {
     return () => { alive = false; };
   }, [diag.industryCode]);
 
-  // 추천 서비스(/api/recommend) 결과를 우선 사용, 없으면 기존 규칙기반으로 폴백
-  const products = useMemo(
-    () => apiProducts ?? recommendProducts(rank),
-    [apiProducts, rank],
-  );
+  const products = apiProducts;
+  const simulationOptions = useMemo(() => buildSimulationOptions(apiProducts), [apiProducts]);
   const topPercent = rank ? rank.topPercent : null;
   const simulationPayload = useMemo(
     () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null,
@@ -86,15 +86,49 @@ export default function App() {
   }, [simulationPayload, screen]);
 
   const canAnalyze = diag.industryCode
+    && String(diag.areaText || '').trim()
     && Number(diag.salesMan) > 0
+    && diag.expenseMan !== ''
+    && Number(diag.expenseMan) >= 0
+    && diag.bizAgeYears !== ''
+    && Number(diag.bizAgeYears) >= 0
     && diag.currentCashMan !== ''
-    && Number(diag.currentCashMan) >= 0;
+    && Number(diag.currentCashMan) >= 0
+    && (diag.hasExistingDebt === 'NONE'
+      || (diag.hasExistingDebt === 'YES'
+        && Number(diag.existingDebtMan) > 0
+        && Number(diag.existingMonthlyPaymentMan) > 0
+        && Number(diag.existingLoanRatePct) > 0
+        && Number(diag.existingLoanRemainingMonths) > 0));
 
-  const toggle = (id) => setEquipped((eq) =>
-    eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
+  const toggle = (optionOrId) => {
+    const option = typeof optionOrId === 'string'
+      ? simulationOptions.find((item) => item.id === optionOrId)
+      : optionOrId;
+    if (!option) return;
+    if (option.requiresExistingDebt && Number(diag.existingDebtMan || 0) <= 0) {
+      setSimulationError('대환 상품은 기존 대출잔액을 입력한 경우에만 시뮬레이션할 수 있어요.');
+      return;
+    }
+    const conflict = equipped.find((item) =>
+      item.key !== option.key
+      && item.duplicateGroup
+      && item.duplicateGroup === option.duplicateGroup);
+    if (conflict && !equipped.some((item) => item.key === option.key)) {
+      setSimulationError(`${option.short}과(와) ${conflict.short}은(는) 중복 가입할 수 없어요.`);
+      return;
+    }
+    setSimulationError('');
+    setEquipped((eq) => eq.some((item) => item.key === option.key)
+      ? eq.filter((item) => item.key !== option.key)
+      : [...eq, option]);
+  };
 
   const analyze = async () => {
     setAnalyzeError('');
+    setRecommendationError('');
+    setApiProducts([]);
+    setEquipped([]);
     setAnalyzing(true);
     try {
       // 선택 입력(임대료·인건비·재료비)이 하나라도 있으면 비용 세부를 전달 — rent 가 있으면 비용구조 축 활성화
@@ -123,7 +157,7 @@ export default function App() {
           monthlyExpense: manToWon(diag.expenseMan || 0),
           areaType: diag.areaType || null,
           costBreakdown,
-          salesHistory,   // 홈택스 연동 시 6개월 이력 → 안정성 축 (형식 정규화됨)
+          salesHistory,
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
@@ -136,16 +170,21 @@ export default function App() {
       const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
       // 실입력값으로 프로필 보정: 업력 + 실부채비율(부채잔액/연매출). 비어 있으면 rankToProfile이 근사로 폴백.
       const salesMonthly = Number(diag.salesMan) || 0;
-      const debtRatio = salesMonthly > 0 && diag.existingDebtMan
-        ? Number(diag.existingDebtMan) / (salesMonthly * 12)
+      const debtRatio = salesMonthly > 0 && diag.hasExistingDebt
+        ? Number(diag.existingDebtMan || 0) / (salesMonthly * 12)
         : null;
       const bizAgeYears = diag.bizAgeYears ? Number(diag.bizAgeYears) : null;
       const profile = rankToProfile(r, {
-        region: '서울', industry: industryName, bizAgeYears, debtRatio,
+        region: diag.areaText || '서울', industry: industryName, bizAgeYears, debtRatio,
       });
+      setRecommendationError('');
       fetchRecommendations(profile)
         .then(setApiProducts)
-        .catch((err) => { console.warn('추천 서비스 폴백:', err.message); setApiProducts(null); });
+        .catch((err) => {
+          console.warn('추천 서비스 요청 실패:', err.message);
+          setApiProducts([]);
+          setRecommendationError(err.message);
+        });
 
     } catch (e) {
       setAnalyzeError(e.message);
@@ -164,6 +203,8 @@ export default function App() {
       rentMan: String(wonToMan(f.rent)),
       laborMan: String(wonToMan(f.laborCost)),
       purchaseMan: String(wonToMan(f.purchaseCost)),
+      bizAgeYears: f.bizAgeYears == null ? d.bizAgeYears : String(f.bizAgeYears),
+      annualTaxPaidMan: f.annualTaxPaid == null ? d.annualTaxPaidMan : String(wonToMan(f.annualTaxPaid)),
     }));
   };
 
@@ -173,14 +214,19 @@ export default function App() {
       ...d,
       salesMan: String(wonToMan(f.monthlySalesAvg)),
       expenseMan: String(wonToMan(f.totalMonthlyExpense)),
+      hasExistingDebt: f.existingDebtBalance > 0 ? 'YES' : 'NONE',
+      existingDebtMan: String(wonToMan(f.existingDebtBalance || 0)),
       existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
+      existingLoanRatePct: f.existingLoanRatePct == null ? d.existingLoanRatePct : String(f.existingLoanRatePct),
+      existingLoanRemainingMonths: f.existingLoanRemainingMonths == null
+        ? d.existingLoanRemainingMonths : String(f.existingLoanRemainingMonths),
       cardCashRatio: f.cardCashRatio,
     }));
   };
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError(''); setApiProducts(null);
+    setEquipped([]); setAnalyzeError(''); setApiProducts([]); setRecommendationError('');
     setSimulation(null); setSimulationError('');
 
   };
@@ -206,8 +252,9 @@ export default function App() {
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
-        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} />}
+        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} error={recommendationError} />}
         {screen === 4 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
+          options={simulationOptions}
           simulation={simulation} loading={simulationLoading} error={simulationError} />}
         {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}

@@ -126,6 +126,8 @@ public record SimulationResponse(
     ) {}
 
     public record AssumptionsUsed(
+            String assumptionVersion,
+            String officialTermsAsOf,
             double taxReserveRatio,
             double minimumCashBuffer,
             String safetyThresholdType,
@@ -135,6 +137,8 @@ public record SimulationResponse(
             double personalCvWeight,
             double maxMonthlyTrendRatio,
             double salesShockAutocorrelation,
+            double fixedCostCv,
+            double variableCostCv,
             double repaymentBurdenLimit,
             double excessFundingRatioLimit,
             String seasonalitySource

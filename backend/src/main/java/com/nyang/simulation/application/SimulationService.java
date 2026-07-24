@@ -89,9 +89,11 @@ public class SimulationService {
                 financingResult(input, items, selectedCalc),
                 constraints,
                 new SimulationResponse.AssumptionsUsed(
+                        assumptions.assumptionVersion(), assumptions.officialTermsAsOf(),
                         input.taxReserveRatio(), money(input.safetyThreshold()).doubleValue(), input.safetyThresholdType(),
                         risk.industryCv(), risk.mixedCv(), risk.personalCv(), risk.personalWeight(),
                         assumptions.maxMonthlyTrendRatio(), assumptions.salesShockAutocorrelation(),
+                        assumptions.fixedCostCv(), assumptions.variableCostCv(),
                         assumptions.repaymentBurdenLimit(), assumptions.excessFundingRatioLimit(), assumptions.seasonalitySource()),
                 inputAssumptions(input),
                 protectionResult(items),
@@ -113,26 +115,46 @@ public class SimulationService {
         if (average(request.monthlySales()).signum() <= 0) {
             throw new IllegalArgumentException("Average monthly sales must be greater than zero.");
         }
+        if (request.currentCash() == null) {
+            throw new IllegalArgumentException("currentCash is required.");
+        }
+        if (request.existingDebtBalance() == null) {
+            throw new IllegalArgumentException("existingDebtBalance is required. Send zero only after the user explicitly selects no debt.");
+        }
+        if (request.existingMonthlyPayment() == null) {
+            throw new IllegalArgumentException("existingMonthlyPayment is required. Send zero only after the user explicitly selects no debt.");
+        }
         requireNonNegative(request.currentCash(), "currentCash");
         requireNonNegative(request.existingDebtBalance(), "existingDebtBalance");
         requireNonNegative(request.existingMonthlyPayment(), "existingMonthlyPayment");
+        if (request.existingDebtBalance().signum() > 0
+                && (request.existingLoanInterestRate() == null || request.existingLoanInterestRate() <= 0
+                || request.existingLoanRemainingMonths() == null || request.existingLoanRemainingMonths() <= 0)) {
+            throw new IllegalArgumentException("Existing debt requires a positive interest rate and remaining term.");
+        }
+        if (request.existingDebtBalance().signum() == 0 && request.existingMonthlyPayment().signum() > 0) {
+            throw new IllegalArgumentException("existingMonthlyPayment must be zero when existingDebtBalance is zero.");
+        }
     }
 
     private ResolvedInput resolveInput(SimulationRequest request) {
         BigDecimal averageSales = average(request.monthlySales());
         CostModel cost = resolveCostModel(request, averageSales);
-        double taxRatio = request.taxReserveRatio() == null
-                ? assumptions.defaultTaxReserveRatio() : request.taxReserveRatio();
+        double taxRatio = request.taxReserveRatio() == null ? 0 : request.taxReserveRatio();
         if (taxRatio < 0 || taxRatio >= 1 || cost.variableCostRatio() + taxRatio >= 1) {
             throw new IllegalArgumentException("Variable cost ratio plus tax reserve ratio must be below 100%.");
         }
 
-        boolean currentCashAssumed = request.currentCash() == null;
-        boolean debtAssumed = request.existingDebtBalance() == null;
-        boolean paymentAssumed = request.existingMonthlyPayment() == null;
-        BigDecimal currentCash = value(request.currentCash(), cost.fixedCost());
-        BigDecimal existingDebt = value(request.existingDebtBalance(), ZERO);
-        BigDecimal existingPayment = value(request.existingMonthlyPayment(), ZERO);
+        boolean currentCashAssumed = false;
+        boolean debtAssumed = false;
+        boolean paymentAssumed = false;
+        BigDecimal currentCash = request.currentCash();
+        BigDecimal existingDebt = request.existingDebtBalance();
+        BigDecimal existingPayment = request.existingMonthlyPayment();
+        List<String> inputMessages = new ArrayList<>(cost.messages());
+        if (request.taxReserveRatio() == null) {
+            inputMessages.add("Tax reserve was not estimated because verified tax payment history was unavailable.");
+        }
 
         String thresholdType;
         BigDecimal threshold;
@@ -158,7 +180,7 @@ public class SimulationService {
                 request.monthlySales(), currentCash, existingDebt, existingPayment,
                 value(request.existingLoanInterestRate(), 0), value(request.existingLoanRemainingMonths(), 0),
                 cost.fixedCost(), cost.variableCostRatio(), taxRatio, threshold, thresholdType,
-                currentCashAssumed, debtAssumed, paymentAssumed, cost.legacy(), cost.messages());
+                currentCashAssumed, debtAssumed, paymentAssumed, cost.legacy(), List.copyOf(inputMessages));
     }
 
     private CostModel resolveCostModel(SimulationRequest request, BigDecimal averageSales) {
@@ -235,20 +257,29 @@ public class SimulationService {
             String type = upper(firstNonBlank(raw.type(), text(defaults, "type"), inferType(source, catalog.orElse(null))), CASH_MANAGEMENT);
             BigDecimal amount = value(raw.amount(), decimal(defaults, "amount", defaultAmount(type)));
             BigDecimal monthlyContribution = value(raw.monthlyContribution(),
-                    decimal(defaults, "monthly_contribution", (SAVINGS.equals(type) || MUTUAL_AID.equals(type) || INSURANCE.equals(type)) ? amount : ZERO));
-            int term = value(raw.totalTermMonths(), integer(defaults, "total_term_months", 0));
+                    decimal(defaults, "monthly_contribution", SAVINGS.equals(type) ? BigDecimal.valueOf(300_000)
+                            : (MUTUAL_AID.equals(type) || INSURANCE.equals(type)) ? amount : ZERO));
+            int term = value(raw.totalTermMonths(), integer(defaults, "total_term_months", LOAN.equals(type) ? 60 : 0));
             int grace = value(raw.graceMonths(), integer(defaults, "grace_months", 0));
             int disbursement = bounded(raw.disbursementMonth(), integer(defaults, "disbursement_month", 1), 1, 60);
-            String duplicateGroup = firstNonBlank(raw.duplicateGroup(), raw.id());
+            String duplicateGroup = firstNonBlank(officialDuplicateGroup(source, raw.id()), raw.duplicateGroup(), raw.id());
             if (duplicateGroup != null && !duplicateGroups.add(duplicateGroup)) {
                 throw new IllegalArgumentException("Duplicate benefit group selected: " + duplicateGroup);
             }
 
             Double catalogMax = catalog.map(CatalogItem::maxAmountWon).orElse(null);
+            BigDecimal minAmount = decimal(defaults, "min_amount", null);
             BigDecimal defaultMax = decimal(defaults, "max_amount", null);
             BigDecimal maxAmount = catalogMax == null ? defaultMax : BigDecimal.valueOf(catalogMax);
+            if (minAmount != null && amount.compareTo(minAmount) < 0) {
+                throw new IllegalArgumentException("Requested amount is below product minimum: " + raw.id());
+            }
             if (maxAmount != null && amount.compareTo(maxAmount) > 0) {
-                throw new IllegalArgumentException("Requested amount exceeds product maximum: " + raw.id());
+                if (raw.amount() == null) {
+                    amount = maxAmount;
+                } else {
+                    throw new IllegalArgumentException("Requested amount exceeds product maximum: " + raw.id());
+                }
             }
             BigDecimal minContribution = decimal(defaults, "min_monthly_contribution", null);
             BigDecimal maxContribution = decimal(defaults, "max_monthly_contribution", null);
@@ -266,6 +297,9 @@ public class SimulationService {
             if (refinance && input.existingDebt().signum() <= 0) {
                 throw new IllegalArgumentException("Refinancing requires an existing debt balance.");
             }
+            if (refinance && raw.amount() == null) {
+                amount = input.existingDebt();
+            }
             if (refinance && amount.compareTo(input.existingDebt()) > 0) {
                 throw new IllegalArgumentException("Refinancing amount cannot exceed existing debt balance.");
             }
@@ -276,13 +310,17 @@ public class SimulationService {
                     ? defaultSpending(type, amount, selfFunding, paymentMethod, refinance)
                     : List.copyOf(raw.projectSpendingSchedule());
             validateSpending(spending);
+            double annualRate = value(raw.annualRate(), number(defaults, "annual_rate", LOAN.equals(type) ? .045 : 0));
+            if (refinance && raw.annualRate() == null && input.existingLoanRate() > 0) {
+                annualRate = input.existingLoanRate();
+            }
 
             result.add(new NormalizedItem(
                     source, raw.id(), firstNonBlank(raw.name(), catalog.map(CatalogItem::name).orElse(null), raw.id()), type,
                     catalog.map(CatalogItem::category).orElse(null), catalog.map(CatalogItem::sourceUrl).orElse(null),
                     catalog.map(CatalogItem::applicationUrl).orElse(null), upper(raw.eligibilityStatus(), "UNKNOWN"),
-                    amount, value(raw.annualRate(), number(defaults, "annual_rate", 0)), term, grace,
-                    upper(firstNonBlank(raw.repaymentType(), text(defaults, "repayment_type")), "NONE"), disbursement,
+                    amount, annualRate, term, grace,
+                    upper(firstNonBlank(raw.repaymentType(), text(defaults, "repayment_type")), LOAN.equals(type) ? "EQUAL_PAYMENT" : "NONE"), disbursement,
                     value(raw.upfrontFee(), decimal(defaults, "upfront_fee", ZERO)),
                     value(raw.feeRate(), number(defaults, "fee_rate", 0)), spending, selfFunding, paymentMethod,
                     value(raw.costReductionRatio(), number(defaults, "cost_reduction_ratio", 0)),
@@ -309,6 +347,7 @@ public class SimulationService {
         BigDecimal maxDebtPayment = ZERO;
         BigDecimal totalInterest = ZERO;
         BigDecimal totalFees = ZERO;
+        BigDecimal[] existingRepayments = existingRepaymentSchedule(input, horizon);
 
         for (int i = 0; i < horizon; i++) {
             int month = i + 1;
@@ -317,8 +356,9 @@ public class SimulationService {
             BigDecimal variableCost = money(sales.multiply(BigDecimal.valueOf(input.variableCostRatio())));
             BigDecimal fixedCost = money(input.fixedCost().multiply(BigDecimal.valueOf(1 - costReduction)));
             BigDecimal taxReserve = money(sales.multiply(BigDecimal.valueOf(input.taxReserveRatio())));
+            BigDecimal scheduledExistingPayment = existingRepayments[i];
             BigDecimal existingPayment = vectors.refinanceEffectiveMonth() > 0 && month >= vectors.refinanceEffectiveMonth()
-                    ? ZERO : input.existingMonthlyPayment();
+                    ? ZERO : scheduledExistingPayment;
 
             AssetMonth assetMonth = assetMonth(items, assetBalances, month);
             BigDecimal operating = sales.subtract(variableCost).subtract(fixedCost).subtract(taxReserve).subtract(existingPayment);
@@ -327,7 +367,8 @@ public class SimulationService {
                     .subtract(assetMonth.contribution()).add(assetMonth.maturityInflow()).add(operating);
             cash = money(cash);
             minimumCash = minimumCash.min(cash);
-            if (firstBuffer == null && cash.compareTo(input.safetyThreshold()) < 0) firstBuffer = month;
+            BigDecimal safetyThreshold = safetyThresholdForMonth(input, fixedCost, existingPayment, vectors.newRepayment()[i]);
+            if (firstBuffer == null && cash.compareTo(safetyThreshold) < 0) firstBuffer = month;
             if (firstNegative == null && cash.signum() < 0) firstNegative = month;
             maxDebtPayment = maxDebtPayment.max(existingPayment.add(vectors.newRepayment()[i]));
             totalInterest = totalInterest.add(vectors.interest()[i]);
@@ -336,7 +377,7 @@ public class SimulationService {
             flows.add(new SimulationResponse.MonthlyCashFlow(
                     month, d(opening), d(vectors.financingInflow()[i]), d(vectors.subsidyInflow()[i]), d(vectors.projectSpending()[i]),
                     d(sales), d(variableCost), d(fixedCost), d(taxReserve), d(existingPayment), d(vectors.newRepayment()[i]),
-                    d(vectors.financingFee()[i]), d(operating), d(cash), cash.compareTo(input.safetyThreshold()) < 0, cash.signum() < 0,
+                    d(vectors.financingFee()[i]), d(operating), d(cash), cash.compareTo(safetyThreshold) < 0, cash.signum() < 0,
                     d(assetMonth.contribution()), d(assetMonth.interest()), d(assetMonth.maturityInflow()), d(assetMonth.balance())));
         }
 
@@ -389,7 +430,7 @@ public class SimulationService {
                 principal = switch (item.repaymentType()) {
                     case "EQUAL_PAYMENT" -> equalPayment.subtract(monthInterest).max(ZERO).min(balance);
                     case "BULLET" -> amortized == amortizingMonths - 1 ? balance : ZERO;
-                    case "INTEREST_ONLY" -> ZERO;
+                    case "INTEREST_ONLY" -> amortized == amortizingMonths - 1 ? balance : ZERO;
                     default -> equalPrincipal.min(balance);
                 };
             }
@@ -398,6 +439,50 @@ public class SimulationService {
             interest[index] = interest[index].add(monthInterest);
             balance = balance.subtract(principal).max(ZERO);
         }
+    }
+
+    /**
+     * Uses the actual monthly payment when it is available. When only balance, rate and
+     * remaining term are supplied (the normal MyData case), it derives an equal-payment
+     * schedule so that an existing loan is not treated as an endless fixed expense.
+     */
+    private BigDecimal[] existingRepaymentSchedule(ResolvedInput input, int horizon) {
+        BigDecimal[] payments = zeros(horizon);
+        if (input.existingDebt().signum() <= 0) {
+            Arrays.fill(payments, input.existingMonthlyPayment());
+            return payments;
+        }
+
+        int remainingMonths = input.existingLoanRemainingMonths();
+        if (remainingMonths <= 0) {
+            Arrays.fill(payments, input.existingMonthlyPayment());
+            return payments;
+        }
+
+        double monthlyRate = input.existingLoanRate() / 12.0;
+        BigDecimal regularPayment = input.existingMonthlyPayment().signum() > 0
+                ? input.existingMonthlyPayment()
+                : equalPayment(input.existingDebt(), monthlyRate, remainingMonths);
+        BigDecimal balance = input.existingDebt();
+        int months = Math.min(horizon, remainingMonths);
+        for (int i = 0; i < months && balance.signum() > 0; i++) {
+            BigDecimal interest = money(balance.multiply(BigDecimal.valueOf(monthlyRate)));
+            BigDecimal principal = regularPayment.subtract(interest).max(ZERO).min(balance);
+            // Clear the remaining balance in the known final month, including a balloon amount.
+            if (i == remainingMonths - 1) principal = balance;
+            payments[i] = money(interest.add(principal));
+            balance = balance.subtract(principal).max(ZERO);
+        }
+        return payments;
+    }
+
+    private BigDecimal safetyThresholdForMonth(ResolvedInput input, BigDecimal fixedCost,
+                                                BigDecimal existingPayment, BigDecimal newPayment) {
+        return switch (input.safetyThresholdType()) {
+            case "FIXED_COST_PLUS_DEBT_PAYMENT" -> money(fixedCost.add(existingPayment).add(newPayment));
+            case "ONE_MONTH_FIXED_COST" -> money(fixedCost);
+            default -> input.safetyThreshold();
+        };
     }
 
     private AssetMonth assetMonth(List<NormalizedItem> items, Map<String, BigDecimal> balances, int month) {
@@ -438,6 +523,8 @@ public class SimulationService {
         double[] endings = new double[runs];
         double rho = clamp(assumptions.salesShockAutocorrelation(), 0, 0.95);
         double innovationScale = Math.sqrt(1 - rho * rho);
+        double fixedCostCv = clamp(assumptions.fixedCostCv(), 0, .3);
+        double variableCostCv = clamp(assumptions.variableCostCv(), 0, .4);
 
         for (int run = 0; run < runs; run++) {
             double cash = input.currentCash().doubleValue();
@@ -448,13 +535,17 @@ public class SimulationService {
                 SimulationResponse.MonthlyCashFlow flow = scenario.flows().get(i);
                 previousShock = rho * previousShock + innovationScale * random.nextGaussian();
                 double sales = Math.max(0, flow.expectedSales() * (1 + previousShock * risk.mixedCv()));
-                double variable = sales * input.variableCostRatio();
+                double variable = sales * input.variableCostRatio()
+                        * clamp(1 + random.nextGaussian() * variableCostCv, .7, 1.4);
+                double fixed = flow.fixedCost() * clamp(1 + random.nextGaussian() * fixedCostCv, .8, 1.25);
                 double tax = sales * input.taxReserveRatio();
                 cash += flow.financingInflow() + flow.subsidyInflow() - flow.projectSpending()
                         - flow.existingRepayment() - flow.newRepayment() - flow.financingFee()
                         - flow.financialAssetContribution() + flow.financialAssetMaturityInflow()
-                        + sales - variable - flow.fixedCost() - tax;
-                boolean bufferNow = cash < input.safetyThreshold().doubleValue();
+                        + sales - variable - fixed - tax;
+                double safetyThreshold = safetyThresholdForMonth(input, BigDecimal.valueOf(flow.fixedCost()),
+                        BigDecimal.valueOf(flow.existingRepayment()), BigDecimal.valueOf(flow.newRepayment())).doubleValue();
+                boolean bufferNow = cash < safetyThreshold;
                 boolean negativeNow = cash < 0;
                 if (bufferNow) atBuffer[i]++;
                 if (negativeNow) atNegative[i]++;
@@ -482,7 +573,9 @@ public class SimulationService {
     private SimulationResponse.ScenarioResult scenarioResult(ResolvedInput input, ScenarioComputation calculation,
                                                               SimulationResponse.StochasticResult stochastic) {
         BigDecimal averageNet = money(BigDecimal.valueOf(calculation.flows().stream()
-                .mapToDouble(f -> f.closingCash() - f.openingCash()).average().orElse(0)));
+                .mapToDouble(f -> f.operatingCashFlow() - f.newRepayment() - f.financingFee()
+                        - f.financialAssetContribution() + f.financialAssetMaturityInflow())
+                .average().orElse(0)));
         SimulationResponse.ScenarioMetrics metrics = new SimulationResponse.ScenarioMetrics(
                 averageNet, money(calculation.deterministic().endingCash()), money(calculation.deterministic().minimumCashBalance()),
                 calculation.deterministic().firstBufferBreachMonth(), stochastic.bufferBreachProbability(),
@@ -529,9 +622,6 @@ public class SimulationService {
 
     private SimulationResponse.InputAssumptions inputAssumptions(ResolvedInput input) {
         List<String> messages = new ArrayList<>(input.costMessages());
-        if (input.currentCashAssumed()) messages.add("currentCash was missing and one month of fixed cost was used.");
-        if (input.debtAssumed()) messages.add("existingDebtBalance was missing and assumed to be zero.");
-        if (input.paymentAssumed()) messages.add("existingMonthlyPayment was missing and assumed to be zero.");
         return new SimulationResponse.InputAssumptions(input.currentCashAssumed(), input.debtAssumed(),
                 input.paymentAssumed(), input.legacyCostModel(), List.copyOf(messages));
     }
@@ -562,6 +652,20 @@ public class SimulationService {
         itemAssumptions.put("costReductionRatio", item.costReductionRatio());
         itemAssumptions.put("salesUpliftRatio", item.salesUpliftRatio());
         itemAssumptions.put("protectionNotMonetized", INSURANCE.equals(item.type()));
+        Optional<JsonNode> evidence = KB_PRODUCT.equals(item.sourceType())
+                ? assumptions.kbProductDefault(item.id())
+                : SEOUL_POLICY.equals(item.sourceType()) ? assumptions.policyDefault(inferPolicyKeyFromNormalized(item))
+                : Optional.empty();
+        evidence.ifPresent(node -> {
+            String termsSource = text(node, "terms_source");
+            String termsAsOf = text(node, "terms_as_of");
+            String rateBasis = text(node, "rate_basis");
+            String evidenceLevel = text(node, "evidence_level");
+            if (termsSource != null) itemAssumptions.put("termsSource", termsSource);
+            if (termsAsOf != null) itemAssumptions.put("termsAsOf", termsAsOf);
+            if (rateBasis != null) itemAssumptions.put("rateBasis", rateBasis);
+            if (evidenceLevel != null) itemAssumptions.put("evidenceLevel", evidenceLevel);
+        });
         return new SimulationResponse.ItemResult(item.sourceType(), item.id(), item.name(), item.type(), item.category(),
                 item.sourceUrl(), item.applicationUrl(), item.eligibilityStatus(), Map.copyOf(verified), Map.copyOf(itemAssumptions));
     }
@@ -575,6 +679,15 @@ public class SimulationService {
         }
         if (items.stream().anyMatch(i -> INSURANCE.equals(i.type()))) {
             result.add("Insurance premiums affect cash flow, but claim benefits are not estimated without actuarial evidence.");
+        }
+        if (items.stream().anyMatch(i -> KB_PRODUCT.equals(i.sourceType()) && assumptions.kbProductDefault(i.id()).isEmpty())) {
+            result.add("One or more KB product terms use the MVP catalog default until official rate and term data are supplied.");
+        }
+        if (items.stream().anyMatch(i -> SEOUL_POLICY.equals(i.sourceType()) && LOAN.equals(i.type()))) {
+            result.add("Policy financing uses the requested amount and public maximum, but rate and repayment terms require confirmation in the linked official notice.");
+        }
+        if (items.stream().anyMatch(i -> SEOUL_POLICY.equals(i.sourceType()) && !LOAN.equals(i.type()))) {
+            result.add("Policy benefits without structured payment timing, self-funding, and settlement terms were not monetized.");
         }
         result.addAll(constraints.violations());
         if (!"HIGH".equals(confidence.level())) result.add("Short sales history reduces forecast confidence.");
@@ -600,10 +713,18 @@ public class SimulationService {
 
     private RiskModel buildRiskModel(SimulationRequest request) {
         double personal = coefficientOfVariation(request.monthlySales());
-        double industry = request.diagnosis() != null && request.diagnosis().industryCv() != null
-                ? request.diagnosis().industryCv() : assumptions.industryCv();
-        double weight = Math.min(.7, .7 * request.monthlySales().size() / 12.0);
+        boolean hasIndustryEvidence = request.diagnosis() != null && request.diagnosis().industryCv() != null;
+        double industry = hasIndustryEvidence ? request.diagnosis().industryCv() : personal;
+        double weight = hasIndustryEvidence ? Math.min(.7, .7 * request.monthlySales().size() / 12.0) : 1;
         return new RiskModel(round4(personal), round4(industry), round4(weight), round4(weight * personal + (1 - weight) * industry));
+    }
+
+    private String officialDuplicateGroup(String source, String id) {
+        if (!KB_PRODUCT.equals(source) || id == null) return null;
+        return switch (id) {
+            case "D002", "D003" -> "KB_119PLUS_RESTRUCTURING";
+            default -> null;
+        };
     }
 
     private SimulationResponse.Confidence confidence(int salesMonths) {
@@ -626,10 +747,18 @@ public class SimulationService {
         if (SALES_UPLIFT.equals(explicit)) return "MARKETING";
         if (catalog != null) {
             String haystack = (String.join(" ", catalog.supportTypes()) + " " + catalog.category() + " " + catalog.summary()).toLowerCase(Locale.ROOT);
-            if (haystack.contains("loan") || haystack.contains("finance") || haystack.contains("guarantee")) return "LOAN";
-            if (haystack.contains("grant") || haystack.contains("subsid")) return "GRANT";
-            if (haystack.contains("marketing")) return "MARKETING";
+            if (containsAny(haystack, "loan", "finance", "guarantee", "대출", "융자", "보증", "금융", "자금")) return "LOAN";
+            if (containsAny(haystack, "grant", "subsid", "지원금", "보조금", "사업화")) return "GRANT";
+            if (containsAny(haystack, "marketing", "판로", "마케팅", "홍보", "온라인", "수출")) return "MARKETING";
         }
+        return "CONSULTING";
+    }
+
+    private String inferPolicyKeyFromNormalized(NormalizedItem item) {
+        if (LOAN.equals(item.type())) return "LOAN";
+        if (GRANT.equals(item.type())) return "GRANT";
+        if (COST_REDUCTION.equals(item.type())) return "CONSULTING";
+        if (SALES_UPLIFT.equals(item.type())) return "MARKETING";
         return "CONSULTING";
     }
 
@@ -646,13 +775,16 @@ public class SimulationService {
             };
         }
         String category = catalog.category() == null ? "" : catalog.category().toLowerCase(Locale.ROOT);
-        return category.contains("loan") || category.contains("finance") || category.contains("debt") ? LOAN : CASH_MANAGEMENT;
+        if (containsAny(category, "loan", "finance", "debt", "대출", "금융", "보증", "융자")) return LOAN;
+        if (containsAny(category, "saving", "savings", "적금", "예금")) return SAVINGS;
+        return CASH_MANAGEMENT;
     }
 
     private boolean isRefinance(SimulationRequest.SelectedItem item, CatalogItem catalog) {
         String text = ((item.id() == null ? "" : item.id()) + " " + (item.name() == null ? "" : item.name())
                 + " " + (catalog == null ? "" : catalog.category()) + " " + (catalog == null ? "" : catalog.summary())).toLowerCase(Locale.ROOT);
-        return text.contains("refi") || text.contains("restructur") || text.contains("대환");
+        return "D002".equalsIgnoreCase(item.id()) || "D003".equalsIgnoreCase(item.id())
+                || text.contains("refi") || text.contains("restructur") || text.contains("대환");
     }
 
     private List<SimulationRequest.CashEvent> defaultSpending(String type, BigDecimal amount, double selfFunding,
@@ -722,6 +854,10 @@ public class SimulationService {
     private static int bounded(Integer value, int fallback, int min, int max) { return Math.max(min, Math.min(max, value(value, fallback))); }
     private static String upper(String value, String fallback) { return value == null || value.isBlank() ? fallback : value.toUpperCase(Locale.ROOT); }
     private static String firstNonBlank(String... values) { for (String value : values) if (value != null && !value.isBlank()) return value; return null; }
+    private static boolean containsAny(String value, String... keywords) {
+        for (String keyword : keywords) if (value.contains(keyword)) return true;
+        return false;
+    }
     private static double clamp(double value, double min, double max) { return Math.max(min, Math.min(max, value)); }
     private static double d(BigDecimal value) { return money(value).doubleValue(); }
     private static BigDecimal money(double value) { return money(BigDecimal.valueOf(value)); }

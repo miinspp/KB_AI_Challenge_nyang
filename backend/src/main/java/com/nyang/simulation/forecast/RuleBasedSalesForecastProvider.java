@@ -25,11 +25,15 @@ public class RuleBasedSalesForecastProvider implements SalesForecastProvider {
         double rawSlope = denominator == 0 ? 0 : numerator / denominator;
         double maximumSlope = average * input.maximumMonthlyTrendRatio();
         double slope = Math.max(-maximumSlope, Math.min(maximumSlope, rawSlope));
-        double spread = Math.max(0.05, input.volatility()) * 1.2816;
+        // A range is only meaningful when it comes from observed sales variation.
+        // With no variation evidence, P10/P50/P90 remain equal instead of inventing a fixed range.
+        double spread = Math.max(0, input.volatility()) * 1.2816;
 
         List<SalesForecast.MonthlyForecast> months = new ArrayList<>();
         for (int month = 1; month <= input.horizonMonths(); month++) {
-            BigDecimal p50 = won(Math.max(0, average + slope * month));
+            // Forecast from the month after the final observation, not from the regression origin.
+            double forecastIndex = (n - 1) + month;
+            BigDecimal p50 = won(Math.max(0, average + slope * (forecastIndex - xAverage)));
             BigDecimal p10 = won(Math.max(0, p50.doubleValue() * (1 - spread)));
             BigDecimal p90 = won(Math.max(p50.doubleValue(), p50.doubleValue() * (1 + spread)));
             months.add(new SalesForecast.MonthlyForecast(month, p10, p50, p90));

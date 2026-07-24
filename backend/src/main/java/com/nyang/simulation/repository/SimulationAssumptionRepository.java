@@ -37,15 +37,31 @@ public class SimulationAssumptionRepository {
     }
 
     public double industryCv() {
-        return root.path("industry_cv").asDouble(0.15);
+        return root.path("industry_cv").asDouble(0);
     }
 
     public double maxMonthlyTrendRatio() {
         return root.path("max_monthly_trend_ratio").asDouble(0.05);
     }
 
+    public String assumptionVersion() {
+        return root.path("assumption_version").asText("UNVERSIONED");
+    }
+
+    public String officialTermsAsOf() {
+        return root.path("official_terms_as_of").asText("UNKNOWN");
+    }
+
     public double salesShockAutocorrelation() {
         return root.path("sales_shock_autocorrelation").asDouble(0.65);
+    }
+
+    public double fixedCostCv() {
+        return root.path("fixed_cost_cv").asDouble(0.04);
+    }
+
+    public double variableCostCv() {
+        return root.path("variable_cost_cv").asDouble(0.08);
     }
 
     public double repaymentBurdenLimit() {
@@ -57,7 +73,7 @@ public class SimulationAssumptionRepository {
     }
 
     public double defaultTaxReserveRatio() {
-        return root.path("default_tax_reserve_ratio").asDouble(0.08);
+        return root.path("default_tax_reserve_ratio").asDouble(0);
     }
 
     public double defaultBufferMonths() {
