@@ -85,8 +85,16 @@ npm install
 npm run dev              # http://localhost:5173  (API는 8080으로 자동 프록시)
 ```
 
-브라우저에서 5173 접속 → 업종 선택 → 월 매출/지출 입력 → "내 위치 확인하기".
-
+### 데이터 모델 (python)
+- 윈도우
+```
+cd recommend-service
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app:app --port 8000
+```
+- 맥은 python->python3 / pip->pip3
 ### API 요약
 | 메서드 | 경로 | 설명 |
 |---|---|---|
