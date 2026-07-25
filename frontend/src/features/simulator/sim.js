@@ -1,5 +1,3 @@
-import { PRODUCTS } from '../recommend/products';
-
 const HORIZON = 12;
 // 서울시·서울신용보증재단의 2026년 중소기업육성자금 공고(소상공인 포함).
 const POLICY_ID = 'PBLN_000000000117111';
@@ -17,11 +15,13 @@ export const sign = (value) => `${value > 0 ? '+' : ''}${f1(value)}`;
 const man = (won) => f1((Number(won) || 0) / 10_000);
 const avg = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 const sum = (values) => values.reduce((total, value) => total + value, 0);
-function selectedItem(id, existingDebtTotal) {
-  const product = PRODUCTS.find((candidate) => candidate.id === id);
+// product: 장착한 상품 객체(정적 데모 PRODUCTS 또는 /api/recommend 가 반환한 실제 추천 상품)
+function selectedItem(product, existingDebtTotal) {
   if (!product) return null;
+  const id = product.id;
 
   switch (id) {
+    // ── 데모 카탈로그(6종)는 기존 고정 가정치를 그대로 유지 ──
     case 'op':
       return {
         sourceType: 'KB_PRODUCT', id: 'L001', name: product.name,
@@ -61,12 +61,28 @@ function selectedItem(id, existingDebtTotal) {
         protectionBasis: '실제 보장 범위와 보험금은 상품 약관 확인 필요', eligibilityStatus: 'UNKNOWN',
         duplicateGroup: 'business-insurance',
       };
-    default:
-      return null;
+    // ── 그 외(=/api/recommend 가 반환한 실제 추천 정책·상품): isFinance/금액으로 일반화 ──
+    default: {
+      const cap = (product.maxAmountManwon || 2000) * 10000;
+      if (product.isFinance) {
+        return {
+          sourceType: product.source === 'KB' ? 'KB_PRODUCT' : 'SEOUL_POLICY',
+          id, name: product.name, type: 'LOAN', amount: cap,
+          annualRate: product.annualRate ?? 0.035, totalTermMonths: product.termMonths ?? 60,
+          graceMonths: product.graceMonths ?? 12, repaymentType: 'EQUAL_PRINCIPAL', feeRate: 0.005,
+          requiredFundingAmount: cap, eligibilityStatus: 'UNKNOWN', duplicateGroup: 'operating-loan',
+        };
+      }
+      return {
+        sourceType: product.source === 'KB' ? 'KB_PRODUCT' : 'CUSTOM',
+        id, name: product.name, type: 'GRANT', amount: cap,
+        eligibilityStatus: 'UNKNOWN', duplicateGroup: id,
+      };
+    }
   }
 }
 
-export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
+export function buildSimulationPayload({ rank, diag, hometax, equipped, products = [] }) {
   const currentSales = Math.max(0, Number(rank?.sales?.value) || Number(diag.salesMan) * 10_000 || 0);
   const history = (hometax?.salesHistory || [])
     .map((entry) => Number(entry?.amount ?? entry))
@@ -115,7 +131,9 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
       industryCode: diag.industryCode || null,
       region: diag.areaType || 'SEOUL',
     },
-    selectedItems: equipped.map((id) => selectedItem(id, existingDebtTotal)).filter(Boolean),
+    selectedItems: equipped
+      .map((id) => selectedItem(products.find((p) => p.id === id), existingDebtTotal))
+      .filter(Boolean),
   };
 }
 
@@ -194,7 +212,7 @@ function itemExplanation(item) {
   return '약정된 월 납입액을 현금 유출로 반영';
 }
 
-export function buildSimulationDetail(simulation, equipped = []) {
+export function buildSimulationDetail(simulation, equipped = [], products = []) {
   if (!simulation) return emptyDetail();
   const beforeFlows = simulation.baseline.monthlyCashFlows;
   const afterFlows = simulation.selectedScenario.monthlyCashFlows;
@@ -268,11 +286,11 @@ export function buildSimulationDetail(simulation, equipped = []) {
   };
 
   const contributions = simulation.selectedItems.map((item, index) => {
-    const product = PRODUCTS.find((candidate) => candidate.id === equipped[index]);
+    const product = products.find((candidate) => candidate.id === equipped[index]);
     return {
       id: `${item.sourceType}-${item.id}`,
       icon: product?.icon || '·', iconBg: product?.iconBg || '#F5EFE3', iconColor: product?.iconColor || '#8A8178',
-      name: product?.short || item.name,
+      name: product?.short || product?.name || item.name,
       delta: item.type === 'LOAN' ? '대출' : item.type === 'GRANT' ? '지원금' : '월 납입',
       formula: itemExplanation(item),
       note: item.eligibilityStatus === 'FAIL'

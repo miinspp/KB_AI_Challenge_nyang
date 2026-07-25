@@ -30,6 +30,10 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
   useEffect(() => { if (groupOfSelected) setTab(groupOfSelected); }, [groupOfSelected]);
 
   const activeGroup = grouped.find((g) => g.prefix === tab) || grouped[0];
+  // 세부 업종 목록은 토글로 접어둔다. 대분류를 바꾸거나 아직 선택 전이면 펼친다.
+  const [open, setOpen] = useState(!selected);
+  const pickTab = (prefix) => { setTab(prefix); setOpen(true); };
+  const pick = (code) => { onChange(code); setOpen(false); };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -40,19 +44,28 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
 
       <div style={{ display: 'flex', gap: 6 }}>
         {grouped.map((g) => (
-          <button key={g.prefix} className={`ind-tab${tab === g.prefix ? ' on' : ''}`} onClick={() => setTab(g.prefix)}>
+          <button key={g.prefix} className={`ind-tab${tab === g.prefix ? ' on' : ''}`} onClick={() => pickTab(g.prefix)}>
             {g.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-        {activeGroup?.items.map((i) => (
-          <button key={i.code} className={`chip${value === i.code ? ' on' : ''}`} onClick={() => onChange(i.code)}>
-            {i.name}
-          </button>
-        ))}
-      </div>
+      {/* 선택 후엔 접힘: 선택 업종 + 변경 버튼만 노출 */}
+      {!open && selected ? (
+        <button className="input-row" onClick={() => setOpen(true)}
+          style={{ justifyContent: 'space-between', cursor: 'pointer', border: '1.5px solid #CFE3B8', background: '#F5FAEE' }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#2B2825' }}>{selected.name}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#8DBB6C' }}>변경 ▾</span>
+        </button>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+          {activeGroup?.items.map((i) => (
+            <button key={i.code} className={`chip${value === i.code ? ' on' : ''}`} onClick={() => pick(i.code)}>
+              {i.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {selected && (
         <div className="pop" style={{

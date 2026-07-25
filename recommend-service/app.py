@@ -18,12 +18,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import engine
+import agent  # AI 오케스트레이터 (/api/agent)
 
 DATA = Path(__file__).parent / "data" / "reco_pool.json"   # 정책(정제) + KB상품 통합 풀 (build_reco_pool.py 산출)
 CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
 
 app = FastAPI(title="소상공인 추천 서비스")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(agent.router)  # POST /api/agent
 
 # ── 카테고리별 카드 스타일 (products.js 톤과 일치) ──
 STYLE = {
@@ -69,6 +71,7 @@ def load():
             DOC_VECS = _build(texts)
     else:
         DOC_VECS = _build(texts)
+    agent.configure(POLICIES, EMBEDDER, DOC_VECS)  # 에이전트에 추천 엔진 컨텍스트 주입
     print(f"[startup] 정책 {len(POLICIES)}건, 임베딩 {EMBEDDER.mode}, shape={DOC_VECS.shape}")
 
 
@@ -89,7 +92,7 @@ def days_left(deadline: str | None):
 
 
 def to_product(item: dict, reason: str) -> dict:
-    """엔진 결과 1건 → RecommendScreen product 스키마"""
+    """엔진 결과 1건 → RecommendScreen/시뮬레이터 공용 product 스키마"""
     p = item["policy"]
     st = STYLE.get(p.get("category"), DEFAULT_STYLE)
     dleft = days_left(p.get("deadline"))
@@ -102,9 +105,14 @@ def to_product(item: dict, reason: str) -> dict:
         {"k": "신청기간", "v": p.get("apply_period") or "상세 참조"},
         {"k": "신청방법", "v": (p.get("apply_method") or "공고문 참조")[:60]},
     ]
+    title = p["title"]
+    is_finance = p.get("is_finance", False)
+    source = p.get("source", "GOV")   # "KB"(자체상품) | "GOV"(정책·지원제도)
+    terms = agent.assume_terms(source, is_finance)  # 시뮬레이터(Java 엔진) 연동용 가정 금리·기간 — 데모 가정치
     return {
         "id": p["id"],
-        "name": p["title"],
+        "name": title,
+        "short": title if len(title) <= 13 else title[:12] + "…",  # 시뮬레이터 장착 슬롯용 축약 이름
         "tag": p.get("category") or "지원제도",
         **st,
         "fit": int(round(item["final_score"] * 100)),
@@ -113,10 +121,15 @@ def to_product(item: dict, reason: str) -> dict:
         "spec2": spec2,
         "deadline": p.get("deadline"),
         "daysLeft": dleft,          # 프론트 D-day 뱃지용
-        "isFinance": p.get("is_finance", False),
-        "source": p.get("source", "GOV"),   # "KB"(자체상품) | "GOV"(정책·지원제도)
+        "isFinance": is_finance,
+        "source": source,
         "link": p.get("url"),
         "details": details,
+        # 시뮬레이터(Java 엔진) selectedItems 구성용 — 실제 약관 아님, 데모 가정치
+        "maxAmountManwon": amount,
+        "annualRate": terms["annual_rate"],
+        "termMonths": terms["term_months"],
+        "graceMonths": terms["grace_months"],
         # 디버그/발표용 — 왜 추천됐는지 축별 점수
         "_scores": {"rule": item["rule_score"], "embedding": item["emb_sim"],
                     "evidence": item["evidence"]},

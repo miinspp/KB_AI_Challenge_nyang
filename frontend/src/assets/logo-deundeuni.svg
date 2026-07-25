@@ -1,0 +1,34 @@
+<svg width="560" height="360" viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .wm { font-family: 'Pretendard Variable','Pretendard','Apple SD Gothic Neo',sans-serif; font-weight: 800; fill: #2B2825; letter-spacing: -1px; }
+    .cap { font-family: 'Pretendard Variable','Pretendard',sans-serif; font-weight: 700; fill: #A79C8E; letter-spacing: 0; }
+  </style>
+
+  <!-- ===== 가로형 로고 (아이콘 + 워드마크) ===== -->
+  <!-- 아이콘: 라운드 스퀘어 골드 배지 + 새싹(성장을 든든하게 받친다) -->
+  <g transform="translate(40,40)">
+    <rect x="0" y="0" width="96" height="96" rx="26" fill="#FFC01E"/>
+    <!-- 받침(든든한 바닥) -->
+    <rect x="26" y="66" width="44" height="9" rx="4.5" fill="#fff"/>
+    <!-- 줄기 -->
+    <rect x="44.5" y="34" width="7" height="34" rx="3.5" fill="#fff"/>
+    <!-- 잎 두 장 -->
+    <path d="M48 40 C48 26 36 22 26 24 C26 38 38 44 48 42 Z" fill="#fff"/>
+    <path d="M48 44 C48 32 60 28 70 30 C70 42 58 48 48 46 Z" fill="#fff"/>
+  </g>
+
+  <text x="156" y="108" class="wm" font-size="62">든든이</text>
+
+  <!-- ===== 아이콘 단독 (앱 아이콘용) ===== -->
+  <g transform="translate(40,210)">
+    <rect x="0" y="0" width="72" height="72" rx="20" fill="#FFC01E"/>
+    <rect x="19.5" y="49" width="33" height="7" rx="3.5" fill="#fff"/>
+    <rect x="33.4" y="25" width="5.2" height="26" rx="2.6" fill="#fff"/>
+    <path d="M36 30 C36 19.5 27 16.5 19.5 18 C19.5 28.5 28.5 33 36 31.5 Z" fill="#fff"/>
+    <path d="M36 33 C36 24 45 21 52.5 22.5 C52.5 31.5 43.5 36 36 34.5 Z" fill="#fff"/>
+  </g>
+
+  <!-- ===== 단색(모노) 워드마크 예시 ===== -->
+  <text x="140" y="262" class="wm" font-size="40">든든이</text>
+  <text x="140" y="292" class="cap" font-size="15">소상공인 금융 파트너</text>
+</svg>

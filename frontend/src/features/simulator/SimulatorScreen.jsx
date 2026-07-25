@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
 import Couple from './Couple';
-import { PRODUCTS } from '../recommend/products';
 import { buildSimulationDetail, SIM_VIEWS } from './sim';
 
-export default function SimulatorScreen({ equipped, toggle, simRows, simulation, loading, error }) {
+export default function SimulatorScreen({ products, equipped, toggle, simRows, simulation, loading, error }) {
   const [view, setView] = useState('cash');
-  const eq = equipped.map((id) => PRODUCTS.find((p) => p.id === id)).filter(Boolean);
-  const detail = useMemo(() => buildSimulationDetail(simulation, equipped), [simulation, equipped]);
+  const eq = equipped.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+  const detail = useMemo(() => buildSimulationDetail(simulation, equipped, products), [simulation, equipped, products]);
   const current = detail.views[view] || detail.views.cash;
   const riskTone = eq.length === 0 ? 'base' : detail.riskAfter <= detail.riskBefore ? 'good' : 'bad';
   const nice = eq.length === 0 || detail.riskAfter <= detail.riskBefore;
@@ -40,7 +39,7 @@ export default function SimulatorScreen({ equipped, toggle, simRows, simulation,
                 display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', textAlign: 'left',
               }}>
                 <span className="icon-badge" style={{ width: 24, height: 24, borderRadius: 8, fontSize: 12, background: '#fff', color: p.iconColor }}>{p.icon}</span>
-                <span style={{ flex: 1, fontSize: 10.5, fontWeight: 800, lineHeight: 1.3, color: '#2B2825' }}>{p.short}</span>
+                <span style={{ flex: 1, fontSize: 10.5, fontWeight: 800, lineHeight: 1.3, color: '#2B2825' }}>{p.short || p.name}</span>
               </button>
             )) : (
               <div style={{ flex: 1, borderRadius: 12, border: '1.5px dashed #E4D8C2', background: 'rgba(255,255,255,.5)', display: 'grid', placeItems: 'center', padding: 10, textAlign: 'center' }}>
@@ -177,7 +176,7 @@ export default function SimulatorScreen({ equipped, toggle, simRows, simulation,
           보유 아이템 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 탭하여 장착/해제</span>
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {PRODUCTS.map((p) => {
+          {products.map((p) => {
             const on = equipped.includes(p.id);
             return (
               <button key={p.id} onClick={() => toggle(p.id)} style={{
@@ -187,7 +186,7 @@ export default function SimulatorScreen({ equipped, toggle, simRows, simulation,
                 display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left', minHeight: 52, transition: 'all .2s',
               }}>
                 <span className="icon-badge" style={{ width: 30, height: 30, borderRadius: 10, fontSize: 14, background: p.iconBg, color: p.iconColor }}>{p.icon}</span>
-                <span style={{ flex: 1, fontSize: 11.5, fontWeight: 800, color: '#2B2825', lineHeight: 1.35 }}>{p.short}</span>
+                <span style={{ flex: 1, fontSize: 11.5, fontWeight: 800, color: '#2B2825', lineHeight: 1.35 }}>{p.short || p.name}</span>
                 <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: on ? '#C98A00' : '#D8CDBB' }}>{on ? '✓' : '+'}</span>
               </button>
             );

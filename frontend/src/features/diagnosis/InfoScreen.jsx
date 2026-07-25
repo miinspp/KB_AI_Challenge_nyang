@@ -130,18 +130,13 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
   return (
     <div className="scr">
       <div>
-        <h1 className="h1">사장님, 반가워요!<br />우리 가게 운영, 저희가 도와드릴게요</h1>
-        <p className="sub">
-          사장님 정보를 바탕으로 우리 가게에 꼭 맞는 진단과 운영 관리를 도와드려요.<br />
-          연동하거나 직접 입력해서 시작해 보세요.
-        </p>
+        <h1 className="h1">사장님, 반가워요!<br />우리 가게부터 진단해요</h1>
+        <p className="sub">연동하면 자동으로 채워져요. 직접 입력해도 돼요.</p>
       </div>
 
       <LinkCard
         iconLabel="KB" iconBg="#6FA85A"
-        title="KB 계좌 마이데이터 연동"
-        desc="사장님 계좌 흐름을 바탕으로, 우리 가게에 더 정확하고 확실한 운영 도움을 드려요."
-        summary="월매출 · 월지출 · 카드/현금 비율 · 대출상환액"
+        title="KB 계좌 연동"
         buildFinancials={() => KB_FINANCIALS}
         onLinked={handleKbLinked}
         onUnlink={unlinkKb}
@@ -149,8 +144,6 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       <LinkCard
         iconLabel="홈택스" iconBg="#4F7139"
         title="국세청 홈택스 연동"
-        desc="사업자 등록·세금계산서 자료를 바탕으로, 우리 가게에 딱 맞는 진단과 운영 도움을 드려요."
-        summary="업종 · 지역 · 매출 · 지출 · 지출세부 · 개업시기"
         buildFinancials={() => HOMETAX_FINANCIALS}
         onLinked={handleHometaxLinked}
         onUnlink={unlinkHometax}
@@ -187,38 +180,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       {field('salesMan', { label: '월 평균 매출', ph: '예: 2,500', required: true })}
       {field('expenseMan', { label: '월 평균 지출', ph: '예: 1,900', required: true })}
       {field('currentCashMan', { label: '현재 보유 현금', ph: '예: 1,500', required: true })}
-      <p style={{ fontSize: 11.5, color: '#A79C8E', lineHeight: 1.55 }}>
-        현재 보유 현금은 월 순이익과 다른 값이에요. 실제 통장·현금 잔액을 입력해야 현금 부족 위험이 정확해져요.
-      </p>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <p className="label-sm">
-          우리 가게 월 매출·지출 <span style={{ color: '#D0564C', fontWeight: 800 }}>*</span>
-          <span style={{ fontWeight: 500, color: '#C4BAAD' }}> · 최근 월평균 기준</span>
-        </p>
-        <div className="input-row">
-          <span className="k" style={{ width: 96 }}>월 평균 매출</span>
-          <input value={diag.salesMan} onChange={(e) => set({ salesMan: e.target.value.replace(/[^\d]/g, '') })}
-            placeholder="예: 2,500" inputMode="numeric" />
-          <span className="u">만원</span>
-        </div>
-        <div className="input-row">
-          <span className="k" style={{ width: 96 }}>월 평균 지출</span>
-          <input value={diag.expenseMan} onChange={(e) => set({ expenseMan: e.target.value.replace(/[^\d]/g, '') })}
-            placeholder="예: 1,900" inputMode="numeric" />
-          <span className="u">만원</span>
-        </div>
-        <div className="input-row">
-          <span className="k" style={{ width: 96 }}>사업 운영 기간</span>
-          <input value={diag.bizAgeYears} onChange={(e) => set({ bizAgeYears: e.target.value.replace(/[^\d.]/g, '') })}
-            placeholder="예: 2" inputMode="decimal" />
-          <span className="u">년</span>
-        </div>
-        <p style={{ fontSize: 11.5, color: '#C4BAAD', lineHeight: 1.55 }}>
-          지출(재료비·인건비·임대료 등)을 넣으면 순수익·비용효율까지 함께 진단해요.
-          운영 기간은 창업 초기 전용 지원사업 매칭에 쓰여요.
-        </p>
-      </div>
+      {field('bizAgeYears', { label: '사업 운영 기간', ph: '예: 2', unit: '년', decimal: true })}
 
 
       {showDetail && (
@@ -227,9 +189,6 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
           {field('rentMan', { label: '월 임대료', ph: '예: 250' })}
           {field('laborMan', { label: '월 인건비', ph: '예: 400' })}
           {field('purchaseMan', { label: '월 재료비(매입)', ph: '예: 900' })}
-
-          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>개업 시기</p>
-          {field('bizAge', { label: '개업 시기(업력)', ph: '예: 2021년 3월', unit: '', text: true })}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E' }}>주 매출 채널 또는 카드·현금 비율</p>
