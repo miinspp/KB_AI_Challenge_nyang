@@ -31,8 +31,11 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, link
     onUnlink && onUnlink();
   };
 
+  // desc: 상태별 안내문(예: 연동 전 "매출·지출·6개월 추이 한 번에" / 완료 "…불러옴"). 없으면 기본 안심 문구.
+  const descText = (status === 'done' ? summary : desc) || desc || '조회 전용 · 출금 불가';
+
   return (
-    <div className="link-card">
+    <div className="link-card" style={status === 'done' ? { borderColor: 'var(--green-border)' } : undefined}>
       <span style={{
         flex: 'none', width: 40, height: 40, borderRadius: 12, background: iconBg,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12.5, color: '#fff',
@@ -40,7 +43,7 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, link
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>{title}</p>
-        <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 2 }}>조회 전용 · 출금 불가</p>
+        <p style={{ fontSize: 11.5, color: status === 'done' ? 'var(--green)' : 'var(--muted-mid)', marginTop: 2 }}>{descText}</p>
       </div>
 
       {status === 'off' && (

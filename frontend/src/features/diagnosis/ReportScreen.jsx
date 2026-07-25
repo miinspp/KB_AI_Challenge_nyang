@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import DistributionChart from './DistributionChart';
 import { fmtMan, fmtRate } from '../../shared/format';
 
+const r1 = (v) => Math.round(v * 10) / 10;
+
 /**
- * 화면 2 — 진단 리포트. 전적으로 백엔드 /api/rank 응답으로 구성된다.
- *   매출·순수익은 서울시 추정매출 실측 분포 기준 상위 %,
- *   비용효율은 업종 평균 영업이익률(소상공인실태조사) 대비 점수.
- *   costHealth(임대료 부담률)·stability(매출 추세·변동성)는 입력이 있을 때만 내려오는 보정축.
+ * 화면 1 — 진단 리포트 v2. 전적으로 백엔드 /api/rank 응답으로 구성된다.
+ * 재현본 이식: 지표마다 "근거 보기"를 펼치면 계산 단계(내 입력값 → 비교 대상 → 계산 → 종합 반영)와
+ * 출처를 그대로 보여준다. 종합점수 = 기본 3축(매출 50 · 순수익 30 · 비용효율 20)
+ * × (1 − 보정축 비중) + 보정축(비용구조 15 · 매출안정성 15, 자료가 있을 때만).
  */
-export default function ReportScreen({ rank, detail, meta, salesHistory }) {
-  const [showNotes, setShowNotes] = useState(false);
+export default function ReportScreen({ rank, meta, salesHistory }) {
+  const [openMetric, setOpenMetric] = useState(null);
 
   if (!rank) {
     return (
@@ -21,277 +22,161 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
   }
 
   const { sales, profit, margin, areaRank, peer, costHealth, stability } = rank;
+  // 보정축이 있으면 기본 3축 비중이 줄어든다 (백엔드 RankService 와 동일 규칙 — 근거 표기용)
+  const wBase = 1 - (costHealth ? 0.15 : 0) - (stability ? 0.15 : 0);
+  const wBasePct = r1(wBase * 100);
+  const expenseWon = sales.value - profit.value;
+
+  const metrics = [
+    {
+      key: 'sales', name: '매출',
+      valueText: `상위 ${sales.topPercent}%`, pct: sales.percentile,
+      sub: `${fmtMan(sales.value)} · 업종 중위 ${fmtMan(sales.peerMedian)}`,
+      steps: [
+        { k: '내 입력값', v: `월 매출 ${fmtMan(sales.value)}` },
+        { k: '비교 대상', v: `서울 ${rank.industryName} ${peer.nStores.toLocaleString()}곳 (중위 ${fmtMan(sales.peerMedian)} · P25 ${fmtMan(sales.peerP25)} · P75 ${fmtMan(sales.peerP75)})` },
+        { k: '계산', v: `실측 분포 격자에서 내 매출 위치를 역보간 → 백분위 ${r1(sales.percentile)}점 = 상위 ${sales.topPercent}%` },
+        { k: '종합 반영', v: `가중치 50% × ${wBasePct}% = ${r1(0.5 * wBase * sales.percentile)}점 기여` },
+      ],
+      source: '출처: 서울시 상권분석서비스 추정매출(OA-15572) 점포당 월매출 분포',
+    },
+    {
+      key: 'profit', name: '순수익',
+      valueText: `상위 ${profit.topPercent}%`, pct: profit.percentile,
+      sub: `${fmtMan(profit.value)} · 업종 평균 이익률 ${fmtRate(margin.benchmark)} 기준 분포`,
+      steps: [
+        { k: '내 순수익', v: `매출 ${fmtMan(sales.value)} − 지출 ${fmtMan(expenseWon)} = ${fmtMan(profit.value)}` },
+        { k: '비교 분포', v: `매출 분포 × 업종 평균 영업이익률 ${fmtRate(margin.benchmark)} → 동종 순수익 중위 ${fmtMan(profit.peerMedian)}` },
+        { k: '계산', v: `유도 분포에서 역보간 → 백분위 ${r1(profit.percentile)}점 = 상위 ${profit.topPercent}%` },
+        { k: '종합 반영', v: `가중치 30% × ${wBasePct}% = ${r1(0.3 * wBase * profit.percentile)}점 기여` },
+      ],
+      source: '출처: 서울시 추정매출 분포 × 소상공인실태조사 업종 평균 영업이익률',
+    },
+    {
+      key: 'margin', name: '비용 효율',
+      valueText: `${r1(margin.score)}점`, pct: margin.score,
+      sub: `내 이익률 ${fmtRate(margin.value)} vs 업종 ${fmtRate(margin.benchmark)} (평균=50점)`,
+      steps: [
+        { k: '내 이익률', v: `순수익 ÷ 매출 = ${fmtRate(margin.value)}` },
+        { k: '업종 벤치마크', v: `${rank.benchmarkGroupLabel} 평균 영업이익률 ${fmtRate(margin.benchmark)}` },
+        { k: '계산', v: `50 × (내 이익률 ÷ 벤치마크) = ${r1(margin.score)}점 (평균이면 50점, 2배면 100점)` },
+        { k: '종합 반영', v: `가중치 20% × ${wBasePct}% = ${r1(0.2 * wBase * margin.score)}점 기여` },
+      ],
+      source: '출처: 소상공인실태조사(중소벤처기업부·통계청) 업종 평균 영업이익률',
+    },
+  ];
+
+  if (costHealth) {
+    const b = costHealth.benchmark;
+    const rentBench = b ? (b.rentRatioAdjusted != null ? b.rentRatioAdjusted : b.rentRatio) : null;
+    const adjusted = b && b.rentRatioAdjusted != null;
+    const steps = [
+      {
+        k: '임차료율',
+        v: `${fmtRate(costHealth.rentBurden)}${rentBench != null ? ` vs 업종 ${fmtRate(rentBench)}` : ' (10% 이하 건전 경험칙)'}`
+          + (adjusted ? ` (${b.areaType} 임대료 ×${b.areaRentMultiplier} 보정)` : ''),
+      },
+    ];
+    if (costHealth.laborRatio != null && b?.laborRatio != null) steps.push({ k: '인건비율', v: `${fmtRate(costHealth.laborRatio)} vs 업종 ${fmtRate(b.laborRatio)}` });
+    if (costHealth.purchaseRatio != null && b?.purchaseRatio != null) steps.push({ k: '원가율', v: `${fmtRate(costHealth.purchaseRatio)} vs 업종 ${fmtRate(b.purchaseRatio)}` });
+    steps.push({ k: '계산', v: `항목별 50 × (2 − 내 비율 ÷ 업종 평균) 점수를 평균 → ${r1(costHealth.score)}점` });
+    steps.push({ k: '종합 반영', v: `보정축 가중치 15% = ${r1(0.15 * costHealth.score)}점 기여` });
+    metrics.push({
+      key: 'cost', name: '비용 구조',
+      valueText: `${r1(costHealth.score)}점`, pct: costHealth.score,
+      sub: `임차료율 ${fmtRate(costHealth.rentBurden)}${rentBench != null ? ` vs 업종 ${fmtRate(rentBench)}` : ''}${adjusted ? ` (${b.areaType} 보정)` : ''}`,
+      steps,
+      source: '출처: KOSIS 소상공인실태조사 2023 비용구조 + 한국부동산원 서울 상가 임대료',
+    });
+  }
+
+  if (stability) {
+    const historyText = (salesHistory || [])
+      .map((m) => (m && typeof m === 'object' ? m.amount : m))
+      .filter((v) => Number.isFinite(v))
+      .map((v) => `${Math.round(v / 1_000_000) / 10}천만`)
+      .join(' → ');
+    const trendText = `${stability.trendPerMonth >= 0 ? '+' : ''}${fmtRate(stability.trendPerMonth)}`;
+    metrics.push({
+      key: 'stability', name: '매출 안정성',
+      valueText: `${r1(stability.score)}점`, pct: stability.score,
+      sub: `최근 ${stability.months}개월 추세 ${trendText}/월 · 변동성 ${fmtRate(stability.volatility)}`,
+      steps: [
+        { k: '사용 데이터', v: `홈택스 최근 ${stability.months}개월 매출${historyText ? ` (${historyText})` : ''}` },
+        { k: '추세', v: `회귀 기울기 ÷ 평균 = ${trendText}/월 → ${r1(stability.trendScore)}점 (0%=50점, ±5%에서 포화)` },
+        { k: '변동성', v: `표준편차 ÷ 평균 = ${fmtRate(stability.volatility)} → ${r1(stability.volatilityScore)}점 (5% 이하 100점, 30% 이상 0점)` },
+        { k: '계산', v: `추세·변동성 50:50 평균 = ${r1(stability.score)}점` },
+        { k: '종합 반영', v: `보정축 가중치 15% = ${r1(0.15 * stability.score)}점 기여` },
+      ],
+      source: '출처: 국세청 홈택스 연동 월별 매출 신고자료',
+    });
+  }
 
   return (
     <div className="scr">
       {/* 헤드라인 */}
-      <div style={{ background: 'linear-gradient(165deg,#FFE9A8,#FFF3D2)', borderRadius: 22, padding: 22 }}>
-        <p style={{ fontSize: 13, fontWeight: 800, color: '#9A7B1E' }}>
-          서울 {rank.industryName} {peer.nStores.toLocaleString()}곳 중
+      <div className="card" style={{ padding: 22 }}>
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>{rank.industryName} 업종에서</p>
+        <p style={{ marginTop: 6, fontSize: 38, fontWeight: 900, color: 'var(--blue)', letterSpacing: -1.4, lineHeight: 1.1 }}>
+          상위 {rank.topPercent}%
         </p>
-        <p style={{ marginTop: 6, fontSize: 34, fontWeight: 900, color: 'var(--ink)', letterSpacing: -1 }}>
-          상위 {rank.topPercent}%<span style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink-soft)' }}>&nbsp;사장님이에요</span>
-        </p>
-        <p style={{ marginTop: 8, fontSize: 12.5, color: '#8A7A55', lineHeight: 1.6 }}>
-          매출·순수익·비용효율{costHealth ? '·비용구조' : ''}{stability ? '·매출안정성' : ''}을
-          종합한 결과예요 (종합점수 {rank.compositeScore}점).
-        </p>
+        <p style={{ marginTop: 8, fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>종합 {rank.compositeScore}점 / 100</p>
       </div>
 
-      {/* 실측 분포 곡선 */}
-      {detail?.quantiles && (
-        <DistributionChart
-          quantiles={detail.quantiles}
-          myValue={sales.value}
-          salesPercentile={sales.percentile}
-        />
-      )}
-
-      {/* 상권유형 비교 (선택 시) */}
-      {areaRank && (
-        <div style={{ background: 'var(--green-bg)', border: '1.5px solid #DCEBC6', borderRadius: 18, padding: '15px 17px' }}>
-          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--green-text)' }}>같은 <b>{areaRank.areaType}</b>만 비교하면</p>
-          <p style={{ marginTop: 5, fontSize: 22, fontWeight: 900, color: 'var(--ink)' }}>
-            상위 {areaRank.topPercent}%
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#7C9463' }}>
-              {' '}· 매출 상위 {areaRank.salesTopPercent}%
-            </span>
-          </p>
-          <p style={{ marginTop: 4, fontSize: 11.5, color: '#7C9463' }}>
-            {areaRank.areaType} 점포 {areaRank.nStores.toLocaleString()}곳 · 중위 월매출 {fmtMan(areaRank.peerMedian)}
-          </p>
-        </div>
-      )}
-
-      {/* 3대 지표 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <MetricCard
-          name="월 매출" topPercent={sales.topPercent} pct={sales.percentile}
-          value={fmtMan(sales.value)} barColor="#FFC24B"
-          note={`동종 중위 ${fmtMan(sales.peerMedian)}`}
-          sub={`P25 ${fmtMan(sales.peerP25)} ~ P75 ${fmtMan(sales.peerP75)}`}
-        />
-        <MetricCard
-          name="월 순수익" topPercent={profit.topPercent} pct={profit.percentile}
-          value={fmtMan(profit.value)} barColor="var(--green-soft)"
-          note={`동종 추정 중위 ${fmtMan(profit.peerMedian)}`}
-          sub="매출 − 지출 기준 · 업종 평균 이익률로 분포 추정"
-        />
-        <MetricCard
-          name="비용 효율" topPercent={null} pct={margin.score} score={margin.score}
-          value={fmtRate(margin.value)} barColor="var(--gold-deep)"
-          note={`업종 벤치마크 ${fmtRate(margin.benchmark)}`}
-          sub={`${rank.benchmarkGroupLabel} 평균 영업이익률 대비 (평균=50점)`}
-        />
+      {/* 지표별 근거 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {metrics.map((m) => {
+          const open = openMetric === m.key;
+          return (
+            <div key={m.key}>
+              <button onClick={() => setOpenMetric(open ? null : m.key)}
+                style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>{m.name}</span>
+                  <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 800, color: 'var(--muted-faint)' }}>{open ? '근거 접기 ▲' : '근거 보기 ▼'}</span>
+                  <span style={{ marginLeft: 'auto', flex: 'none', fontSize: 14.5, fontWeight: 900, color: 'var(--blue)' }}>{m.valueText}</span>
+                </div>
+                <div style={{ marginTop: 8, height: 9, background: '#EFE7D8', borderRadius: 5, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 5, transition: 'width .6s', background: '#5B8AC4', width: `${Math.max(2, Math.min(100, m.pct))}%` }} />
+                </div>
+                <p style={{ marginTop: 6, fontSize: 11.5, color: '#B0A697' }}>{m.sub}</p>
+              </button>
+              {open && (
+                <div className="evidence-box">
+                  <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)' }}>이렇게 계산했어요</p>
+                  {m.steps.map((st) => (
+                    <div key={st.k} className="evidence-row">
+                      <span className="evidence-k">{st.k}</span>
+                      <span className="evidence-v">{st.v}</span>
+                    </div>
+                  ))}
+                  <p className="evidence-src">{m.source}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* 보정축 — 비용 구조 (임대료 부담률) */}
-      {costHealth && <CostHealthCard ch={costHealth} />}
-
-      {/* 보정축 — 매출 안정성 (추세·변동성) */}
-      {stability && <StabilityCard st={stability} history={salesHistory} />}
-
-      {/* 모집단 */}
-      <div style={{ background: 'var(--warm)', borderRadius: 14, padding: '12px 15px' }}>
-        <p style={{ fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.6 }}>
-          비교 모집단 · 서울시 {rank.industryName} 점포 {peer.nStores.toLocaleString()}개
-          (상권 {peer.nAreas.toLocaleString()}곳의 점포당 매출 분포, 점포수 가중)
+      {/* 산출 기준 요약 */}
+      <div style={{ background: 'var(--green-bg)', borderRadius: 14, padding: '14px 16px' }}>
+        <p style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700, lineHeight: 1.6 }}>
+          서울시 상권분석서비스 실측 데이터 기준으로 산출했어요{areaRank ? ` · ${areaRank.areaType} 비교 포함` : ''}
         </p>
       </div>
 
-      {/* 산출 근거 */}
-      <div className="card" style={{ padding: '14px 16px' }}>
-        <button onClick={() => setShowNotes((s) => !s)} style={{
-          width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)' }}>산출 근거 · 방법론</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted-faint)' }}>{showNotes ? '접기 ▲' : '보기 ▼'}</span>
-        </button>
-        {showNotes && (
-          <ul className="pop" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 7, listStyle: 'none' }}>
-            {rank.notes.map((n, i) => (
-              <li key={i} style={{ fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 0, color: '#D8CDBB' }}>·</span>{n}
-              </li>
-            ))}
-            {meta?.meta && (
-              <li style={{ fontSize: 11, color: 'var(--muted-soft)', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 0, color: '#D8CDBB' }}>·</span>
-                출처: {meta.meta.sourceDataset} (기준 분기 {Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})
-              </li>
-            )}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * 비용 구조 건전성. benchmark 가 있으면 임차료율·인건비율·원가율을 소상공인실태조사
- * 업종 평균과 나란히 비교(막대)한다. 없으면 임대료 부담률 10% 경험칙 게이지로 폴백.
- */
-function CostHealthCard({ ch }) {
-  const b = ch.benchmark;
-  const rentAdjusted = b && b.rentRatioAdjusted != null;
-  const rows = b ? [
-    { label: '임차료율', mine: ch.rentBurden, avg: rentAdjusted ? b.rentRatioAdjusted : b.rentRatio,
-      badge: rentAdjusted ? b.areaType : null },
-    ch.laborRatio != null && b.laborRatio != null ? { label: '인건비율', mine: ch.laborRatio, avg: b.laborRatio } : null,
-    ch.purchaseRatio != null && b.purchaseRatio != null ? { label: '원가율', mine: ch.purchaseRatio, avg: b.purchaseRatio } : null,
-  ].filter(Boolean) : [];
-
-  return (
-    <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
-          비용 구조 건전성
-          <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{ch.score}점 / 100</span>
-        </span>
-        {b && <span style={{ fontSize: 11, color: 'var(--muted-soft)' }}>{b.industryLabel} 평균 대비</span>}
-      </div>
-
-      {b ? (
-        <>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 11 }}>
-            {rows.map((r) => <CostCompareBar key={r.label} {...r} />)}
-          </div>
-          <p style={{ marginTop: 10, fontSize: 10.5, color: 'var(--muted-faint)', lineHeight: 1.5 }}>
-            소상공인실태조사(2023) 업종 평균 대비 · 낮을수록 좋아요 · 업종 평균이면 50점
-            {rentAdjusted && (
-              <><br />임차료율 기준은 <b style={{ color: '#B08A2E' }}>{b.areaType}</b> 임대료로 보정
-                (전국 {(b.rentRatio * 100).toFixed(1)}% × {b.areaRentMultiplier} · 한국부동산원 서울 상가 임대료)</>
-            )}
+      {/* 방법론 노트 */}
+      <div style={{ background: 'var(--warm)', borderRadius: 14, padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+        {[
+          ...(rank.notes || []),
+          ...(areaRank ? [`${areaRank.areaType}만 비교하면 상위 ${areaRank.topPercent}% (매출 상위 ${areaRank.salesTopPercent}%) 예요.`] : []),
+          `비교 모집단: 서울시 ${rank.industryName} 점포 ${peer.nStores.toLocaleString()}개 (상권 ${peer.nAreas.toLocaleString()}곳, 점포수 가중)`,
+          ...(meta?.meta ? [`출처: ${meta.meta.sourceDataset} (기준 분기 ${Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})`] : []),
+        ].map((t, i) => (
+          <p key={i} style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 11, position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 0, color: '#D8CDBB' }}>·</span>{t}
           </p>
-        </>
-      ) : (
-        <FlatRentGauge burden={ch.rentBurden * 100} laborRatio={ch.laborRatio} purchaseRatio={ch.purchaseRatio} />
-      )}
-    </div>
-  );
-}
-
-/** 내 비율 vs 업종 평균 비교 막대. 업종 평균 위치에 기준선 표시. badge 있으면 상권유형 보정 표시. */
-function CostCompareBar({ label, mine, avg, badge }) {
-  const scale = Math.max(mine, avg) * 1.5 || 1;             // 축 상한
-  const minePct = Math.min(100, (mine / scale) * 100);
-  const avgPct = Math.min(100, (avg / scale) * 100);
-  const good = mine <= avg;
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
-        <span style={{ color: 'var(--muted)', fontWeight: 700 }}>
-          {label}
-          {badge && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 800, color: '#B08A2E',
-            background: '#FFF6DD', borderRadius: 6, padding: '1px 5px' }}>{badge} 보정</span>}
-        </span>
-        <span>
-          <b style={{ color: good ? 'var(--green-text)' : 'var(--danger)' }}>{(mine * 100).toFixed(1)}%</b>
-          <span style={{ color: 'var(--muted-faint)' }}> vs {badge ? '' : '평균 '}{(avg * 100).toFixed(1)}%</span>
-        </span>
-      </div>
-      <div style={{ height: 8, background: '#F5EFE3', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: 8, borderRadius: 4,
-          width: `${Math.max(2, minePct)}%`, background: good ? 'var(--green-soft)' : '#E8896C', transition: 'width .5s' }} />
-        {/* 업종 평균 기준선 */}
-        <div style={{ position: 'absolute', left: `${avgPct}%`, top: -2, width: 2, height: 12, background: 'var(--muted)', borderRadius: 1 }} />
-      </div>
-    </div>
-  );
-}
-
-/** 벤치마크 미로드 시 폴백 — 임대료 부담률 10% 경험칙 게이지. */
-function FlatRentGauge({ burden, laborRatio, purchaseRatio }) {
-  const pos = Math.min(100, (burden / 25) * 100);
-  const healthy = burden <= 10;
-  return (
-    <>
-      <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: healthy ? 'var(--green-text)' : 'var(--danger)' }}>
-          임대료 부담률 {burden.toFixed(1)}%
-        </span>
-      </div>
-      <div style={{ marginTop: 10, height: 8, borderRadius: 4, position: 'relative',
-        background: 'linear-gradient(90deg,#DCEBC6 0%,#DCEBC6 40%,#F3E4C0 40%,#F3E4C0 70%,#F5D9D6 70%)' }}>
-        <div style={{ position: 'absolute', left: '40%', top: -3, width: 2, height: 14, background: 'var(--green-soft)', borderRadius: 1 }} />
-        <div style={{ position: 'absolute', left: `calc(${pos}% - 6px)`, top: -2, width: 12, height: 12,
-          borderRadius: '50%', background: healthy ? 'var(--green-soft)' : 'var(--danger)', border: '2.5px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
-      </div>
-      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-soft)' }}>
-        <span>10% 이하 건전 · 25% 이상 위험 (경험칙)</span>
-        <span>
-          {purchaseRatio != null && `재료비 ${(purchaseRatio * 100).toFixed(0)}%`}
-          {purchaseRatio != null && laborRatio != null && ' · '}
-          {laborRatio != null && `인건비 ${(laborRatio * 100).toFixed(0)}%`}
-        </span>
-      </div>
-    </>
-  );
-}
-
-/** 매출 안정성 — 최근 월별 매출 스파크라인 + 추세·변동성 점수. */
-function StabilityCard({ st, history }) {
-  const amounts = (history || []).map((m) => m.amount);
-  let spark = null;
-  if (amounts.length >= 3) {
-    const W = 120, H = 34, min = Math.min(...amounts), max = Math.max(...amounts);
-    const span = max - min || 1;
-    const pts = amounts.map((v, i) => {
-      const x = 4 + (i / (amounts.length - 1)) * (W - 8);
-      const y = H - 5 - ((v - min) / span) * (H - 10);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
-    spark = (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: 120, height: 34, flex: 'none' }}>
-        <polyline points={pts} fill="none" stroke="#E8B93E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  const trendPct = (st.trendPerMonth * 100).toFixed(1);
-  const up = st.trendPerMonth >= 0;
-  return (
-    <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
-            매출 안정성
-            <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{st.score}점 / 100</span>
-          </span>
-          <p style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.7, color: 'var(--ink-soft)' }}>
-            추세 <b style={{ color: up ? 'var(--green-text)' : 'var(--danger)' }}>{up ? '+' : ''}{trendPct}%/월</b>
-            <span style={{ color: 'var(--muted-faint)' }}> ({st.trendScore}점)</span>
-            <br />
-            변동성 <b style={{ color: st.volatility <= 0.15 ? 'var(--green-text)' : 'var(--danger)' }}>{(st.volatility * 100).toFixed(1)}%</b>
-            <span style={{ color: 'var(--muted-faint)' }}> ({st.volatilityScore}점)</span>
-          </p>
-        </div>
-        {spark}
-      </div>
-      <p style={{ marginTop: 7, fontSize: 11, color: 'var(--muted-soft)' }}>
-        최근 {st.months}개월 매출 기준 · 홈택스 연동 자료
-      </p>
-    </div>
-  );
-}
-
-function MetricCard({ name, topPercent, pct, value, barColor, note, sub, score }) {
-  return (
-    <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
-          {name}
-          {topPercent != null
-            ? <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: 'var(--green-text)' }}>상위 {topPercent}%</span>
-            : <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{score}점 / 100</span>}
-        </span>
-        <span style={{ fontSize: 15, fontWeight: 900, color: 'var(--ink)' }}>{value}</span>
-      </div>
-      <div style={{ marginTop: 10, height: 8, background: '#F5EFE3', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: 8, borderRadius: 4, background: barColor, width: `${Math.max(2, Math.min(100, pct))}%`, transition: 'width .6s' }} />
-      </div>
-      <div style={{ marginTop: 7, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-soft)' }}>
-        <span>{sub}</span><span>{note}</span>
+        ))}
       </div>
     </div>
   );

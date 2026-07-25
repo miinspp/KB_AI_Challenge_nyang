@@ -2,12 +2,16 @@
 // 실서비스에서는 본인인증 + 마이데이터 API 응답으로 교체된다.
 // InfoScreen(입력 자동채움)과 HomeScreen/AccountScreen(계좌·거래내역 표시)이 함께 쓴다.
 
-/** 연동 시 온보딩 입력을 자동으로 채우는 재무 요약 */
-export const KB_FINANCIALS = {
-  monthlySalesAvg: 24_800_000,
-  totalMonthlyExpense: 18_500_000,
+/**
+ * 연동 시 온보딩 입력을 자동으로 채우는 값 — 진단 입력 v2 역할 분담:
+ *   홈택스 = 매출·지출·지출세부·6개월 이력 / KB = 보유현금·기존 대출 (홈택스엔 없는 계좌·여신 정보)
+ */
+export const KB_LINK = {
+  currentCash: 15_000_000,
+  existingDebtBalance: 42_000_000,
   monthlyLoanPayment: 1_800_000,
-  cardCashRatio: '카드 72% · 현금 28%',
+  existingLoanRatePct: '5.2',
+  existingLoanRemainingMonths: '24',
 };
 
 /** 사업자 주거래 계좌 */

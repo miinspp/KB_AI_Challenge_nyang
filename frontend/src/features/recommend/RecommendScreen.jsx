@@ -1,7 +1,19 @@
 import { useState } from 'react';
 
+// 상품 → 카테고리 (재현본 규칙 + 실제 추천 API 상품의 isFinance 반영)
+const CATS = [['all', '전체'], ['loan', '대출'], ['save', '적금'], ['ins', '보험'], ['gov', '정부 지원']];
+const catOf = (p) => {
+  const tag = p.tag || '';
+  if (tag.includes('대출') || p.isFinance) return 'loan';
+  if (tag.includes('적금')) return 'save';
+  if (tag.includes('보험')) return 'ins';
+  return 'gov';
+};
+
 export default function RecommendScreen({ products, percentile }) {
   const [openId, setOpenId] = useState(null);
+  const [cat, setCat] = useState('all');
+  const visible = products.filter((p) => cat === 'all' || catOf(p) === cat);
   return (
     <div className="scr" style={{ gap: 14 }}>
       <div>
@@ -18,7 +30,25 @@ export default function RecommendScreen({ products, percentile }) {
         </p>
       </div>
 
-      {products.map((p) => {
+      {/* 카테고리 필터 */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+        {CATS.map(([key, label]) => {
+          const on = cat === key;
+          const count = key === 'all' ? products.length : products.filter((p) => catOf(p) === key).length;
+          return (
+            <button key={key} onClick={() => setCat(key)} style={{
+              flex: 'none', borderRadius: 11, padding: '8px 14px', fontSize: 12.5, fontWeight: 800,
+              cursor: 'pointer', whiteSpace: 'nowrap',
+              border: on ? '1.5px solid var(--green-deep)' : '1.5px solid var(--border)',
+              background: on ? 'var(--green-deep)' : '#fff', color: on ? '#fff' : 'var(--muted)',
+            }}>
+              {label} <span style={{ fontWeight: 700, opacity: .65 }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {visible.map((p) => {
         const open = openId === p.id;
         return (
           <div key={p.id} onClick={() => setOpenId(open ? null : p.id)} className="card" style={{

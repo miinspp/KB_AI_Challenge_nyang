@@ -12,8 +12,17 @@ const marketRiskLevel = (topPercent) =>
 // rank(/api/rank 응답) + 사용자 입력(업력·부채) → 추천 프로필
 //   debtRatio / bizAgeYears 가 실제 입력값으로 넘어오면 그것을 쓰고,
 //   비어 있을 때만 마진 기반 근사(데모 폴백)로 대체한다.
+// 온보딩 '관심사' 칩 → 임베딩 검색용 니즈 문구 (진단 입력 v2에서 노출)
+const NEED_PHRASES = {
+  funding: '운전자금 대출, 자금 지원',
+  cost: '비용 절감, 고정비 부담 완화',
+  growth: '매출 성장, 판로 개척',
+  digital: '디지털 전환, 스마트상점 지원',
+  consulting: '경영 컨설팅, 교육 지원',
+};
+
 export function rankToProfile(rank, {
-  region = '서울', industry = '', bizAgeYears = null, debtRatio = null,
+  region = '서울', industry = '', bizAgeYears = null, debtRatio = null, userNeeds = [],
 } = {}) {
   const salesTop = rank?.sales?.topPercent ?? 50;
   const netMargin = rank?.margin?.value ?? 0.1;
@@ -27,8 +36,8 @@ export function rankToProfile(rank, {
   const mrl = marketRiskLevel(rank?.topPercent ?? 50);
   const bizAge = bizAgeYears != null && Number.isFinite(bizAgeYears) ? bizAgeYears : 2;
 
-  // 니즈 문장을 재무신호 기반으로 동적 생성 → 상황이 다르면 임베딩 검색 결과도 달라진다
-  const needs = [];
+  // 니즈 문장 = 사용자가 고른 관심사(우선) + 재무신호 기반 동적 생성
+  const needs = userNeeds.map((k) => NEED_PHRASES[k]).filter(Boolean);
   if (debt >= 0.4) needs.push('고금리 대출 대환, 부채 상환부담 완화');
   if (cashGap >= 0.3) needs.push('긴급 운전자금, 경영안정자금');
   if (mrl === 'HIGH') needs.push('상권 활성화, 경영 컨설팅, 판로 개척');

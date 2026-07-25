@@ -62,8 +62,8 @@ export default function HomeScreen({ kbLinked, onLinkKb, onOpenAccount, onGo }) 
       <p className="home-logo">든든이</p>
 
       <div>
-        <h1 className="h1">사장님, 안녕하세요</h1>
-        <p className="sub" style={{ marginTop: 6 }}>우리 가게, 오늘도 든든하게</p>
+        <h1 className="h1">혼자 고민하지 마세요<br />우리 가게, 같이 챙길게요</h1>
+        <p className="sub" style={{ marginTop: 6 }}>진단부터 비용 점검, 맞춤 지원까지 든든이가 도와드려요</p>
       </div>
 
       <AccountCard linked={kbLinked} onLink={onLinkKb} onOpen={onOpenAccount} />

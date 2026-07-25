@@ -18,7 +18,56 @@ const GROUP_META = {
   변동비: { color: '#E0A93C', bg: '#FBF4E6' },
   금융: { color: '#7E8BC4', bg: '#EEF0F8' },
 };
-const EXPENSE_GROUPS = ['고정비', '변동비', '금융'];
+const GROUP_ORDER = ['수입', '고정비', '변동비', '금융'];
+
+// KOSIS 소상공인실태조사 2023 음식점업 비용 비중(%) — 개선 제안의 비교 기준.
+const KOSIS_BENCH = { labor: 18.4, rent: 9.3, purchase: 43.7 };
+
+/**
+ * 개선 제안의 "근거 보기" 단계 — 실제 분류 금액으로 계산/업종평균/차이/조언을 구성한다.
+ * 백엔드 suggestion.value 는 전체 기간(모든 월) 합계 기준이라, 단계 계산도 같은 기준으로 맞춘다.
+ */
+function buildSuggestionSteps(sug, months) {
+  const amountOf = (code) => {
+    const total = months.reduce((s, mm) => s + (mm.categories.find((c) => c.code === code)?.amount ?? 0), 0);
+    return total > 0 ? total : null;
+  };
+  const income = months.reduce((s, mm) => s + mm.income, 0);
+  const period = `최근 ${months.length}개월 합계`;
+  if (!income) return null;
+
+  const make = (label, amount, benchPct, benchLabel, warnAdvice, okAdvice, judge) => {
+    if (amount == null) return null;
+    const myPct = (amount / income) * 100;
+    const diff = myPct - benchPct;
+    return [
+      { k: '계산', v: `${label} ${fmtMan(amount)} ÷ 수입 ${fmtMan(income)} = ${myPct.toFixed(1)}% (${period})` },
+      ...(judge ? [{ k: '판단 기준', v: judge }] : []),
+      { k: '업종 평균', v: `음식점업 ${benchLabel} 비중 ${benchPct}% (KOSIS 소상공인실태조사 2023)` },
+      { k: '차이', v: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%p · 월 ${fmtMan(Math.abs(income * diff / 100))} 수준` },
+      { k: '그래서', v: sug.status === 'warn' ? warnAdvice : okAdvice },
+    ];
+  };
+
+  if (sug.metric.includes('인건비')) {
+    return make('인건비', amountOf('LABOR'), KOSIS_BENCH.labor, '인건비',
+      '피크타임 위주로 근무 스케줄을 조정하거나 두루누리 사회보험료 지원(80%)을 신청해 보세요.',
+      '현재 인력 구조는 유지해도 좋아요.');
+  }
+  if (sug.metric.includes('임대료')) {
+    return make('임대료', amountOf('RENT'), KOSIS_BENCH.rent, '임차료',
+      '매출 확대 없이는 고정비 압박이 커요. 착한임대인 세액공제 협의나 임대료 인하 요청, 배달·포장 매출 확대를 함께 검토해 보세요.',
+      '임대료 부담은 안정권이에요.',
+      '임차료율 10%가 소상공인 경영 안정 경계선 (진단 리포트 비용구조 축과 동일 기준)');
+  }
+  if (sug.metric.includes('원가') || sug.metric.includes('매입')) {
+    return make('매입·원재료', amountOf('SUPPLIES'), KOSIS_BENCH.purchase, '재료비',
+      '식자재 거래처를 2곳 이상 비교하거나 공동구매·식자재 카드 할인 활용으로 1~3%p 절감 여지가 있어요.',
+      '원가는 안정적으로 관리되고 있어요.',
+      '외식업 원가율 35% 초과 시 수익성 경고 구간');
+  }
+  return null;
+}
 
 /** 상단 요약 숫자 카드 */
 function StatCard({ label, value, color }) {
@@ -36,37 +85,24 @@ function CategoryBar({ cat, max }) {
   const pct = max > 0 ? Math.max(4, Math.round((cat.amount / max) * 100)) : 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-      <span style={{ flex: 'none', width: 92, fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</span>
-      <div style={{ flex: 1, height: 18, background: '#F5EFE2', borderRadius: 6, overflow: 'hidden' }}>
+      <span style={{ flex: 'none', width: 88, fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</span>
+      <div style={{ flex: 1, height: 16, background: '#F5EFE2', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: meta.color, borderRadius: 6 }} />
       </div>
-      <span style={{ flex: 'none', width: 78, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#4A453E' }}>
+      <span style={{ flex: 'none', width: 76, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#4A453E' }}>
         {fmtMan(cat.amount)}
       </span>
     </div>
   );
 }
 
-/** 그룹 소계 헤더 + 그 그룹 카테고리 막대들 */
-function GroupBlock({ group, cats, max }) {
-  const meta = GROUP_META[group];
-  const subtotal = cats.reduce((s, c) => s + c.amount, 0);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <span className="tag" style={{ color: meta.color, background: meta.bg }}>{group}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 12.5, fontWeight: 900, color: meta.color }}>{fmtMan(subtotal)}</span>
-      </div>
-      {cats.map((c) => <CategoryBar key={c.code} cat={c} max={max} />)}
-    </div>
-  );
-}
-
 export default function CostReportScreen({ report }) {
   const [sel, setSel] = useState(null);
-  const [queue, setQueue] = useState([]);       // 확인필요 큐(교정하면 즉시 제거)
+  const [openGroup, setOpenGroup] = useState('수입');  // 접이식 그룹 (기본: 수입 펼침)
+  const [openTip, setOpenTip] = useState(null);        // 개선 제안 근거 펼침
+  const [queue, setQueue] = useState([]);              // 확인필요 큐(교정하면 즉시 제거)
   const [savingId, setSavingId] = useState(null);
-  const [resolved, setResolved] = useState(0);  // 이번 세션에 교정 완료한 건수
+  const [resolved, setResolved] = useState(0);         // 이번 세션에 교정 완료한 건수
 
   // report 로드/변경 시 확인필요 큐 동기화.
   useEffect(() => {
@@ -97,10 +133,14 @@ export default function CostReportScreen({ report }) {
   const m = months[idx];
   const maxAmount = Math.max(...m.categories.map((c) => c.amount), 1);
 
-  const incomeCats = m.categories.filter((c) => c.group === '수입');
-  const expenseByGroup = EXPENSE_GROUPS
-    .map((g) => ({ group: g, cats: m.categories.filter((c) => c.group === g) }))
-    .filter((x) => x.cats.length > 0);
+  const groups = GROUP_ORDER
+    .map((g) => ({ group: g, meta: GROUP_META[g], cats: m.categories.filter((c) => c.group === g) }))
+    .filter((x) => x.cats.length > 0)
+    .map((x) => ({
+      ...x,
+      subtotal: x.cats.reduce((s, c) => s + c.amount, 0),
+      preview: x.cats.slice(0, 3).map((c) => c.label).join(' · ') + (x.cats.length > 3 ? ` 외 ${x.cats.length - 3}개` : ''),
+    }));
 
   return (
     <div className="scr" style={{ gap: 14 }}>
@@ -140,33 +180,64 @@ export default function CostReportScreen({ report }) {
         💡 손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.
       </p>
 
-      {/* 수입 */}
-      <div className="card" style={{ gap: 11 }}>
-        <GroupBlock group="수입" cats={incomeCats} max={maxAmount} />
+      {/* 그룹별 분류 — 접이식 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {groups.map((g) => {
+          const open = openGroup === g.group;
+          return (
+            <div key={g.group} className="list-box">
+              <button onClick={() => setOpenGroup(open ? null : g.group)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '15px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                <span className="tag" style={{ marginTop: 0, flex: 'none', color: g.meta.color, background: g.meta.bg, padding: '3px 9px' }}>{g.group}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#B0A697', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
+                <span style={{ flex: 'none', fontSize: 13.5, fontWeight: 900, color: g.meta.color }}>{fmtMan(g.subtotal)}</span>
+                <span style={{ flex: 'none', fontSize: 12, color: 'var(--muted-faint)' }}>{open ? '▲' : '▼'}</span>
+              </button>
+              {open && (
+                <div className="pop" style={{ padding: '2px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {g.cats.map((c) => <CategoryBar key={c.code} cat={c} max={maxAmount} />)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* 비용(그룹별) */}
-      <div className="card" style={{ gap: 15 }}>
-        {expenseByGroup.map(({ group, cats }) => (
-          <GroupBlock key={group} group={group} cats={cats} max={maxAmount} />
-        ))}
-      </div>
-
-      {/* 개선 제안 */}
+      {/* 개선 제안 — 펼치면 계산 근거 */}
       {report.suggestions?.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>이렇게 개선해 보세요</p>
           {report.suggestions.map((s) => {
             const warn = s.status === 'warn';
+            const steps = buildSuggestionSteps(s, months);
+            const open = openTip === s.metric;
             return (
-              <div key={s.metric} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '11px 13px' }}>
-                <span style={{ flex: 'none', fontSize: 16 }}>{warn ? '⚠️' : '✅'}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
-                    {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
-                  </p>
-                  <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{s.message}</p>
-                </div>
+              <div key={s.metric} className="list-box" style={{ borderRadius: 20 }}>
+                <button onClick={() => steps && setOpenTip(open ? null : s.metric)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', background: 'none', border: 'none', cursor: steps ? 'pointer' : 'default', textAlign: 'left' }}>
+                  <span style={{ flex: 'none', fontSize: 16 }}>{warn ? '⚠️' : '✅'}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
+                      {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
+                    </p>
+                    <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{s.message}</p>
+                  </div>
+                  {steps && (
+                    <span style={{ flex: 'none', fontSize: 10.5, fontWeight: 800, color: 'var(--muted-faint)', whiteSpace: 'nowrap' }}>
+                      {open ? '▲' : '근거 보기 ▼'}
+                    </span>
+                  )}
+                </button>
+                {open && steps && (
+                  <div className="pop" style={{ padding: '2px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                    {steps.map((st) => (
+                      <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: '1.5px solid #F6EFE2', paddingTop: 9 }}>
+                        <span style={{ flex: 'none', width: 58, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{st.k}</span>
+                        <span style={{ flex: 1, fontSize: 11.5, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.55 }}>{st.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

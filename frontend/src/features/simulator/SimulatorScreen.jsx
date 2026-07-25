@@ -4,6 +4,9 @@ import { buildSimulationDetail, SIM_VIEWS } from './sim';
 
 export default function SimulatorScreen({ products, equipped, toggle, simRows, simulation, loading, error }) {
   const [view, setView] = useState('cash');
+  // 섹션 접이식 (재현본: 지표·근거는 기본 펼침, 상품별 근거는 접힘)
+  const [openSec, setOpenSec] = useState({ metrics: true, forecast: true, detail: false });
+  const toggleSec = (key) => setOpenSec((s) => ({ ...s, [key]: !s[key] }));
   const eq = equipped.map((id) => products.find((p) => p.id === id)).filter(Boolean);
   const detail = useMemo(() => buildSimulationDetail(simulation, equipped, products), [simulation, equipped, products]);
   const current = detail.views[view] || detail.views.cash;
@@ -51,10 +54,16 @@ export default function SimulatorScreen({ products, equipped, toggle, simRows, s
       </div>
 
       <div className="card" style={{ margin: '12px 22px 0', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+        <button onClick={() => toggleSec('metrics')}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>지표 변화</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted-mid)' }}>{eq.length > 0 ? `장착 ${eq.length}개 반영` : '기준값'}</span>
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--muted-faint)' }}>{openSec.metrics ? '▲' : '▼'}</span>
+        </button>
         {loading && <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted)' }}>Java 계산 엔진으로 1,000개 시나리오를 계산하고 있어요.</p>}
         {error && <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--danger)' }}>시뮬레이션 연결 실패: {error}</p>}
         {!loading && !error && simRows.length === 0 && <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted)' }}>시뮬레이션 결과를 불러오는 중이에요.</p>}
-        {!loading && simRows.map((m) => (
+        {!loading && openSec.metrics && simRows.map((m) => (
           <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ flex: 'none', width: 80, fontSize: 11.5, fontWeight: 700, color: 'var(--muted)' }}>{m.name}</span>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted-soft)', textDecoration: m.strike, whiteSpace: 'nowrap' }}>{m.before}</span>
@@ -66,7 +75,8 @@ export default function SimulatorScreen({ products, equipped, toggle, simRows, s
       </div>
 
       <div className="card" style={{ margin: '12px 22px 0', padding: '15px 16px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <button onClick={() => toggleSec('forecast')}
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 14.5, fontWeight: 900, color: 'var(--ink)', letterSpacing: 0 }}>시뮬레이션 근거</p>
             <p style={{ marginTop: 4, fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.45 }}>
@@ -81,8 +91,10 @@ export default function SimulatorScreen({ products, equipped, toggle, simRows, s
           }}>
             위험 {riskTone === 'base' ? '기준' : riskTone === 'good' ? '완화' : '주의'}
           </span>
-        </div>
+          <span style={{ flex: 'none', fontSize: 12, color: 'var(--muted-faint)', paddingTop: 5 }}>{openSec.forecast ? '▲' : '▼'}</span>
+        </button>
 
+        {openSec.forecast && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: 'var(--chip)', padding: 4, borderRadius: 13 }}>
           {SIM_VIEWS.map((v) => {
             const on = view === v.key;
@@ -132,10 +144,16 @@ export default function SimulatorScreen({ products, equipped, toggle, simRows, s
             </div>
           ))}
         </div>
+        </>)}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)' }}>상품별 반영 근거</p>
-          {detail.contributions.length > 0 ? detail.contributions.map((c) => (
+          <button onClick={() => toggleSec('detail')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: '12px 0 0', cursor: 'pointer', textAlign: 'left', borderTop: '1.5px solid var(--border)' }}>
+            <span style={{ fontSize: 12.5, fontWeight: 900, color: 'var(--ink)' }}>상품별 반영 근거</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted-mid)' }}>{eq.length > 0 ? `${eq.length}개 상품` : '없음'}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--muted-faint)' }}>{openSec.detail ? '▲' : '▼'}</span>
+          </button>
+          {openSec.detail && (detail.contributions.length > 0 ? detail.contributions.map((c) => (
             <div key={c.id} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', paddingTop: 8, borderTop: '1.5px solid var(--border)' }}>
               <span className="icon-badge" style={{ width: 28, height: 28, borderRadius: 9, fontSize: 13, background: c.iconBg, color: c.iconColor }}>{c.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -151,13 +169,15 @@ export default function SimulatorScreen({ products, equipped, toggle, simRows, s
             <p style={{ borderTop: '1.5px solid var(--border)', paddingTop: 9, fontSize: 11.5, color: 'var(--muted-mid)', lineHeight: 1.55 }}>
               장착한 상품이 없어서 진단 결과의 기준 현금흐름만 표시하고 있어요.
             </p>
-          )}
+          ))}
         </div>
 
-        {(detail.violations.length > 0 || detail.warnings.length > 0) && (
+        {/* 제약 검증 결과 — 항상 노출 (재현본: 통과/초과를 명시) */}
+        {simulation && (
           <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: 10 }}>
+            {/* 판정은 위반(violations) 기준 — warnings 엔 영문 엔진 로그가 섞여 있어 노출하지 않는다 */}
             <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? 'var(--danger)' : 'var(--muted)' }}>
-              {detail.violations[0] || detail.warnings[0]}
+              {detail.violations[0] || '상환부담·중복수혜·초과조달 기준을 모두 통과했어요.'}
             </p>
             <p style={{ marginTop: 4, fontSize: 10.5, color: 'var(--muted-mid)', lineHeight: 1.45 }}>
               {simulation?.inputAssumptions?.currentCashAssumed

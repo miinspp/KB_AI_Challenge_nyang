@@ -7,7 +7,7 @@ import { postSimulation } from './api/simulation';
 import SplashScreen from './features/splash/SplashScreen';
 import HomeScreen from './features/home/HomeScreen';
 import AccountScreen from './features/account/AccountScreen';
-import { KB_FINANCIALS } from './features/account/accountMock';
+import { KB_LINK } from './features/account/accountMock';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
@@ -19,7 +19,7 @@ import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
 
-const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
+const TITLES = ['우리 가게 진단', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
 // AI 에이전트 trace 표시용 도구 한글 라벨
 const TOOL_KO = {
@@ -28,12 +28,13 @@ const TOOL_KO = {
   run_simulation: '현금흐름 시뮬레이션',
   optimize_portfolio: '최적 조합 탐색',
 };
-// rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
-// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
+// 진단 입력 v2 — 필수는 업종·매출·지출 3개, 나머지는 정확도를 높이는 선택 입력.
+//   rentMan/laborMan/purchaseMan(+otherMan): 지출 세부 — 임대료가 있으면 비용구조 축 추가 (백엔드 보정)
+//   currentCash~RemainingMonths: 자금 상황 — 시뮬레이터 계산용, KB 연동 시 자동 채움
+//   bizAgeYears: 추천 업력 필터용
 const DIAG_INIT = {
   industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
-
-  rentMan: '', laborMan: '', purchaseMan: '',
+  rentMan: '', laborMan: '', purchaseMan: '', otherMan: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
 };
@@ -49,6 +50,7 @@ export default function App() {
   const [loadError, setLoadError] = useState('');
 
   const [diag, setDiag] = useState(DIAG_INIT);
+  const [needs, setNeeds] = useState([]);        // 관심사 칩 (추천 need_keywords 로 전달)
   const [hometax, setHometax] = useState(null);  // 홈택스 연동 결과 financials (salesHistory → 안정성 축)
   const [detail, setDetail] = useState(null);   // 선택 업종 상세(분포 격자)
   const [rank, setRank] = useState(null);        // /api/rank 결과
@@ -104,10 +106,10 @@ export default function App() {
     return () => { alive = false; };
   }, [simulationPayload, screen]);
 
-  const canAnalyze = diag.industryCode
+  // v2 필수: 업종 · 매출 · 지출 3개. (보유현금은 시뮬레이터용 선택 입력으로 이동)
+  const canAnalyze = !!diag.industryCode
     && Number(diag.salesMan) > 0
-    && diag.currentCashMan !== ''
-    && Number(diag.currentCashMan) >= 0;
+    && diag.expenseMan !== '';
 
   const toggle = (id) => setEquipped((eq) =>
     eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
@@ -160,7 +162,7 @@ export default function App() {
         : null;
       const bizAgeYears = diag.bizAgeYears ? Number(diag.bizAgeYears) : null;
       const profile = rankToProfile(r, {
-        region: '서울', industry: industryName, bizAgeYears, debtRatio,
+        region: '서울', industry: industryName, bizAgeYears, debtRatio, userNeeds: needs,
       });
       fetchRecommendations(profile)
         .then(setApiProducts)
@@ -194,33 +196,36 @@ export default function App() {
     }
   };
 
-  // 홈택스 연동 완료 → 매출·지출·비용 세부를 입력값으로 채우고 월별 이력을 보관
+  // 홈택스 연동 완료 → 업종·매출·지출·지출세부를 채우고 6개월 이력을 보관 (진단 v2 역할)
   const onHometaxLinked = (f) => {
     setHometax(f);
     setDiag((d) => ({
       ...d,
+      industryCode: d.industryCode || f.industryCode || '',
       salesMan: String(wonToMan(f.monthlySalesAvg)),
       expenseMan: String(wonToMan(f.totalMonthlyExpense)),
       rentMan: String(wonToMan(f.rent)),
       laborMan: String(wonToMan(f.laborCost)),
       purchaseMan: String(wonToMan(f.purchaseCost)),
+      otherMan: f.otherExpense != null ? String(wonToMan(f.otherExpense)) : d.otherMan,
     }));
   };
 
-  // KB 계좌 마이데이터 연동 완료 → 계좌 흐름 기반 매출·지출·대출상환·카드현금 비율을 채운다
-  const onKbLinked = (f) => {
+  // KB 계좌 마이데이터 연동 완료 → 보유현금·기존 대출 조건을 채운다 (홈택스엔 없는 계좌·여신 정보)
+  const onKbLinked = (f = KB_LINK) => {
     setKbLinked(true);
     setDiag((d) => ({
       ...d,
-      salesMan: String(wonToMan(f.monthlySalesAvg)),
-      expenseMan: String(wonToMan(f.totalMonthlyExpense)),
+      currentCashMan: String(wonToMan(f.currentCash)),
+      existingDebtMan: String(wonToMan(f.existingDebtBalance)),
       existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
-      cardCashRatio: f.cardCashRatio,
+      existingLoanRatePct: f.existingLoanRatePct,
+      existingLoanRemainingMonths: f.existingLoanRemainingMonths,
     }));
   };
 
   const reset = () => {
-    setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
+    setScreen(0); setDiag(DIAG_INIT); setNeeds([]); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError('');
     setKbLinked(false); setRoute('home'); setEntryScreen(0);
@@ -261,7 +266,7 @@ export default function App() {
       <div className="app">
         <HomeScreen
           kbLinked={kbLinked}
-          onLinkKb={() => onKbLinked(KB_FINANCIALS)}
+          onLinkKb={() => onKbLinked(KB_LINK)}
           onOpenAccount={() => { setRoute('account'); window.scrollTo(0, 0); }}
           onGo={goFlow}
         />
@@ -291,10 +296,12 @@ export default function App() {
       <div className="app-body">
         {screen === 0 && (
           <InfoScreen industries={industries} diag={diag} setDiag={setDiag} detail={detail}
+            needs={needs} setNeeds={setNeeds}
             kbLinked={kbLinked} onUnlinkKb={() => setKbLinked(false)}
+            hometaxLinked={!!hometax} onUnlinkHometax={() => setHometax(null)}
             onHometaxLinked={onHometaxLinked} onKbLinked={onKbLinked} />
         )}
-        {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
+        {screen === 1 && <ReportScreen rank={rank} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
         {screen === 3 && <RecommendScreen products={products} percentile={topPercent} />}
         {screen === 4 && <SimulatorScreen products={products} equipped={equipped} toggle={toggle} simRows={simRows}
