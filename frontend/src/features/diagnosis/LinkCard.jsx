@@ -6,12 +6,16 @@ import { useEffect, useRef, useState } from 'react';
  * "조회 전용·출금 불가·언제든 해지" 안심 문구를 항상 노출하고,
  * 연동이 완료되면 buildFinancials()가 만든 재무 요약을 onLinked(f)로 상위에 전달해
  * 아래 입력 항목이 자동으로 채워진다. (프로토타입: 시뮬레이션 데이터, 실서비스는 인증·스크래핑으로 교체)
+ *
+ * linked: 홈 화면 등 이 카드 밖에서 이미 연동된 경우 done 상태로 시작·동기화한다.
  */
-export default function LinkCard({ iconLabel, iconBg, title, desc, summary, buildFinancials, onLinked, onUnlink }) {
-  const [status, setStatus] = useState('off'); // off | linking | done
+export default function LinkCard({ iconLabel, iconBg, title, desc, summary, linked = false, buildFinancials, onLinked, onUnlink }) {
+  const [status, setStatus] = useState(linked ? 'done' : 'off'); // off | linking | done
   const timerRef = useRef(null);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
+  // 외부에서 연동되면 즉시 done 으로 맞춘다(해제는 이 카드의 unlink 가 담당).
+  useEffect(() => { if (linked) setStatus('done'); }, [linked]);
 
   const link = () => {
     setStatus('linking');
@@ -28,7 +32,7 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, buil
   };
 
   return (
-    <div className="link-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+    <div className="link-card">
       <span style={{
         flex: 'none', width: 40, height: 40, borderRadius: 12, background: iconBg,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12.5, color: '#fff',
@@ -46,9 +50,7 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, buil
         <span className="spinner" style={{ flex: 'none', width: 20, height: 20, borderWidth: 3 }} />
       )}
       {status === 'done' && (
-        <button className="unlink-link" style={{ flex: 'none' }} onClick={unlink}>
-          <span style={{ color: '#4F7139', fontWeight: 900, marginRight: 4 }}>✓</span>연동됨
-        </button>
+        <button className="unlink-link" onClick={unlink}>✓ 연동됨</button>
       )}
     </div>
   );

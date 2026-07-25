@@ -5,6 +5,9 @@ import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
 import { getTxnReport } from './api/txn';
 import { postSimulation } from './api/simulation';
 import SplashScreen from './features/splash/SplashScreen';
+import HomeScreen from './features/home/HomeScreen';
+import AccountScreen from './features/account/AccountScreen';
+import { KB_FINANCIALS } from './features/account/accountMock';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
@@ -37,7 +40,10 @@ const DIAG_INIT = {
 
 export default function App() {
   const [started, setStarted] = useState(false);  // 표지 화면 통과 여부
+  const [route, setRoute] = useState('home');     // home | flow | account
   const [screen, setScreen] = useState(0);
+  const [entryScreen, setEntryScreen] = useState(0);  // 홈에서 어느 화면으로 진입했는지(뒤로가기 기준점)
+  const [kbLinked, setKbLinked] = useState(false);  // KB 계좌 연동 여부(홈·온보딩 공유)
   const [industries, setIndustries] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -203,6 +209,7 @@ export default function App() {
 
   // KB 계좌 마이데이터 연동 완료 → 계좌 흐름 기반 매출·지출·대출상환·카드현금 비율을 채운다
   const onKbLinked = (f) => {
+    setKbLinked(true);
     setDiag((d) => ({
       ...d,
       salesMan: String(wonToMan(f.monthlySalesAvg)),
@@ -216,7 +223,18 @@ export default function App() {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError('');
+    setKbLinked(false); setRoute('home'); setEntryScreen(0);
+  };
 
+  // 홈 메뉴 → 기존 6단계 플로우 진입.
+  // 진단 결과가 있어야 의미 있는 화면(리포트·추천·시뮬·포트폴리오)은 입력 화면으로 돌려보낸다.
+  const NEEDS_RANK = [1, 3, 4, 5];
+  const goFlow = (target) => {
+    const to = NEEDS_RANK.includes(target) && !rank ? 0 : target;
+    setScreen(to);
+    setEntryScreen(to);   // 진입 지점보다 뒤로는 가지 않는다(방문한 적 없는 화면으로 되돌아가지 않도록)
+    setRoute('flow');
+    window.scrollTo(0, 0);
   };
 
   const next = () => {
@@ -238,12 +256,42 @@ export default function App() {
     );
   }
 
+  if (route === 'home') {
+    return (
+      <div className="app">
+        <HomeScreen
+          kbLinked={kbLinked}
+          onLinkKb={() => onKbLinked(KB_FINANCIALS)}
+          onOpenAccount={() => { setRoute('account'); window.scrollTo(0, 0); }}
+          onGo={goFlow}
+        />
+      </div>
+    );
+  }
+
+  if (route === 'account') {
+    return (
+      <div className="app">
+        <AccountScreen
+          onBack={() => { setRoute('home'); window.scrollTo(0, 0); }}
+          onOpenCostReport={() => goFlow(2)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <Header title={TITLES[screen]} screen={screen} onBack={() => setScreen((s) => Math.max(0, s - 1))} />
+      <Header title={TITLES[screen]} screen={screen}
+        onBack={() => {
+          if (screen <= entryScreen) { setRoute('home'); return; }
+          setScreen((s) => s - 1);
+          window.scrollTo(0, 0);
+        }} />
       <div className="app-body">
         {screen === 0 && (
           <InfoScreen industries={industries} diag={diag} setDiag={setDiag} detail={detail}
+            kbLinked={kbLinked} onUnlinkKb={() => setKbLinked(false)}
             onHometaxLinked={onHometaxLinked} onKbLinked={onKbLinked} />
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}

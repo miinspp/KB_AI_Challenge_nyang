@@ -16,6 +16,9 @@ export function fmtMan(won) {
   return `${man.toLocaleString()}만원`;
 }
 
+/** 원 → "1,795,700원" (통장 표기용 원 단위 그대로) */
+export const fmtWon = (won) => (won == null ? '-' : `${Math.round(won).toLocaleString('ko-KR')}원`);
+
 /** 원 → "1,234" (단위 없이, 만원 기준) */
 export const fmtManNum = (won) => (won == null ? '-' : Math.round(won / MAN).toLocaleString());
 

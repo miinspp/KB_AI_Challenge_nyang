@@ -3,14 +3,10 @@ import IndustryPicker from './IndustryPicker';
 import LinkCard from './LinkCard';
 import { topPercentOf } from './percentile';
 import { manToWon, fmtMan } from '../../shared/format';
+import { KB_FINANCIALS } from '../account/accountMock';
 
 // 프로토타입 연동 결과(시뮬레이션). 실서비스에서는 본인인증 + 마이데이터/스크래핑 API로 교체된다.
-const KB_FINANCIALS = {
-  monthlySalesAvg: 24_800_000,
-  totalMonthlyExpense: 18_500_000,
-  monthlyLoanPayment: 1_800_000,
-  cardCashRatio: '카드 72% · 현금 28%',
-};
+// KB 계좌분은 홈 화면과 공유하므로 features/account/accountMock.js 에 있다.
 const HOMETAX_FINANCIALS = {
   industryName: '한식음식점',
   address: '강남구 역삼동',
@@ -33,7 +29,7 @@ const HOMETAX_FINANCIALS = {
  *   [필수] 업종 · 사업장 지역 · 월 평균 매출 · 월 평균 지출
  *   [선택] 지출 세부(임대료·인건비·재료비) · 개업 시기 · 주 매출 채널 또는 카드·현금 비율 · 사업 자금·기존 대출
  */
-export default function InfoScreen({ industries, diag, setDiag, detail, onHometaxLinked, onKbLinked }) {
+export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked, onHometaxLinked, onKbLinked, onUnlinkKb }) {
   // 어떤 필드가 어떤 연동으로 채워졌는지: { [key]: 'kb' | 'hometax' }
   const [sources, setSources] = useState({});
   const [chMode, setChMode] = useState('channel'); // channel | ratio
@@ -66,16 +62,21 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
   }, [detail, diag.industryCode, diag.salesMan]);
 
   // ── 연동 완료 핸들러: 상위(App)로 재무값 전달 + 로컬로 소스(배지) 표시 ──
-  const handleKbLinked = (f) => {
-    onKbLinked(f);
+  // KB 연동 상태는 App 이 들고 있다(홈 화면에서도 연동 가능). 여기서 어디서 연동됐든 배지를 맞춘다.
+  useEffect(() => {
+    if (!kbLinked) return;
     setSources((s) => ({ ...s, salesMan: 'kb', expenseMan: 'kb', existingMonthlyPaymentMan: 'kb', cardCashRatio: 'kb' }));
     setShowDetail(true);  // 연동으로 세부 필드가 채워졌으니 펼쳐서 보여준다
+  }, [kbLinked]);
+
+  const unlinkKb = () => {
+    onUnlinkKb && onUnlinkKb();
+    setSources((s) => {
+      const n = { ...s };
+      ['salesMan', 'expenseMan', 'existingMonthlyPaymentMan', 'cardCashRatio'].forEach((k) => { if (n[k] === 'kb') delete n[k]; });
+      return n;
+    });
   };
-  const unlinkKb = () => setSources((s) => {
-    const n = { ...s };
-    ['salesMan', 'expenseMan', 'existingMonthlyPaymentMan', 'cardCashRatio'].forEach((k) => { if (n[k] === 'kb') delete n[k]; });
-    return n;
-  });
 
   const handleHometaxLinked = (f) => {
     onHometaxLinked(f);
@@ -137,8 +138,9 @@ export default function InfoScreen({ industries, diag, setDiag, detail, onHometa
       <LinkCard
         iconLabel="KB" iconBg="#6FA85A"
         title="KB 계좌 연동"
+        linked={kbLinked}
         buildFinancials={() => KB_FINANCIALS}
-        onLinked={handleKbLinked}
+        onLinked={onKbLinked}
         onUnlink={unlinkKb}
       />
       <LinkCard
