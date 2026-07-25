@@ -140,11 +140,11 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped, products
 }
 
 function tone(delta, goodUp) {
-  if (Math.abs(delta) < 0.0001) return { color: '#B9B0A4', dark: '#8A8178', bg: '#F5EFE3' };
+  if (Math.abs(delta) < 0.0001) return { color: 'var(--muted-soft)', dark: 'var(--muted)', bg: '#F5EFE3' };
   const good = goodUp ? delta > 0 : delta < 0;
   return good
-    ? { color: '#5E8A3E', dark: '#A8D284', bg: '#EDF5E1' }
-    : { color: '#D0564C', dark: '#F0968C', bg: '#FDE8E6' };
+    ? { color: 'var(--green-text)', dark: '#A8D284', bg: 'var(--green-bg)' }
+    : { color: 'var(--danger)', dark: '#F0968C', bg: 'var(--danger-bg)' };
 }
 
 function row(name, before, after, unit, goodUp) {
@@ -291,7 +291,7 @@ export function buildSimulationDetail(simulation, equipped = [], products = []) 
     const product = products.find((candidate) => candidate.id === equipped[index]);
     return {
       id: `${item.sourceType}-${item.id}`,
-      icon: product?.icon || '·', iconBg: product?.iconBg || '#F5EFE3', iconColor: product?.iconColor || '#8A8178',
+      icon: product?.icon || '·', iconBg: product?.iconBg || '#F5EFE3', iconColor: product?.iconColor || 'var(--muted)',
       name: product?.short || product?.name || item.name,
       delta: item.type === 'LOAN' ? '대출' : item.type === 'GRANT' ? '지원금' : '월 납입',
       formula: itemExplanation(item),

@@ -7,7 +7,7 @@ export default function Header({ title, screen, onBack }) {
         {[1, 2, 3, 4, 5].map((n, i) => (
           <span key={i} className="dot" style={{
             width: n === screen ? 14 : 6,
-            background: n === screen ? '#FFBC00' : n < screen ? '#E8D9B8' : '#EFE6D4',
+            background: n === screen ? 'var(--gold)' : n < screen ? '#E8D9B8' : 'var(--border-strong)',
           }} />
         ))}
       </div>

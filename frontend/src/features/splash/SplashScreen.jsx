@@ -10,7 +10,7 @@ export default function SplashScreen({ onStart }) {
       }}
     >
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: "'Jua', sans-serif", fontSize: 60, color: '#2B2825', letterSpacing: '-1px' }}>
+        <div style={{ fontFamily: "'Jua', sans-serif", fontSize: 60, color: 'var(--ink)', letterSpacing: '-1px' }}>
           든든이
         </div>
         <div style={{ marginTop: 14, fontFamily: "'Jua', sans-serif", fontSize: 17, color: '#6B5A1E', letterSpacing: '.5px' }}>

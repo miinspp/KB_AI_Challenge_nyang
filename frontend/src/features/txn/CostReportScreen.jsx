@@ -13,8 +13,8 @@ const PICK = [
 
 // 카테고리 그룹별 색상 — 리포트 막대·라벨에 공통 사용.
 const GROUP_META = {
-  수입: { color: '#8DBB6C', bg: '#F2F7EC' },
-  고정비: { color: '#D0564C', bg: '#FBEEEC' },
+  수입: { color: 'var(--green-soft)', bg: '#F2F7EC' },
+  고정비: { color: 'var(--danger)', bg: '#FBEEEC' },
   변동비: { color: '#E0A93C', bg: '#FBF4E6' },
   금융: { color: '#7E8BC4', bg: '#EEF0F8' },
 };
@@ -24,7 +24,7 @@ const EXPENSE_GROUPS = ['고정비', '변동비', '금융'];
 function StatCard({ label, value, color }) {
   return (
     <div className="card" style={{ flex: 1, padding: '12px 10px', textAlign: 'center', gap: 4 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#8A8178' }}>{label}</p>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>{label}</p>
       <p style={{ fontSize: 15.5, fontWeight: 900, color, letterSpacing: -.3 }}>{value}</p>
     </div>
   );
@@ -36,7 +36,7 @@ function CategoryBar({ cat, max }) {
   const pct = max > 0 ? Math.max(4, Math.round((cat.amount / max) * 100)) : 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-      <span style={{ flex: 'none', width: 92, fontSize: 12, fontWeight: 700, color: '#2B2825' }}>{cat.label}</span>
+      <span style={{ flex: 'none', width: 92, fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</span>
       <div style={{ flex: 1, height: 18, background: '#F5EFE2', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: meta.color, borderRadius: 6 }} />
       </div>
@@ -89,7 +89,7 @@ export default function CostReportScreen({ report }) {
   };
 
   if (!report) {
-    return <div className="scr"><p style={{ color: '#8A8178', fontSize: 13 }}>비용 리포트를 불러오는 중이에요…</p></div>;
+    return <div className="scr"><p style={{ color: 'var(--muted)', fontSize: 13 }}>비용 리포트를 불러오는 중이에요…</p></div>;
   }
 
   const months = report.months;
@@ -105,10 +105,10 @@ export default function CostReportScreen({ report }) {
   return (
     <div className="scr" style={{ gap: 14 }}>
       <div>
-        <h2 style={{ fontSize: 21, fontWeight: 900, color: '#2B2825', letterSpacing: -.4, lineHeight: 1.4 }}>
+        <h2 style={{ fontSize: 21, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4, lineHeight: 1.4 }}>
           우리 가게 비용 리포트
         </h2>
-        <p style={{ marginTop: 6, fontSize: 13, color: '#8A8178' }}>
+        <p style={{ marginTop: 6, fontSize: 13, color: 'var(--muted)' }}>
           마이데이터 거래 {report.meta.txnCount}건을 자동으로 분류했어요.
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function CostReportScreen({ report }) {
               style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12.5, fontWeight: 800, letterSpacing: -.2,
-                background: active ? '#FFBC00' : '#F5EFE2', color: active ? '#2B2825' : '#A79C8E',
+                background: active ? 'var(--gold)' : '#F5EFE2', color: active ? 'var(--ink)' : 'var(--muted-mid)',
               }}>
               {mm.month.slice(5)}월
             </button>
@@ -132,11 +132,11 @@ export default function CostReportScreen({ report }) {
 
       {/* 손익 요약 */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <StatCard label="수입" value={fmtMan(m.income)} color="#5C9A3A" />
-        <StatCard label="비용" value={fmtMan(m.expense)} color="#D0564C" />
-        <StatCard label="손익" value={fmtMan(m.profit)} color={m.profit >= 0 ? '#5C9A3A' : '#D0564C'} />
+        <StatCard label="수입" value={fmtMan(m.income)} color="var(--green-mid)" />
+        <StatCard label="비용" value={fmtMan(m.expense)} color="var(--danger)" />
+        <StatCard label="손익" value={fmtMan(m.profit)} color={m.profit >= 0 ? 'var(--green-mid)' : 'var(--danger)'} />
       </div>
-      <p style={{ fontSize: 11.5, color: '#8A7A55', background: '#FBF7EE', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600 }}>
+      <p style={{ fontSize: 11.5, color: '#8A7A55', background: 'var(--warm)', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600 }}>
         💡 손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.
       </p>
 
@@ -155,17 +155,17 @@ export default function CostReportScreen({ report }) {
       {/* 개선 제안 */}
       {report.suggestions?.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 900, color: '#2B2825' }}>이렇게 개선해 보세요</p>
+          <p style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>이렇게 개선해 보세요</p>
           {report.suggestions.map((s) => {
             const warn = s.status === 'warn';
             return (
               <div key={s.metric} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '11px 13px' }}>
                 <span style={{ flex: 'none', fontSize: 16 }}>{warn ? '⚠️' : '✅'}</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12.5, fontWeight: 800, color: '#2B2825' }}>
-                    {s.metric} <span style={{ color: warn ? '#D0564C' : '#5C9A3A' }}>{s.value}%</span>
+                  <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
+                    {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
                   </p>
-                  <p style={{ fontSize: 11.5, color: '#8A8178', marginTop: 2 }}>{s.message}</p>
+                  <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{s.message}</p>
                 </div>
               </div>
             );
@@ -176,18 +176,18 @@ export default function CostReportScreen({ report }) {
       {/* 확인 필요 거래 (레이어⑥ 교정) */}
       {(queue.length > 0 || resolved > 0) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 900, color: '#2B2825' }}>
+          <p style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>
             확인이 필요한 거래 <span style={{ color: '#B08F3C' }}>{queue.length}건</span>
-            {resolved > 0 && <span style={{ fontSize: 11.5, color: '#5C9A3A', marginLeft: 6 }}>· {resolved}건 정리됨</span>}
+            {resolved > 0 && <span style={{ fontSize: 11.5, color: 'var(--green-mid)', marginLeft: 6 }}>· {resolved}건 정리됨</span>}
           </p>
           {queue.length > 0
-            ? <p style={{ fontSize: 11.5, color: '#8A8178', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
-            : <p style={{ fontSize: 12, color: '#5C9A3A', fontWeight: 700, marginTop: -4 }}>모두 확인했어요 🎉 다음부터 자동으로 분류돼요.</p>}
+            ? <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
+            : <p style={{ fontSize: 12, color: 'var(--green-mid)', fontWeight: 700, marginTop: -4 }}>모두 확인했어요 🎉 다음부터 자동으로 분류돼요.</p>}
           {queue.map((r) => (
             <div key={r.txnId} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '10px 13px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 12.5, fontWeight: 800, color: '#2B2825', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.merchant}</p>
-                <p style={{ fontSize: 11, color: '#A79C8E', marginTop: 2 }}>{r.date} · {fmtMan(r.amount)}</p>
+                <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.merchant}</p>
+                <p style={{ fontSize: 11, color: 'var(--muted-mid)', marginTop: 2 }}>{r.date} · {fmtMan(r.amount)}</p>
               </div>
               <select
                 defaultValue=""
@@ -195,7 +195,7 @@ export default function CostReportScreen({ report }) {
                 onChange={(e) => saveCorrection(r, e.target.value)}
                 style={{
                   flex: 'none', maxWidth: 130, padding: '7px 8px', borderRadius: 9,
-                  border: '1.5px solid #EADFC8', background: '#FBF7EE', color: '#8A6E2E',
+                  border: '1.5px solid #EADFC8', background: 'var(--warm)', color: '#8A6E2E',
                   fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
                 }}>
                 <option value="" disabled>{savingId === r.txnId ? '저장 중…' : `${r.guess} → 선택`}</option>

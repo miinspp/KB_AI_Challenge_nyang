@@ -23,8 +23,8 @@ export default function DistributionChart({ quantiles, myValue, salesPercentile 
 
   return (
     <div className="card">
-      <p style={{ fontSize: 13.5, fontWeight: 800, color: '#2B2825', marginBottom: 4 }}>업종 내 우리 가게 위치</p>
-      <p style={{ fontSize: 11, color: '#B9B0A4', marginBottom: 8 }}>
+      <p style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', marginBottom: 4 }}>업종 내 우리 가게 위치</p>
+      <p style={{ fontSize: 11, color: 'var(--muted-soft)', marginBottom: 8 }}>
         같은 업종 점포들의 월매출 분포 · 오른쪽일수록 상위
       </p>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
@@ -50,7 +50,7 @@ export default function DistributionChart({ quantiles, myValue, salesPercentile 
         <text x={PAD} y={126} fill="#C4BAAD" fontSize="9.5">하위</text>
         <text x={W - PAD} y={126} fill="#C4BAAD" fontSize="9.5" textAnchor="end">상위</text>
       </svg>
-      <p style={{ fontSize: 10.5, color: '#C4BAAD', textAlign: 'center', marginTop: 2 }}>
+      <p style={{ fontSize: 10.5, color: 'var(--muted-faint)', textAlign: 'center', marginTop: 2 }}>
         내 매출 {fmtMan(myValue)} · 세로축은 상위 5%까지 표시
       </p>
     </div>

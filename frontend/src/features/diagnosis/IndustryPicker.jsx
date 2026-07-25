@@ -38,7 +38,7 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <p className="label-sm">업종 <span style={{ color: '#D0564C' }}>*</span></p>
+        <p className="label-sm">업종 <span style={{ color: 'var(--danger)' }}>*</span></p>
         {sourced && <span className="filled-badge">홈택스 불러옴</span>}
       </div>
 
@@ -53,9 +53,9 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
       {/* 선택 후엔 접힘: 선택 업종 + 변경 버튼만 노출 */}
       {!open && selected ? (
         <button className="input-row" onClick={() => setOpen(true)}
-          style={{ justifyContent: 'space-between', cursor: 'pointer', border: '1.5px solid #CFE3B8', background: '#F5FAEE' }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: '#2B2825' }}>{selected.name}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#8DBB6C' }}>변경 ▾</span>
+          style={{ justifyContent: 'space-between', cursor: 'pointer', border: '1.5px solid var(--green-border)', background: 'var(--green-bg-soft)' }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>{selected.name}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-soft)' }}>변경 ▾</span>
         </button>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
@@ -69,12 +69,12 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
 
       {selected && (
         <div className="pop" style={{
-          background: '#EDF5E1', border: '1.5px solid #CFE3B8', borderRadius: 14,
+          background: 'var(--green-bg)', border: '1.5px solid var(--green-border)', borderRadius: 14,
           padding: '12px 15px', display: 'flex', flexDirection: 'column', gap: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 15 }}>📊</span>
-            <p style={{ fontSize: 13, fontWeight: 800, color: '#2B2825' }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
               {selected.name} · 서울시 실측 데이터
             </p>
           </div>
@@ -91,8 +91,8 @@ export default function IndustryPicker({ industries, value, selected, onChange, 
 function Stat({ label, value }) {
   return (
     <div style={{ flex: 1, background: '#fff', borderRadius: 11, padding: '9px 11px' }}>
-      <p style={{ fontSize: 10.5, color: '#A79C8E', fontWeight: 700 }}>{label}</p>
-      <p style={{ fontSize: 15, fontWeight: 900, color: '#2B2825', marginTop: 2 }}>{value}</p>
+      <p style={{ fontSize: 10.5, color: 'var(--muted-mid)', fontWeight: 700 }}>{label}</p>
+      <p style={{ fontSize: 15, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>{value}</p>
     </div>
   );
 }

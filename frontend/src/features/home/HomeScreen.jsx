@@ -4,8 +4,8 @@ import { KB_ACCOUNT } from '../account/accountMock';
 
 // 홈 메뉴 — [배지 글자, 배지색, 제목, 설명, 이동할 화면 index]
 const MENU = [
-  ['진', '#6FA85A', '우리 가게 진단', '상권 속 내 위치 · 매출 등급', 0],
-  ['비', '#4A79B8', '비용 리포트', '돈이 어디로 새는지 한눈에', 2],
+  ['진', 'var(--green-bright)', '우리 가게 진단', '상권 속 내 위치 · 매출 등급', 0],
+  ['비', 'var(--blue)', '비용 리포트', '돈이 어디로 새는지 한눈에', 2],
   ['추', '#C4884A', '맞춤 지원 추천', '정책 · 대출 딱 맞는 것만', 3],
   ['시', '#C4564C', '금융 시뮬레이터', '고르면 어떻게 바뀔지 미리', 4],
 ];
@@ -30,8 +30,8 @@ function AccountCard({ linked, onLink, onOpen }) {
       <div className="acct-card">
         <span className="kb-badge">KB</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14.5, fontWeight: 800, color: '#2B2825' }}>KB 계좌 연결하기</p>
-          <p style={{ fontSize: 11.5, color: '#A79C8E', marginTop: 3 }}>조회 전용 · 출금 불가</p>
+          <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>KB 계좌 연결하기</p>
+          <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 3 }}>조회 전용 · 출금 불가</p>
         </div>
         {linking
           ? <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
@@ -45,7 +45,7 @@ function AccountCard({ linked, onLink, onOpen }) {
       <span className="kb-badge">KB</span>
       <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
         <p className="acct-card-balance">{fmtWon(KB_ACCOUNT.balance)}</p>
-        <p style={{ fontSize: 12, color: '#A79C8E', marginTop: 3 }}>{KB_ACCOUNT.name}</p>
+        <p style={{ fontSize: 12, color: 'var(--muted-mid)', marginTop: 3 }}>{KB_ACCOUNT.name}</p>
       </div>
       <span className="acct-card-cta">내역</span>
     </button>
@@ -69,7 +69,7 @@ export default function HomeScreen({ kbLinked, onLinkKb, onOpenAccount, onGo }) 
       <AccountCard linked={kbLinked} onLink={onLinkKb} onOpen={onOpenAccount} />
 
       <button className="home-cta" onClick={() => onGo(0)}>
-        <p style={{ fontSize: 18.5, fontWeight: 900, color: '#2B2825', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
+        <p style={{ fontSize: 18.5, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
         <p style={{ fontSize: 12.5, fontWeight: 600, color: '#7A6420', marginTop: 6 }}>1분이면 상권 속 내 위치를 알 수 있어요</p>
       </button>
 
@@ -79,8 +79,8 @@ export default function HomeScreen({ kbLinked, onLinkKb, onOpenAccount, onGo }) 
           <button key={title} className="menu-item" onClick={() => onGo(target)}>
             <span className="menu-badge" style={{ background: color }}>{mark}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14.5, fontWeight: 800, color: '#2B2825' }}>{title}</p>
-              <p style={{ fontSize: 11.5, color: '#A79C8E', marginTop: 3 }}>{desc}</p>
+              <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>{title}</p>
+              <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 3 }}>{desc}</p>
             </div>
             <span className="menu-chev">›</span>
           </button>

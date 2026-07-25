@@ -305,15 +305,15 @@ export default function App() {
 
       <div className="cta-wrap">
         {screen === 0 && (loadError || analyzeError) && (
-          <p style={{ fontSize: 12.5, color: '#D0564C', fontWeight: 600, textAlign: 'center', marginBottom: 8 }}>
+          <p style={{ fontSize: 12.5, color: 'var(--danger)', fontWeight: 600, textAlign: 'center', marginBottom: 8 }}>
             {loadError || analyzeError}
           </p>
         )}
         <button className="cta" onClick={next} disabled={ctaDisabled}
           style={ctaDisabled
-            ? { background: '#EFE6D4', color: '#C4BAAD', boxShadow: 'none', cursor: 'default' }
+            ? { background: 'var(--border-strong)', color: 'var(--muted-faint)', boxShadow: 'none', cursor: 'default' }
             : ctaGreen
-              ? { background: '#3F6B2E', color: '#fff', boxShadow: '0 8px 20px -8px rgba(63,107,46,.45)' }
+              ? { background: 'var(--green-deep)', color: '#fff', boxShadow: '0 8px 20px -8px rgba(63,107,46,.45)' }
               : undefined}>
           {ctaLabel}
         </button>
@@ -323,7 +323,7 @@ export default function App() {
             style={{
               marginTop: 8,
               background: (!canAnalyze || agentRunning) ? '#F3E4C0' : '#FFC01E',
-              color: '#2B2825', boxShadow: 'none',
+              color: 'var(--ink)', boxShadow: 'none',
             }}>
             {agentRunning ? '든든이 AI가 판단 중…' : '✨ 든든이 AI에게 맡기기'}
           </button>
@@ -335,30 +335,30 @@ export default function App() {
           style={{ position: 'absolute', inset: 0, background: 'rgba(43,40,37,.5)', display: 'flex',
             alignItems: 'flex-end', zIndex: 50 }}>
           <div onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxHeight: '82%', overflowY: 'auto', background: '#FFF9EF',
+            style={{ width: '100%', maxHeight: '82%', overflowY: 'auto', background: 'var(--canvas)',
               borderRadius: '24px 24px 0 0', padding: '22px 20px 28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <span style={{ fontSize: 18 }}>✨</span>
-              <span style={{ fontSize: 17, fontWeight: 900, color: '#2B2825' }}>든든이 AI</span>
+              <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>든든이 AI</span>
               {!agentRunning && (
                 <button onClick={() => { setAgentResult(null); setAgentError(''); }}
-                  style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: 20, color: '#C4BAAD', cursor: 'pointer' }}>×</button>
+                  style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: 20, color: 'var(--muted-faint)', cursor: 'pointer' }}>×</button>
               )}
             </div>
 
             {agentRunning && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
                 <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#8A8178' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
                   진단 → 추천 → 시뮬레이션을 스스로 판단하고 있어요…
                 </span>
               </div>
             )}
 
             {agentError && (
-              <p style={{ fontSize: 13.5, color: '#D0564C', fontWeight: 700, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13.5, color: 'var(--danger)', fontWeight: 700, lineHeight: 1.6 }}>
                 에이전트 호출 실패: {agentError}<br />
-                <span style={{ color: '#8A8178', fontWeight: 500 }}>추천 서비스(8000)가 켜져 있고 ANTHROPIC_API_KEY가 설정됐는지 확인해주세요.</span>
+                <span style={{ color: 'var(--muted)', fontWeight: 500 }}>추천 서비스(8000)가 켜져 있고 ANTHROPIC_API_KEY가 설정됐는지 확인해주세요.</span>
               </p>
             )}
 
@@ -368,24 +368,24 @@ export default function App() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                     {agentResult.trace.map((t, i) => (
                       <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                        <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: '#8DBB6C' }}>{i + 1}</span>
+                        <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: 'var(--green-soft)' }}>{i + 1}</span>
                         <div>
-                          <p style={{ fontSize: 13, fontWeight: 800, color: '#2B2825' }}>{TOOL_KO[t.tool] || t.tool}</p>
+                          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>{TOOL_KO[t.tool] || t.tool}</p>
                           {t.tool === 'run_simulation' && t.output && (
-                            <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? '#5E8A3E' : '#D0564C', fontWeight: 600 }}>
+                            <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
                               상환부담 {(t.output.repayment_burden_ratio * 100).toFixed(0)}% · {t.output.repayment_burden_passed ? '기준 통과' : '기준 초과 → 재검토'}
                             </p>
                           )}
                           {t.tool === 'recommend_policies' && t.output && (
-                            <p style={{ fontSize: 11.5, color: '#8A8178', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
+                            <p style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                <div style={{ background: '#fff', border: '1.5px solid #F0E7D6', borderRadius: 16, padding: '15px 16px' }}>
-                  <p style={{ fontSize: 13.5, color: '#2B2825', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                <div style={{ background: '#fff', border: '1.5px solid var(--border)', borderRadius: 16, padding: '15px 16px' }}>
+                  <p style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                     {agentResult.final}
                   </p>
                 </div>

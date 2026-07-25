@@ -25,7 +25,7 @@ function TxnRow({ txn, showDate }) {
         <p className="txn-time">{txn.time}</p>
       </div>
       <div style={{ flex: 'none', textAlign: 'right' }}>
-        <p className="txn-amount" style={{ color: income ? '#3F6B2E' : '#2B2825' }}>
+        <p className="txn-amount" style={{ color: income ? 'var(--green-deep)' : 'var(--ink)' }}>
           {income ? '+' : '−'}{fmtWon(Math.abs(txn.amount))}
         </p>
         <p className="txn-balance">{fmtWon(txn.balance)}</p>
@@ -88,8 +88,8 @@ export default function AccountScreen({ onBack, onOpenCostReport }) {
         <div style={{ padding: '18px 22px 44px' }}>
           <button className="acct-link" onClick={onOpenCostReport}>
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <p style={{ fontSize: 13.5, fontWeight: 800, color: '#2B2825' }}>이 거래로 비용 리포트 보기</p>
-              <p style={{ fontSize: 11.5, color: '#A79C8E', marginTop: 3 }}>돈이 어디로 새는지 자동으로 분류해 드려요</p>
+              <p style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ink)' }}>이 거래로 비용 리포트 보기</p>
+              <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 3 }}>돈이 어디로 새는지 자동으로 분류해 드려요</p>
             </div>
             <span className="menu-chev">›</span>
           </button>

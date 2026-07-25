@@ -108,7 +108,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="label-sm">{label}{required && <span style={{ color: '#D0564C' }}> *</span>}</span>
+          <span className="label-sm">{label}{required && <span style={{ color: 'var(--danger)' }}> *</span>}</span>
           {src && <span className="filled-badge">{src === 'hometax' ? '홈택스' : 'KB'} 불러옴</span>}
           {src && <button className="edit-link" onClick={() => clearSource(key)}>직접 수정</button>}
         </div>
@@ -136,7 +136,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
       </div>
 
       <LinkCard
-        iconLabel="KB" iconBg="#6FA85A"
+        iconLabel="KB" iconBg="var(--green-bright)"
         title="KB 계좌 연동"
         linked={kbLinked}
         buildFinancials={() => KB_FINANCIALS}
@@ -144,7 +144,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
         onUnlink={unlinkKb}
       />
       <LinkCard
-        iconLabel="홈택스" iconBg="#4F7139"
+        iconLabel="홈택스" iconBg="var(--green)"
         title="국세청 홈택스 연동"
         buildFinancials={() => HOMETAX_FINANCIALS}
         onLinked={handleHometaxLinked}
@@ -152,7 +152,7 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
       />
 
       {/* ── 필수 정보 ── */}
-      <p className="label-sm" style={{ marginTop: 4 }}>필수 정보 <span style={{ color: '#D0564C' }}>*</span></p>
+      <p className="label-sm" style={{ marginTop: 4 }}>필수 정보 <span style={{ color: 'var(--danger)' }}>*</span></p>
 
       <IndustryPicker
         industries={industries}
@@ -166,8 +166,8 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
       {selected?.areaTypes?.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div>
-            <p className="label-sm">상권 유형 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 선택</span></p>
-            <p style={{ fontSize: 11.5, color: '#C4BAAD', marginTop: 3 }}>선택하면 같은 유형 상권 안에서의 순위도 함께 알려드려요</p>
+            <p className="label-sm">상권 유형 <span style={{ fontWeight: 500, color: 'var(--muted-faint)' }}>· 선택</span></p>
+            <p style={{ fontSize: 11.5, color: 'var(--muted-faint)', marginTop: 3 }}>선택하면 같은 유형 상권 안에서의 순위도 함께 알려드려요</p>
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <button className={`ind-tab${diag.areaType === '' ? ' on' : ''}`} onClick={() => set({ areaType: '' })}>서울 전체</button>
@@ -187,13 +187,13 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
 
       {showDetail && (
         <>
-          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>지출 세부 (임대료 · 인건비 · 재료비)</p>
+          <p style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted-mid)', margin: '2px 0 -4px' }}>지출 세부 (임대료 · 인건비 · 재료비)</p>
           {field('rentMan', { label: '월 임대료', ph: '예: 250' })}
           {field('laborMan', { label: '월 인건비', ph: '예: 400' })}
           {field('purchaseMan', { label: '월 재료비(매입)', ph: '예: 900' })}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E' }}>주 매출 채널 또는 카드·현금 비율</p>
+            <p style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted-mid)' }}>주 매출 채널 또는 카드·현금 비율</p>
             <div style={{ display: 'flex', gap: 6 }}>
               <button className={`ind-tab${chMode === 'channel' ? ' on' : ''}`} onClick={() => setChMode('channel')}>홀·포장·배달 비중</button>
               <button className={`ind-tab${chMode === 'ratio' ? ' on' : ''}`} onClick={() => setChMode('ratio')}>카드·현금 비율</button>
@@ -218,8 +218,8 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
             )}
           </div>
 
-          <p style={{ fontSize: 11.5, fontWeight: 800, color: '#A79C8E', margin: '2px 0 -4px' }}>
-            기존 대출 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· 시뮬레이션 기준값</span>
+          <p style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted-mid)', margin: '2px 0 -4px' }}>
+            기존 대출 <span style={{ fontWeight: 500, color: 'var(--muted-faint)' }}>· 시뮬레이션 기준값</span>
           </p>
           {field('existingDebtMan', { label: '기존 대출 잔액', ph: '없으면 0' })}
           {field('existingMonthlyPaymentMan', { label: '월 대출 상환액', ph: '없으면 0' })}
@@ -230,21 +230,21 @@ export default function InfoScreen({ industries, diag, setDiag, detail, kbLinked
 
       {livePreview != null && (
         <div className="pop" style={{
-          background: 'linear-gradient(165deg,#EDF5E1,#FFF9EF)', border: '1.5px solid #CFE3B8',
+          background: 'linear-gradient(165deg,var(--green-bg),var(--canvas))', border: '1.5px solid var(--green-border)',
           borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <span style={{ fontSize: 22 }}>✨</span>
           <div>
             <p style={{ fontSize: 12.5, color: '#5E6E4A', fontWeight: 600 }}>
-              입력하신 매출이면 <b style={{ color: '#2B2825' }}>{selected?.name}</b> 매출 기준
+              입력하신 매출이면 <b style={{ color: 'var(--ink)' }}>{selected?.name}</b> 매출 기준
             </p>
-            <p style={{ fontSize: 17, fontWeight: 900, color: '#2B2825', marginTop: 2 }}>
+            <p style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)', marginTop: 2 }}>
               대략 상위 {livePreview}%
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#A79C8E' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-mid)' }}>
                 {' '}· 중위 {fmtMan(selected?.medianMonthlySales)}
               </span>
             </p>
-            <p style={{ fontSize: 11, color: '#B9B0A4', marginTop: 3 }}>
+            <p style={{ fontSize: 11, color: 'var(--muted-soft)', marginTop: 3 }}>
               분석하기를 누르면 순수익·비용효율까지 합쳐 정밀 진단해요
             </p>
           </div>

@@ -15,7 +15,7 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
     return (
       <div className="scr" style={{ alignItems: 'center', paddingTop: 80 }}>
         <span className="spinner" />
-        <p style={{ fontSize: 13, color: '#8A8178' }}>서울시 공공데이터와 비교 분석 중이에요…</p>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>서울시 공공데이터와 비교 분석 중이에요…</p>
       </div>
     );
   }
@@ -29,8 +29,8 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
         <p style={{ fontSize: 13, fontWeight: 800, color: '#9A7B1E' }}>
           서울 {rank.industryName} {peer.nStores.toLocaleString()}곳 중
         </p>
-        <p style={{ marginTop: 6, fontSize: 34, fontWeight: 900, color: '#2B2825', letterSpacing: -1 }}>
-          상위 {rank.topPercent}%<span style={{ fontSize: 16, fontWeight: 800, color: '#6B6259' }}>&nbsp;사장님이에요</span>
+        <p style={{ marginTop: 6, fontSize: 34, fontWeight: 900, color: 'var(--ink)', letterSpacing: -1 }}>
+          상위 {rank.topPercent}%<span style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink-soft)' }}>&nbsp;사장님이에요</span>
         </p>
         <p style={{ marginTop: 8, fontSize: 12.5, color: '#8A7A55', lineHeight: 1.6 }}>
           매출·순수익·비용효율{costHealth ? '·비용구조' : ''}{stability ? '·매출안정성' : ''}을
@@ -49,9 +49,9 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
 
       {/* 상권유형 비교 (선택 시) */}
       {areaRank && (
-        <div style={{ background: '#EDF5E1', border: '1.5px solid #DCEBC6', borderRadius: 18, padding: '15px 17px' }}>
-          <p style={{ fontSize: 12.5, fontWeight: 800, color: '#5E8A3E' }}>같은 <b>{areaRank.areaType}</b>만 비교하면</p>
-          <p style={{ marginTop: 5, fontSize: 22, fontWeight: 900, color: '#2B2825' }}>
+        <div style={{ background: 'var(--green-bg)', border: '1.5px solid #DCEBC6', borderRadius: 18, padding: '15px 17px' }}>
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--green-text)' }}>같은 <b>{areaRank.areaType}</b>만 비교하면</p>
+          <p style={{ marginTop: 5, fontSize: 22, fontWeight: 900, color: 'var(--ink)' }}>
             상위 {areaRank.topPercent}%
             <span style={{ fontSize: 12, fontWeight: 700, color: '#7C9463' }}>
               {' '}· 매출 상위 {areaRank.salesTopPercent}%
@@ -73,13 +73,13 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
         />
         <MetricCard
           name="월 순수익" topPercent={profit.topPercent} pct={profit.percentile}
-          value={fmtMan(profit.value)} barColor="#8DBB6C"
+          value={fmtMan(profit.value)} barColor="var(--green-soft)"
           note={`동종 추정 중위 ${fmtMan(profit.peerMedian)}`}
           sub="매출 − 지출 기준 · 업종 평균 이익률로 분포 추정"
         />
         <MetricCard
           name="비용 효율" topPercent={null} pct={margin.score} score={margin.score}
-          value={fmtRate(margin.value)} barColor="#E8B93E"
+          value={fmtRate(margin.value)} barColor="var(--gold-deep)"
           note={`업종 벤치마크 ${fmtRate(margin.benchmark)}`}
           sub={`${rank.benchmarkGroupLabel} 평균 영업이익률 대비 (평균=50점)`}
         />
@@ -92,8 +92,8 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
       {stability && <StabilityCard st={stability} history={salesHistory} />}
 
       {/* 모집단 */}
-      <div style={{ background: '#FBF7EE', borderRadius: 14, padding: '12px 15px' }}>
-        <p style={{ fontSize: 11.5, color: '#8A8178', lineHeight: 1.6 }}>
+      <div style={{ background: 'var(--warm)', borderRadius: 14, padding: '12px 15px' }}>
+        <p style={{ fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.6 }}>
           비교 모집단 · 서울시 {rank.industryName} 점포 {peer.nStores.toLocaleString()}개
           (상권 {peer.nAreas.toLocaleString()}곳의 점포당 매출 분포, 점포수 가중)
         </p>
@@ -105,18 +105,18 @@ export default function ReportScreen({ rank, detail, meta, salesHistory }) {
           width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#8A8178' }}>산출 근거 · 방법론</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: '#C4BAAD' }}>{showNotes ? '접기 ▲' : '보기 ▼'}</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)' }}>산출 근거 · 방법론</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted-faint)' }}>{showNotes ? '접기 ▲' : '보기 ▼'}</span>
         </button>
         {showNotes && (
           <ul className="pop" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 7, listStyle: 'none' }}>
             {rank.notes.map((n, i) => (
-              <li key={i} style={{ fontSize: 11.5, color: '#8A8178', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
+              <li key={i} style={{ fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 0, color: '#D8CDBB' }}>·</span>{n}
               </li>
             ))}
             {meta?.meta && (
-              <li style={{ fontSize: 11, color: '#B9B0A4', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
+              <li style={{ fontSize: 11, color: 'var(--muted-soft)', lineHeight: 1.6, paddingLeft: 12, position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 0, color: '#D8CDBB' }}>·</span>
                 출처: {meta.meta.sourceDataset} (기준 분기 {Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})
               </li>
@@ -145,11 +145,11 @@ function CostHealthCard({ ch }) {
   return (
     <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#8A8178' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
           비용 구조 건전성
           <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{ch.score}점 / 100</span>
         </span>
-        {b && <span style={{ fontSize: 11, color: '#B9B0A4' }}>{b.industryLabel} 평균 대비</span>}
+        {b && <span style={{ fontSize: 11, color: 'var(--muted-soft)' }}>{b.industryLabel} 평균 대비</span>}
       </div>
 
       {b ? (
@@ -157,7 +157,7 @@ function CostHealthCard({ ch }) {
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 11 }}>
             {rows.map((r) => <CostCompareBar key={r.label} {...r} />)}
           </div>
-          <p style={{ marginTop: 10, fontSize: 10.5, color: '#C4BAAD', lineHeight: 1.5 }}>
+          <p style={{ marginTop: 10, fontSize: 10.5, color: 'var(--muted-faint)', lineHeight: 1.5 }}>
             소상공인실태조사(2023) 업종 평균 대비 · 낮을수록 좋아요 · 업종 평균이면 50점
             {rentAdjusted && (
               <><br />임차료율 기준은 <b style={{ color: '#B08A2E' }}>{b.areaType}</b> 임대료로 보정
@@ -181,21 +181,21 @@ function CostCompareBar({ label, mine, avg, badge }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
-        <span style={{ color: '#8A8178', fontWeight: 700 }}>
+        <span style={{ color: 'var(--muted)', fontWeight: 700 }}>
           {label}
           {badge && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 800, color: '#B08A2E',
             background: '#FFF6DD', borderRadius: 6, padding: '1px 5px' }}>{badge} 보정</span>}
         </span>
         <span>
-          <b style={{ color: good ? '#5E8A3E' : '#D0564C' }}>{(mine * 100).toFixed(1)}%</b>
-          <span style={{ color: '#C4BAAD' }}> vs {badge ? '' : '평균 '}{(avg * 100).toFixed(1)}%</span>
+          <b style={{ color: good ? 'var(--green-text)' : 'var(--danger)' }}>{(mine * 100).toFixed(1)}%</b>
+          <span style={{ color: 'var(--muted-faint)' }}> vs {badge ? '' : '평균 '}{(avg * 100).toFixed(1)}%</span>
         </span>
       </div>
       <div style={{ height: 8, background: '#F5EFE3', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, height: 8, borderRadius: 4,
-          width: `${Math.max(2, minePct)}%`, background: good ? '#8DBB6C' : '#E8896C', transition: 'width .5s' }} />
+          width: `${Math.max(2, minePct)}%`, background: good ? 'var(--green-soft)' : '#E8896C', transition: 'width .5s' }} />
         {/* 업종 평균 기준선 */}
-        <div style={{ position: 'absolute', left: `${avgPct}%`, top: -2, width: 2, height: 12, background: '#8A8178', borderRadius: 1 }} />
+        <div style={{ position: 'absolute', left: `${avgPct}%`, top: -2, width: 2, height: 12, background: 'var(--muted)', borderRadius: 1 }} />
       </div>
     </div>
   );
@@ -208,17 +208,17 @@ function FlatRentGauge({ burden, laborRatio, purchaseRatio }) {
   return (
     <>
       <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: healthy ? '#5E8A3E' : '#D0564C' }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: healthy ? 'var(--green-text)' : 'var(--danger)' }}>
           임대료 부담률 {burden.toFixed(1)}%
         </span>
       </div>
       <div style={{ marginTop: 10, height: 8, borderRadius: 4, position: 'relative',
         background: 'linear-gradient(90deg,#DCEBC6 0%,#DCEBC6 40%,#F3E4C0 40%,#F3E4C0 70%,#F5D9D6 70%)' }}>
-        <div style={{ position: 'absolute', left: '40%', top: -3, width: 2, height: 14, background: '#8DBB6C', borderRadius: 1 }} />
+        <div style={{ position: 'absolute', left: '40%', top: -3, width: 2, height: 14, background: 'var(--green-soft)', borderRadius: 1 }} />
         <div style={{ position: 'absolute', left: `calc(${pos}% - 6px)`, top: -2, width: 12, height: 12,
-          borderRadius: '50%', background: healthy ? '#8DBB6C' : '#D0564C', border: '2.5px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+          borderRadius: '50%', background: healthy ? 'var(--green-soft)' : 'var(--danger)', border: '2.5px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
       </div>
-      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#B9B0A4' }}>
+      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-soft)' }}>
         <span>10% 이하 건전 · 25% 이상 위험 (경험칙)</span>
         <span>
           {purchaseRatio != null && `재료비 ${(purchaseRatio * 100).toFixed(0)}%`}
@@ -254,21 +254,21 @@ function StabilityCard({ st, history }) {
     <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#8A8178' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
             매출 안정성
             <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{st.score}점 / 100</span>
           </span>
-          <p style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.7, color: '#6B6259' }}>
-            추세 <b style={{ color: up ? '#5E8A3E' : '#D0564C' }}>{up ? '+' : ''}{trendPct}%/월</b>
-            <span style={{ color: '#C4BAAD' }}> ({st.trendScore}점)</span>
+          <p style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.7, color: 'var(--ink-soft)' }}>
+            추세 <b style={{ color: up ? 'var(--green-text)' : 'var(--danger)' }}>{up ? '+' : ''}{trendPct}%/월</b>
+            <span style={{ color: 'var(--muted-faint)' }}> ({st.trendScore}점)</span>
             <br />
-            변동성 <b style={{ color: st.volatility <= 0.15 ? '#5E8A3E' : '#D0564C' }}>{(st.volatility * 100).toFixed(1)}%</b>
-            <span style={{ color: '#C4BAAD' }}> ({st.volatilityScore}점)</span>
+            변동성 <b style={{ color: st.volatility <= 0.15 ? 'var(--green-text)' : 'var(--danger)' }}>{(st.volatility * 100).toFixed(1)}%</b>
+            <span style={{ color: 'var(--muted-faint)' }}> ({st.volatilityScore}점)</span>
           </p>
         </div>
         {spark}
       </div>
-      <p style={{ marginTop: 7, fontSize: 11, color: '#B9B0A4' }}>
+      <p style={{ marginTop: 7, fontSize: 11, color: 'var(--muted-soft)' }}>
         최근 {st.months}개월 매출 기준 · 홈택스 연동 자료
       </p>
     </div>
@@ -279,18 +279,18 @@ function MetricCard({ name, topPercent, pct, value, barColor, note, sub, score }
   return (
     <div className="card" style={{ borderRadius: 16, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#8A8178' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>
           {name}
           {topPercent != null
-            ? <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#5E8A3E' }}>상위 {topPercent}%</span>
+            ? <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: 'var(--green-text)' }}>상위 {topPercent}%</span>
             : <span style={{ marginLeft: 7, fontSize: 11.5, fontWeight: 800, color: '#B08A2E' }}>{score}점 / 100</span>}
         </span>
-        <span style={{ fontSize: 15, fontWeight: 900, color: '#2B2825' }}>{value}</span>
+        <span style={{ fontSize: 15, fontWeight: 900, color: 'var(--ink)' }}>{value}</span>
       </div>
       <div style={{ marginTop: 10, height: 8, background: '#F5EFE3', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, height: 8, borderRadius: 4, background: barColor, width: `${Math.max(2, Math.min(100, pct))}%`, transition: 'width .6s' }} />
       </div>
-      <div style={{ marginTop: 7, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#B9B0A4' }}>
+      <div style={{ marginTop: 7, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted-soft)' }}>
         <span>{sub}</span><span>{note}</span>
       </div>
     </div>

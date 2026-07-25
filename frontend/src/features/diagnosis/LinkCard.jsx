@@ -39,8 +39,8 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, link
       }}>{iconLabel}</span>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 14.5, fontWeight: 800, color: '#2B2825' }}>{title}</p>
-        <p style={{ fontSize: 11.5, color: '#A79C8E', marginTop: 2 }}>조회 전용 · 출금 불가</p>
+        <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>{title}</p>
+        <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 2 }}>조회 전용 · 출금 불가</p>
       </div>
 
       {status === 'off' && (
