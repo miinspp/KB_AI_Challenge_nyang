@@ -28,43 +28,27 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, buil
   };
 
   return (
-    <div className="link-card">
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <span style={{
-          flex: 'none', width: 44, height: 44, borderRadius: 14, background: iconBg,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: '#fff',
-        }}>{iconLabel}</span>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 15.5, fontWeight: 800, color: '#2B2825' }}>{title}</p>
-          <p style={{ fontSize: 12.5, color: '#A79C8E', marginTop: 4, lineHeight: 1.55 }}>{desc}</p>
-        </div>
-      </div>
+    <div className="link-card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+      <span style={{
+        flex: 'none', width: 40, height: 40, borderRadius: 12, background: iconBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12.5, color: '#fff',
+      }}>{iconLabel}</span>
 
-      <div className="safe-note">
-        <span style={{ color: '#4F7139', fontWeight: 900, fontSize: 12 }}>✓</span>
-        <span>조회 전용 · 출금 불가 · 언제든 해지</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 14.5, fontWeight: 800, color: '#2B2825' }}>{title}</p>
+        <p style={{ fontSize: 11.5, color: '#A79C8E', marginTop: 2 }}>조회 전용 · 출금 불가</p>
       </div>
 
       {status === 'off' && (
-        <button className="link-btn" onClick={link}>연동하기</button>
+        <button className="link-btn" style={{ flex: 'none', width: 'auto', padding: '9px 16px' }} onClick={link}>연동</button>
       )}
       {status === 'linking' && (
-        <div className="link-btn is-loading">
-          <span className="spinner" style={{ width: 18, height: 18, borderWidth: 3 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#8A8178' }}>연동 확인 중…</span>
-        </div>
+        <span className="spinner" style={{ flex: 'none', width: 20, height: 20, borderWidth: 3 }} />
       )}
       {status === 'done' && (
-        <div className="link-done">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{
-              width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,.2)',
-              color: '#fff', fontWeight: 900, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
-            }}>✓</span>
-            <span style={{ fontSize: 12.5, fontWeight: 800, color: '#fff', lineHeight: 1.35 }}>연동 완료 · {summary} 반영</span>
-          </div>
-          <button className="unlink-link" onClick={unlink}>해지</button>
-        </div>
+        <button className="unlink-link" style={{ flex: 'none' }} onClick={unlink}>
+          <span style={{ color: '#4F7139', fontWeight: 900, marginRight: 4 }}>✓</span>연동됨
+        </button>
       )}
     </div>
   );

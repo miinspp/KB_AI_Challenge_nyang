@@ -14,13 +14,14 @@ function Character({ src, label, variant }) {
   );
 }
 
-export default function Couple() {
+export default function Couple({ nice }) {
   return (
     <div className="owner-couple">
       <div className="owner-couple__characters">
         <Character src={bearOwner} label="곰 사장님" variant="bear" />
         <Character src={rabbitOwner} label="토끼 사장님" variant="rabbit" />
       </div>
+      <span className={`owner-couple__label${nice ? ' is-nice' : ''}`}>모모카페 사장님 부부</span>
     </div>
   );
 }

@@ -4,31 +4,39 @@ import { manToWon, wonToMan } from './shared/format';
 import { getIndustries, getMeta, getIndustry, postRank } from './api/diagnosis';
 import { getTxnReport } from './api/txn';
 import { postSimulation } from './api/simulation';
+import SplashScreen from './features/splash/SplashScreen';
 import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
+import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
+import { postAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
+import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
 
 const TITLES = ['우리 가게 위치', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
+// AI 에이전트 trace 표시용 도구 한글 라벨
+const TOOL_KO = {
+  get_diagnosis: '우리 가게 진단',
+  recommend_policies: '맞춤 상품 검토',
+  run_simulation: '현금흐름 시뮬레이션',
+  optimize_portfolio: '최적 조합 탐색',
+};
 // rentMan/laborMan/purchaseMan: 선택 입력 — 임대료가 있으면 비용구조 축이 추가된다 (백엔드 v2 보정)
-// areaText/bizAgeYears는 추천·시뮬레이션까지 동일한 계약으로 전달한다.
+// areaText/bizAge/salesChannel/cardCashRatio: 온보딩 표시·정밀도 보조값 (연동 시 자동 채움, 아직 postRank 미전달)
 const DIAG_INIT = {
   industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
 
   rentMan: '', laborMan: '', purchaseMan: '',
-  hasExistingDebt: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
-  annualTaxPaidMan: '', desiredFundingMan: '1000', desiredGrantUseMan: '500', desiredSavingsMan: '30',
-  fundingPurpose: 'OPERATING',
 };
 
 export default function App() {
+  const [started, setStarted] = useState(false);  // 표지 화면 통과 여부
   const [screen, setScreen] = useState(0);
   const [industries, setIndustries] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -43,8 +51,10 @@ export default function App() {
   const [analyzeError, setAnalyzeError] = useState('');
 
   const [equipped, setEquipped] = useState([]);
-  const [apiProducts, setApiProducts] = useState([]);
-  const [recommendationError, setRecommendationError] = useState('');
+  const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
+  const [agentRunning, setAgentRunning] = useState(false);  // AI 에이전트 자율 실행 상태
+  const [agentResult, setAgentResult] = useState(null);
+  const [agentError, setAgentError] = useState('');
   const [simulation, setSimulation] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState('');
@@ -64,12 +74,15 @@ export default function App() {
     return () => { alive = false; };
   }, [diag.industryCode]);
 
-  const products = apiProducts;
-  const simulationOptions = useMemo(() => buildSimulationOptions(apiProducts), [apiProducts]);
+  // 추천 서비스(/api/recommend) 결과를 우선 사용, 없으면 기존 규칙기반으로 폴백
+  const products = useMemo(
+    () => apiProducts ?? recommendProducts(rank),
+    [apiProducts, rank],
+  );
   const topPercent = rank ? rank.topPercent : null;
   const simulationPayload = useMemo(
-    () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null,
-    [rank, diag, hometax, equipped],
+    () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped, products }) : null,
+    [rank, diag, hometax, equipped, products],
   );
   const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
 
@@ -86,49 +99,15 @@ export default function App() {
   }, [simulationPayload, screen]);
 
   const canAnalyze = diag.industryCode
-    && String(diag.areaText || '').trim()
     && Number(diag.salesMan) > 0
-    && diag.expenseMan !== ''
-    && Number(diag.expenseMan) >= 0
-    && diag.bizAgeYears !== ''
-    && Number(diag.bizAgeYears) >= 0
     && diag.currentCashMan !== ''
-    && Number(diag.currentCashMan) >= 0
-    && (diag.hasExistingDebt === 'NONE'
-      || (diag.hasExistingDebt === 'YES'
-        && Number(diag.existingDebtMan) > 0
-        && Number(diag.existingMonthlyPaymentMan) > 0
-        && Number(diag.existingLoanRatePct) > 0
-        && Number(diag.existingLoanRemainingMonths) > 0));
+    && Number(diag.currentCashMan) >= 0;
 
-  const toggle = (optionOrId) => {
-    const option = typeof optionOrId === 'string'
-      ? simulationOptions.find((item) => item.id === optionOrId)
-      : optionOrId;
-    if (!option) return;
-    if (option.requiresExistingDebt && Number(diag.existingDebtMan || 0) <= 0) {
-      setSimulationError('대환 상품은 기존 대출잔액을 입력한 경우에만 시뮬레이션할 수 있어요.');
-      return;
-    }
-    const conflict = equipped.find((item) =>
-      item.key !== option.key
-      && item.duplicateGroup
-      && item.duplicateGroup === option.duplicateGroup);
-    if (conflict && !equipped.some((item) => item.key === option.key)) {
-      setSimulationError(`${option.short}과(와) ${conflict.short}은(는) 중복 가입할 수 없어요.`);
-      return;
-    }
-    setSimulationError('');
-    setEquipped((eq) => eq.some((item) => item.key === option.key)
-      ? eq.filter((item) => item.key !== option.key)
-      : [...eq, option]);
-  };
+  const toggle = (id) => setEquipped((eq) =>
+    eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
 
   const analyze = async () => {
     setAnalyzeError('');
-    setRecommendationError('');
-    setApiProducts([]);
-    setEquipped([]);
     setAnalyzing(true);
     try {
       // 선택 입력(임대료·인건비·재료비)이 하나라도 있으면 비용 세부를 전달 — rent 가 있으면 비용구조 축 활성화
@@ -157,7 +136,7 @@ export default function App() {
           monthlyExpense: manToWon(diag.expenseMan || 0),
           areaType: diag.areaType || null,
           costBreakdown,
-          salesHistory,
+          salesHistory,   // 홈택스 연동 시 6개월 이력 → 안정성 축 (형식 정규화됨)
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
@@ -170,26 +149,42 @@ export default function App() {
       const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
       // 실입력값으로 프로필 보정: 업력 + 실부채비율(부채잔액/연매출). 비어 있으면 rankToProfile이 근사로 폴백.
       const salesMonthly = Number(diag.salesMan) || 0;
-      const debtRatio = salesMonthly > 0 && diag.hasExistingDebt
-        ? Number(diag.existingDebtMan || 0) / (salesMonthly * 12)
+      const debtRatio = salesMonthly > 0 && diag.existingDebtMan
+        ? Number(diag.existingDebtMan) / (salesMonthly * 12)
         : null;
       const bizAgeYears = diag.bizAgeYears ? Number(diag.bizAgeYears) : null;
       const profile = rankToProfile(r, {
-        region: diag.areaText || '서울', industry: industryName, bizAgeYears, debtRatio,
+        region: '서울', industry: industryName, bizAgeYears, debtRatio,
       });
-      setRecommendationError('');
       fetchRecommendations(profile)
         .then(setApiProducts)
-        .catch((err) => {
-          console.warn('추천 서비스 요청 실패:', err.message);
-          setApiProducts([]);
-          setRecommendationError(err.message);
-        });
+        .catch((err) => { console.warn('추천 서비스 폴백:', err.message); setApiProducts(null); });
 
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  // AI에게 맡기기 — 진단 입력을 넘기면 에이전트가 진단→추천→시뮬→포트폴리오를 자율 실행
+  const runAgent = async () => {
+    setAgentError(''); setAgentResult(null); setAgentRunning(true);
+    try {
+      const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
+      const result = await postAgent({
+        industryCode: diag.industryCode,
+        industry: industryName,
+        monthlySales: manToWon(diag.salesMan),
+        monthlyExpense: manToWon(diag.expenseMan || 0),
+        currentCash: manToWon(diag.currentCashMan || 0),
+        existingMonthlyPayment: manToWon(diag.existingMonthlyPaymentMan || 0),
+      });
+      setAgentResult(result);
+    } catch (e) {
+      setAgentError(e.message);
+    } finally {
+      setAgentRunning(false);
     }
   };
 
@@ -203,8 +198,6 @@ export default function App() {
       rentMan: String(wonToMan(f.rent)),
       laborMan: String(wonToMan(f.laborCost)),
       purchaseMan: String(wonToMan(f.purchaseCost)),
-      bizAgeYears: f.bizAgeYears == null ? d.bizAgeYears : String(f.bizAgeYears),
-      annualTaxPaidMan: f.annualTaxPaid == null ? d.annualTaxPaidMan : String(wonToMan(f.annualTaxPaid)),
     }));
   };
 
@@ -214,19 +207,14 @@ export default function App() {
       ...d,
       salesMan: String(wonToMan(f.monthlySalesAvg)),
       expenseMan: String(wonToMan(f.totalMonthlyExpense)),
-      hasExistingDebt: f.existingDebtBalance > 0 ? 'YES' : 'NONE',
-      existingDebtMan: String(wonToMan(f.existingDebtBalance || 0)),
       existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
-      existingLoanRatePct: f.existingLoanRatePct == null ? d.existingLoanRatePct : String(f.existingLoanRatePct),
-      existingLoanRemainingMonths: f.existingLoanRemainingMonths == null
-        ? d.existingLoanRemainingMonths : String(f.existingLoanRemainingMonths),
       cardCashRatio: f.cardCashRatio,
     }));
   };
 
   const reset = () => {
     setScreen(0); setDiag(DIAG_INIT); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError(''); setApiProducts([]); setRecommendationError('');
+    setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError('');
 
   };
@@ -242,6 +230,14 @@ export default function App() {
   const ctaLabel = screen === 0 && analyzing ? '분석 중…' : CTAS[screen];
   const ctaGreen = screen === 0 && !ctaDisabled;  // 온보딩 CTA는 초록 포인트
 
+  if (!started) {
+    return (
+      <div className="app">
+        <SplashScreen onStart={() => setStarted(true)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <Header title={TITLES[screen]} screen={screen} onBack={() => setScreen((s) => Math.max(0, s - 1))} />
@@ -252,11 +248,10 @@ export default function App() {
         )}
         {screen === 1 && <ReportScreen rank={rank} detail={detail} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
-        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} error={recommendationError} />}
-        {screen === 4 && <SimulatorScreen equipped={equipped} toggle={toggle} simRows={simRows}
-          options={simulationOptions}
+        {screen === 3 && <RecommendScreen products={products} percentile={topPercent} />}
+        {screen === 4 && <SimulatorScreen products={products} equipped={equipped} toggle={toggle} simRows={simRows}
           simulation={simulation} loading={simulationLoading} error={simulationError} />}
-        {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
+        {screen === 5 && <PortfolioScreen products={products} equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}
       </div>
 
@@ -274,7 +269,83 @@ export default function App() {
               : undefined}>
           {ctaLabel}
         </button>
+
+        {screen === 0 && (
+          <button className="cta" onClick={runAgent} disabled={!canAnalyze || agentRunning}
+            style={{
+              marginTop: 8,
+              background: (!canAnalyze || agentRunning) ? '#F3E4C0' : '#FFC01E',
+              color: '#2B2825', boxShadow: 'none',
+            }}>
+            {agentRunning ? '든든이 AI가 판단 중…' : '✨ 든든이 AI에게 맡기기'}
+          </button>
+        )}
       </div>
+
+      {(agentRunning || agentResult || agentError) && (
+        <div onClick={() => { if (!agentRunning) { setAgentResult(null); setAgentError(''); } }}
+          style={{ position: 'absolute', inset: 0, background: 'rgba(43,40,37,.5)', display: 'flex',
+            alignItems: 'flex-end', zIndex: 50 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxHeight: '82%', overflowY: 'auto', background: '#FFF9EF',
+              borderRadius: '24px 24px 0 0', padding: '22px 20px 28px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 18 }}>✨</span>
+              <span style={{ fontSize: 17, fontWeight: 900, color: '#2B2825' }}>든든이 AI</span>
+              {!agentRunning && (
+                <button onClick={() => { setAgentResult(null); setAgentError(''); }}
+                  style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: 20, color: '#C4BAAD', cursor: 'pointer' }}>×</button>
+              )}
+            </div>
+
+            {agentRunning && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
+                <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#8A8178' }}>
+                  진단 → 추천 → 시뮬레이션을 스스로 판단하고 있어요…
+                </span>
+              </div>
+            )}
+
+            {agentError && (
+              <p style={{ fontSize: 13.5, color: '#D0564C', fontWeight: 700, lineHeight: 1.6 }}>
+                에이전트 호출 실패: {agentError}<br />
+                <span style={{ color: '#8A8178', fontWeight: 500 }}>추천 서비스(8000)가 켜져 있고 ANTHROPIC_API_KEY가 설정됐는지 확인해주세요.</span>
+              </p>
+            )}
+
+            {agentResult && (
+              <>
+                {Array.isArray(agentResult.trace) && agentResult.trace.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                    {agentResult.trace.map((t, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                        <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: '#8DBB6C' }}>{i + 1}</span>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 800, color: '#2B2825' }}>{TOOL_KO[t.tool] || t.tool}</p>
+                          {t.tool === 'run_simulation' && t.output && (
+                            <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? '#5E8A3E' : '#D0564C', fontWeight: 600 }}>
+                              상환부담 {(t.output.repayment_burden_ratio * 100).toFixed(0)}% · {t.output.repayment_burden_passed ? '기준 통과' : '기준 초과 → 재검토'}
+                            </p>
+                          )}
+                          {t.tool === 'recommend_policies' && t.output && (
+                            <p style={{ fontSize: 11.5, color: '#8A8178', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ background: '#fff', border: '1.5px solid #F0E7D6', borderRadius: 16, padding: '15px 16px' }}>
+                  <p style={{ fontSize: 13.5, color: '#2B2825', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                    {agentResult.final}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
