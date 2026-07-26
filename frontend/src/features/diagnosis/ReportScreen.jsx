@@ -22,10 +22,25 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
   }
 
   const { sales, profit, margin, areaRank, peer, costHealth, stability } = rank;
-  // 보정축이 있으면 기본 3축 비중이 줄어든다 (백엔드 RankService 와 동일 규칙 — 근거 표기용)
-  const wBase = 1 - (costHealth ? 0.15 : 0) - (stability ? 0.15 : 0);
-  const wBasePct = r1(wBase * 100);
   const expenseWon = sales.value - profit.value;
+
+  // 근거 문구의 가중치는 백엔드가 실제로 적용한 값(weightsUsed)을 그대로 쓴다.
+  // 여기서 기본값을 다시 계산하면 가중치 조절 기능이 붙는 순간 화면 숫자는 맞는데
+  // 설명만 조용히 틀어지므로, 응답이 없을 때만 RankService 기본값으로 폴백한다.
+  const W = rank.weightsUsed ?? {
+    sales: 0.5, profit: 0.3, margin: 0.2,
+    ...(costHealth ? { cost: 0.15 } : {}),
+    ...(stability ? { stability: 0.15 } : {}),
+  };
+  const extraW = (W.cost ?? 0) + (W.stability ?? 0);
+  const baseScale = 1 - extraW;                       // 보정축 때문에 기본 3축에 곱해진 비율
+  const pctText = (v) => `${r1((v ?? 0) * 100)}%`;
+  const contrib = (w, score) => r1((w ?? 0) * score); // 종합점수 기여도 = 가중치 × 점수
+  // 표시용 원가중치 복원: weightsUsed 는 이미 baseScale 이 곱해진 값이라 되돌려야 "50% × 70%" 로 읽힌다
+  const rawPctText = (w) => (baseScale > 0 ? pctText((w ?? 0) / baseScale) : '-');
+  const basisText = (w, score) => (extraW > 0
+    ? `가중치 ${rawPctText(w)} × ${pctText(baseScale)} = ${contrib(w, score)}점 기여`
+    : `가중치 ${pctText(w)} = ${contrib(w, score)}점 기여`);
 
   const metrics = [
     {
@@ -36,7 +51,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         { k: '내 입력값', v: `월 매출 ${fmtMan(sales.value)}` },
         { k: '비교 대상', v: `서울 ${rank.industryName} ${peer.nStores.toLocaleString()}곳 (중위 ${fmtMan(sales.peerMedian)} · P25 ${fmtMan(sales.peerP25)} · P75 ${fmtMan(sales.peerP75)})` },
         { k: '계산', v: `실측 분포 격자에서 내 매출 위치를 역보간 → 백분위 ${r1(sales.percentile)}점 = 상위 ${sales.topPercent}%` },
-        { k: '종합 반영', v: `가중치 50% × ${wBasePct}% = ${r1(0.5 * wBase * sales.percentile)}점 기여` },
+        { k: '종합 반영', v: basisText(W.sales, sales.percentile) },
       ],
       source: '출처: 서울시 상권분석서비스 추정매출(OA-15572) 점포당 월매출 분포',
     },
@@ -48,7 +63,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         { k: '내 순수익', v: `매출 ${fmtMan(sales.value)} − 지출 ${fmtMan(expenseWon)} = ${fmtMan(profit.value)}` },
         { k: '비교 분포', v: `매출 분포 × 업종 평균 영업이익률 ${fmtRate(margin.benchmark)} → 동종 순수익 중위 ${fmtMan(profit.peerMedian)}` },
         { k: '계산', v: `유도 분포에서 역보간 → 백분위 ${r1(profit.percentile)}점 = 상위 ${profit.topPercent}%` },
-        { k: '종합 반영', v: `가중치 30% × ${wBasePct}% = ${r1(0.3 * wBase * profit.percentile)}점 기여` },
+        { k: '종합 반영', v: basisText(W.profit, profit.percentile) },
       ],
       source: '출처: 서울시 추정매출 분포 × 소상공인실태조사 업종 평균 영업이익률',
     },
@@ -60,7 +75,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         { k: '내 이익률', v: `순수익 ÷ 매출 = ${fmtRate(margin.value)}` },
         { k: '업종 벤치마크', v: `${rank.benchmarkGroupLabel} 평균 영업이익률 ${fmtRate(margin.benchmark)}` },
         { k: '계산', v: `50 × (내 이익률 ÷ 벤치마크) = ${r1(margin.score)}점 (평균이면 50점, 2배면 100점)` },
-        { k: '종합 반영', v: `가중치 20% × ${wBasePct}% = ${r1(0.2 * wBase * margin.score)}점 기여` },
+        { k: '종합 반영', v: basisText(W.margin, margin.score) },
       ],
       source: '출처: 소상공인실태조사(중소벤처기업부·통계청) 업종 평균 영업이익률',
     },
@@ -80,7 +95,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
     if (costHealth.laborRatio != null && b?.laborRatio != null) steps.push({ k: '인건비율', v: `${fmtRate(costHealth.laborRatio)} vs 업종 ${fmtRate(b.laborRatio)}` });
     if (costHealth.purchaseRatio != null && b?.purchaseRatio != null) steps.push({ k: '원가율', v: `${fmtRate(costHealth.purchaseRatio)} vs 업종 ${fmtRate(b.purchaseRatio)}` });
     steps.push({ k: '계산', v: `항목별 50 × (2 − 내 비율 ÷ 업종 평균) 점수를 평균 → ${r1(costHealth.score)}점` });
-    steps.push({ k: '종합 반영', v: `보정축 가중치 15% = ${r1(0.15 * costHealth.score)}점 기여` });
+    steps.push({ k: '종합 반영', v: `보정축 가중치 ${pctText(W.cost)} = ${contrib(W.cost, costHealth.score)}점 기여` });
     metrics.push({
       key: 'cost', name: '비용 구조',
       valueText: `${r1(costHealth.score)}점`, pct: costHealth.score,
@@ -106,7 +121,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         { k: '추세', v: `회귀 기울기 ÷ 평균 = ${trendText}/월 → ${r1(stability.trendScore)}점 (0%=50점, ±5%에서 포화)` },
         { k: '변동성', v: `표준편차 ÷ 평균 = ${fmtRate(stability.volatility)} → ${r1(stability.volatilityScore)}점 (5% 이하 100점, 30% 이상 0점)` },
         { k: '계산', v: `추세·변동성 50:50 평균 = ${r1(stability.score)}점` },
-        { k: '종합 반영', v: `보정축 가중치 15% = ${r1(0.15 * stability.score)}점 기여` },
+        { k: '종합 반영', v: `보정축 가중치 ${pctText(W.stability)} = ${contrib(W.stability, stability.score)}점 기여` },
       ],
       source: '출처: 국세청 홈택스 연동 월별 매출 신고자료',
     });
