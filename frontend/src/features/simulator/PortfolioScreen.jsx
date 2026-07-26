@@ -1,21 +1,21 @@
-export default function PortfolioScreen({ products, equipped, simRows, percentile, simulation }) {
-  const eq = equipped.map((id) => products.find((p) => p.id === id)).filter(Boolean);
+export default function PortfolioScreen({ equipped, simRows, percentile, simulation }) {
+  const eq = equipped;
   const headline = eq.length === 0
     ? '상품을 장착하면 변화를 보여드려요'
     : '상품 ' + eq.length + '개 조합의 12개월 계산 결과예요';
 
   return (
     <div className="scr">
-      <div style={{ background: 'var(--ink)', borderRadius: 22, padding: '20px 22px', color: '#fff' }}>
+      <div style={{ background: '#2B2825', borderRadius: 22, padding: '20px 22px', color: '#fff' }}>
         <p style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD873' }}>사장님의 최종 포트폴리오</p>
         <p style={{ marginTop: 8, fontSize: 20, fontWeight: 900, lineHeight: 1.45, letterSpacing: -.4 }}>{headline}</p>
         <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {simRows.map((m) => (
             <div key={m.name} style={{ background: 'rgba(255,255,255,.07)', borderRadius: 14, padding: '12px 14px' }}>
-              <p style={{ fontSize: 11, color: 'var(--muted-soft)', fontWeight: 700 }}>{m.name}</p>
+              <p style={{ fontSize: 11, color: '#B9B0A4', fontWeight: 700 }}>{m.name}</p>
               <p style={{ marginTop: 5, fontSize: 16, fontWeight: 900, color: '#fff' }}>{m.after}</p>
               <p style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: m.deltaColorDark }}>
-                {m.delta} <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(기존 {m.before})</span>
+                {m.delta} <span style={{ color: '#8A8178', fontWeight: 500 }}>(기존 {m.before})</span>
               </p>
             </div>
           ))}
@@ -25,16 +25,16 @@ export default function PortfolioScreen({ products, equipped, simRows, percentil
       {eq.length > 0 ? (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p className="label-sm">가입하러 가기 <span style={{ fontWeight: 500, color: 'var(--muted-faint)' }}>· KB스타뱅킹으로 이동해요</span></p>
+            <p className="label-sm">가입하러 가기 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· KB스타뱅킹으로 이동해요</span></p>
             {eq.map((p) => (
               <a key={p.id} href={p.link} target="_blank" rel="noreferrer" className="card" style={{ display: 'block' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span className="icon-badge" style={{ width: 40, height: 40, background: p.iconBg, color: p.iconColor, fontSize: 18 }}>{p.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', letterSpacing: -.3 }}>{p.name}</p>
-                    <p style={{ marginTop: 2, fontSize: 11.5, color: 'var(--muted-mid)' }}>{p.spec1} · {p.spec2}</p>
+                    <p style={{ fontSize: 15, fontWeight: 800, color: '#2B2825', letterSpacing: -.3 }}>{p.name}</p>
+                    <p style={{ marginTop: 2, fontSize: 11.5, color: '#A79C8E' }}>{p.spec1} · {p.spec2}</p>
                   </div>
-                  <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: 'var(--gold-link)' }}>가입 ↗</span>
+                  <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: '#C98A00' }}>가입 ↗</span>
                 </div>
                 <div style={{ marginTop: 12, background: '#FFF9EA', borderRadius: 12, padding: '11px 13px' }}>
                   <p style={{ fontSize: 12, color: '#8A7A55', lineHeight: 1.65 }}>{p.reason}</p>
@@ -42,7 +42,7 @@ export default function PortfolioScreen({ products, equipped, simRows, percentil
               </a>
             ))}
           </div>
-          <div style={{ background: 'var(--green-bg)', borderRadius: 16, padding: '14px 16px' }}>
+          <div style={{ background: '#EDF5E1', borderRadius: 16, padding: '14px 16px' }}>
             <p style={{ fontSize: 12.5, color: '#5E6E4A', lineHeight: 1.65, fontWeight: 600 }}>
               사장님은 상위 {percentile}% 위치예요. {simulation?.constraints?.violations?.[0]
                 || '현재 조합은 계산 엔진의 상환부담·중복수혜·초과조달 기준을 통과했어요.'} 실제 자격과 금리는 각 상품 페이지에서 확인하세요.
@@ -50,9 +50,9 @@ export default function PortfolioScreen({ products, equipped, simRows, percentil
           </div>
         </>
       ) : (
-        <div style={{ background: '#fff', border: '1.5px dashed var(--border-deep)', borderRadius: 20, padding: 28, textAlign: 'center' }}>
-          <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--muted)' }}>아직 장착한 상품이 없어요</p>
-          <p style={{ marginTop: 6, fontSize: 12.5, color: 'var(--muted-faint)' }}>이전 화면에서 상품을 장착해 보세요.</p>
+        <div style={{ background: '#fff', border: '1.5px dashed #E4D8C2', borderRadius: 20, padding: 28, textAlign: 'center' }}>
+          <p style={{ fontSize: 14, fontWeight: 800, color: '#8A8178' }}>아직 장착한 상품이 없어요</p>
+          <p style={{ marginTop: 6, fontSize: 12.5, color: '#C4BAAD' }}>이전 화면에서 상품을 장착해 보세요.</p>
         </div>
       )}
     </div>
