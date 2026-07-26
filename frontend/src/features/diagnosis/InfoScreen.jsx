@@ -3,23 +3,7 @@ import { createPortal } from 'react-dom';
 import LinkCard from './LinkCard';
 import { topPercentOf } from './percentile';
 import { manToWon, fmtMan } from '../../shared/format';
-
-/*
- * 프로토타입 연동 결과(시뮬레이션). 실서비스에서는 본인인증 + 마이데이터/스크래핑 API로 교체된다.
- * 진단 v2 역할 분담: 홈택스 = 업종·매출·지출·지출세부·6개월 이력 / KB = 보유현금·기존 대출(accountMock.KB_LINK).
- */
-const HOMETAX_FINANCIALS = {
-  industryCode: 'CS100001',        // 한식음식점
-  maskedBusinessNumber: '123-45-*****',
-  basisPeriod: '최근 6개월',
-  monthlySalesAvg: 25_000_000,
-  totalMonthlyExpense: 19_000_000,
-  rent: 2_500_000,
-  laborCost: 4_000_000,
-  purchaseCost: 9_000_000,
-  otherExpense: 3_500_000,
-  salesHistory: [23_800_000, 24_100_000, 25_600_000, 24_900_000, 26_200_000, 25_400_000],
-};
+import { HOMETAX_FINANCIALS } from '../account/accountMock';
 
 // 관심사 칩 — api/recommend.js NEED_PHRASES 와 키를 맞춘다 (need_keywords 로 전달됨)
 const NEEDS = [
@@ -55,11 +39,19 @@ export default function InfoScreen({
   industries, diag, setDiag, detail, needs, setNeeds,
   kbLinked, onKbLinked, onUnlinkKb,
   hometaxLinked, onHometaxLinked, onUnlinkHometax,
+  requestSheet, onSheetHandled,
 }) {
   const [sources, setSources] = useState({});   // { field: 'kb' | 'hometax' }
   const [sheet, setSheet] = useState(null);     // industry | area | sales | cost | finance | needs
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('CS1');
+
+  // 다른 탭(내 정보 → 관심사)에서 특정 시트를 열어달라고 요청한 경우
+  useEffect(() => {
+    if (!requestSheet) return;
+    setSheet(requestSheet);
+    onSheetHandled && onSheetHandled();
+  }, [requestSheet, onSheetHandled]);
 
   const selected = useMemo(
     () => industries.find((i) => i.code === diag.industryCode),
@@ -191,7 +183,7 @@ export default function InfoScreen({
   const industryOptions = industries.filter((i) => (qStr ? i.name.includes(qStr) : i.code.startsWith(tab)));
 
   return (
-    <div className="scr" style={{ paddingBottom: 150 }}>
+    <div className="scr" style={{ paddingBottom: 215 }}>
       <div>
         <h1 className="h1">3가지만 알려주시면<br />바로 진단해 드려요</h1>
         <p className="sub">홈택스를 연동하면 매출·지출·6개월 추이까지 한 번에 채워져요.</p>

@@ -1,6 +1,6 @@
-// KB 계좌 마이데이터 연동 결과(프로토타입 시뮬레이션).
-// 실서비스에서는 본인인증 + 마이데이터 API 응답으로 교체된다.
-// InfoScreen(입력 자동채움)과 HomeScreen/AccountScreen(계좌·거래내역 표시)이 함께 쓴다.
+// 연동 결과 mock (프로토타입 시뮬레이션).
+// 실서비스에서는 본인인증 + 마이데이터 / 국세청 API 응답으로 교체된다.
+// InfoScreen(입력 자동채움) · HomeScreen · AccountScreen · HometaxScreen 이 함께 쓴다.
 
 /**
  * 연동 시 온보딩 입력을 자동으로 채우는 값 — 진단 입력 v2 역할 분담:
@@ -13,6 +13,50 @@ export const KB_LINK = {
   existingLoanRatePct: '5.2',
   existingLoanRemainingMonths: '24',
 };
+
+/**
+ * 국세청 홈택스 연동 결과 — 업종·매출·지출·지출세부·6개월 이력.
+ * (InfoScreen 자동채움 + HometaxScreen 상세 표시)
+ */
+export const HOMETAX_FINANCIALS = {
+  industryCode: 'CS100001',        // 한식음식점
+  industryName: '한식음식점',
+  maskedBusinessNumber: '123-45-*****',
+  basisPeriod: '최근 6개월',
+  monthlySalesAvg: 25_000_000,
+  totalMonthlyExpense: 19_000_000,
+  rent: 2_500_000,
+  laborCost: 4_000_000,
+  purchaseCost: 9_000_000,
+  otherExpense: 3_500_000,
+  salesHistory: [23_800_000, 24_100_000, 25_600_000, 24_900_000, 26_200_000, 25_400_000],
+};
+
+/**
+ * 이미 가입해 이용 중인 상품 — KB 계좌를 연결하면 마이데이터로 불러온다는 설정.
+ * 시뮬레이터의 '장착'(가상 실험)과는 별개다. 기존 대출 항목은 KB_LINK 의
+ * 잔액·금리·잔여기간과 같은 값이어야 진단/시뮬 입력과 어긋나지 않는다.
+ */
+export const JOINED_PRODUCTS = [
+  {
+    id: 'joined-loan', icon: '₩', iconBg: '#FFF1CC', iconColor: 'var(--gold-link)',
+    name: 'KB 소상공인 든든 운영자금 대출',
+    spec: `잔액 ${(KB_LINK.existingDebtBalance / 10000).toLocaleString()}만원 · 연 ${KB_LINK.existingLoanRatePct}% · ${KB_LINK.existingLoanRemainingMonths}개월 남음`,
+    status: '상환중',
+  },
+  {
+    id: 'joined-aid', icon: '☂', iconBg: '#FFF0E4', iconColor: '#D07A3A',
+    name: '노란우산공제',
+    spec: '월 10만원 납입 · 누적 240만원',
+    status: '납입중',
+  },
+  {
+    id: 'joined-card', icon: '▣', iconBg: '#E4EEF9', iconColor: 'var(--blue)',
+    name: 'KB 사업자 체크카드',
+    spec: '이번 달 사용 320만원',
+    status: '사용중',
+  },
+];
 
 /** 사업자 주거래 계좌 */
 export const KB_ACCOUNT = {

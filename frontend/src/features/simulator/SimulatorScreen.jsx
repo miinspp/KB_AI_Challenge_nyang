@@ -17,7 +17,7 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
     : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
 
   return (
-    <div className="scr" style={{ padding: '0 0 130px', gap: 0 }}>
+    <div className="scr" style={{ padding: '0 0 200px', gap: 0 }}>
       <div style={{
         margin: '2px 22px 0', position: 'relative', height: 230, overflow: 'hidden',
         background: 'linear-gradient(180deg,#FFF3D2 0%,#FFF9EF 68%,#E9F2DB 86%,#D8E8C2 100%)',
