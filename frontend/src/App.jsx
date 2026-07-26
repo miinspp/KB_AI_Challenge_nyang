@@ -17,7 +17,7 @@ import { fetchRecommendations, rankToProfile } from './api/recommend';
 import { postAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows, buildSimulationPayload } from './features/simulator/sim';
+import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
 
 const TITLES = ['우리 가게 진단', '진단 리포트', '비용 리포트', '맞춤 상품 추천', '금융 시뮬레이터', '분석 포트폴리오'];
 const CTAS = ['우리 가게 분석하기', '비용 리포트 보기', '맞춤 상품 추천 받기', '시뮬레이터에서 장착해보기', '포트폴리오 확인하기', '처음부터 다시 하기'];
@@ -35,8 +35,10 @@ const TOOL_KO = {
 const DIAG_INIT = {
   industryCode: '', areaType: '', salesMan: '', expenseMan: '', bizAgeYears: '',
   rentMan: '', laborMan: '', purchaseMan: '', otherMan: '',
+  hasExistingDebt: '',
   currentCashMan: '', existingDebtMan: '', existingMonthlyPaymentMan: '',
   existingLoanRatePct: '', existingLoanRemainingMonths: '',
+  annualTaxPaidMan: '', desiredFundingMan: '1000', desiredGrantUseMan: '500', desiredSavingsMan: '30',
 };
 
 export default function App() {
@@ -87,10 +89,25 @@ export default function App() {
     () => apiProducts ?? recommendProducts(rank),
     [apiProducts, rank],
   );
+  const simulationOptions = useMemo(() => buildSimulationOptions(products), [products]);
   const topPercent = rank ? rank.topPercent : null;
+  const simulationReady = diag.currentCashMan !== ''
+    && Number(diag.currentCashMan) >= 0
+    && (
+      diag.hasExistingDebt === 'NONE'
+      || (
+        diag.hasExistingDebt === 'YES'
+        && Number(diag.existingDebtMan) > 0
+        && Number(diag.existingMonthlyPaymentMan) > 0
+        && Number(diag.existingLoanRatePct) > 0
+        && Number(diag.existingLoanRemainingMonths) > 0
+      )
+    );
   const simulationPayload = useMemo(
-    () => rank ? buildSimulationPayload({ rank, diag, hometax, equipped, products }) : null,
-    [rank, diag, hometax, equipped, products],
+    () => rank && simulationReady
+      ? buildSimulationPayload({ rank, diag, hometax, equipped })
+      : null,
+    [rank, diag, hometax, equipped, simulationReady],
   );
   const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
 
@@ -111,8 +128,26 @@ export default function App() {
     && Number(diag.salesMan) > 0
     && diag.expenseMan !== '';
 
-  const toggle = (id) => setEquipped((eq) =>
-    eq.includes(id) ? eq.filter((x) => x !== id) : [...eq, id]);
+  const toggle = (optionOrId) => {
+    const option = typeof optionOrId === 'string'
+      ? simulationOptions.find((item) => item.id === optionOrId)
+      : optionOrId;
+    if (!option) return;
+    if (option.requiresExistingDebt && Number(diag.existingDebtMan || 0) <= 0) {
+      setSimulationError('대환 상품은 기존 대출 잔액을 입력한 경우에만 선택할 수 있어요.');
+      return;
+    }
+    const conflict = equipped.find((item) => item.key !== option.key
+      && item.duplicateGroup && item.duplicateGroup === option.duplicateGroup);
+    if (conflict && !equipped.some((item) => item.key === option.key)) {
+      setSimulationError(`${option.short}과(와) ${conflict.short}은(는) 중복 가입할 수 없어요.`);
+      return;
+    }
+    setSimulationError('');
+    setEquipped((current) => current.some((item) => item.key === option.key)
+      ? current.filter((item) => item.key !== option.key)
+      : [...current, option]);
+  };
 
   const analyze = async () => {
     setAnalyzeError('');
@@ -217,6 +252,7 @@ export default function App() {
     setDiag((d) => ({
       ...d,
       currentCashMan: String(wonToMan(f.currentCash)),
+      hasExistingDebt: Number(f.existingDebtBalance) > 0 ? 'YES' : 'NONE',
       existingDebtMan: String(wonToMan(f.existingDebtBalance)),
       existingMonthlyPaymentMan: String(wonToMan(f.monthlyLoanPayment)),
       existingLoanRatePct: f.existingLoanRatePct,
@@ -304,9 +340,12 @@ export default function App() {
         {screen === 1 && <ReportScreen rank={rank} meta={meta} salesHistory={hometax?.salesHistory} />}
         {screen === 2 && <CostReportScreen report={txnReport} />}
         {screen === 3 && <RecommendScreen products={products} percentile={topPercent} />}
-        {screen === 4 && <SimulatorScreen products={products} equipped={equipped} toggle={toggle} simRows={simRows}
-          simulation={simulation} loading={simulationLoading} error={simulationError} />}
-        {screen === 5 && <PortfolioScreen products={products} equipped={equipped} simRows={simRows} percentile={topPercent}
+        {screen === 4 && <SimulatorScreen options={simulationOptions} equipped={equipped} toggle={toggle} simRows={simRows}
+          simulation={simulation} loading={simulationLoading}
+          error={simulationError || (!simulationReady
+            ? '첫 화면의 자금 상황에서 보유 현금과 기존 대출 여부를 입력해 주세요.'
+            : '')} />}
+        {screen === 5 && <PortfolioScreen equipped={equipped} simRows={simRows} percentile={topPercent}
           simulation={simulation} />}
       </div>
 

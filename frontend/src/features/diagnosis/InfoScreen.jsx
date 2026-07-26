@@ -41,7 +41,7 @@ const GROUP_TABS = [['CS1', '외식업'], ['CS2', '서비스업'], ['CS3', '소�
 
 // 연동 소스별로 자동 채워지는 필드 (배지 표시용)
 const HOMETAX_FIELDS = ['industryCode', 'salesMan', 'expenseMan', 'rentMan', 'laborMan', 'purchaseMan', 'otherMan'];
-const KB_FIELDS = ['currentCashMan', 'existingDebtMan', 'existingMonthlyPaymentMan', 'existingLoanRatePct', 'existingLoanRemainingMonths'];
+const KB_FIELDS = ['currentCashMan', 'hasExistingDebt', 'existingDebtMan', 'existingMonthlyPaymentMan', 'existingLoanRatePct', 'existingLoanRemainingMonths'];
 
 const manText = (v) => (v === '' || v == null ? '' : `${Number(v).toLocaleString()}만원`);
 
@@ -109,7 +109,7 @@ export default function InfoScreen({
 
   // ── 선택 행 요약문 ──
   const costFilled = diag.rentMan !== '' || diag.laborMan !== '' || diag.purchaseMan !== '';
-  const financeFilled = diag.currentCashMan !== '' || diag.existingDebtMan !== '';
+  const financeFilled = diag.currentCashMan !== '' && diag.hasExistingDebt !== '';
   const needLabels = needs.map((k) => NEEDS.find((n) => n.key === k)?.label).filter(Boolean).join(' · ');
   const optionalRows = [
     {
@@ -168,10 +168,16 @@ export default function InfoScreen({
       title: '자금 상황', desc: '시뮬레이터가 현금흐름·상환부담을 계산할 때 쓰는 값이에요.',
       fields: [
         numField('currentCashMan', '현재 보유 현금', { ph: '예: 1,500' }),
-        numField('existingDebtMan', '기존 대출 잔액', { ph: '없으면 0' }),
-        numField('existingMonthlyPaymentMan', '월 대출 상환액', { ph: '없으면 0' }),
-        numField('existingLoanRatePct', '기존 대출 금리', { unit: '%', ph: '예: 5.2' }),
-        numField('existingLoanRemainingMonths', '남은 상환기간', { unit: '개월', ph: '예: 24' }),
+        ...(diag.hasExistingDebt === 'YES' ? [
+          numField('existingDebtMan', '기존 대출 잔액', { ph: '예: 4,320' }),
+          numField('existingMonthlyPaymentMan', '월 대출 상환액', { ph: '예: 180' }),
+          numField('existingLoanRatePct', '기존 대출 금리', { unit: '%', ph: '예: 5.2' }),
+          numField('existingLoanRemainingMonths', '남은 상환기간', { unit: '개월', ph: '예: 24' }),
+        ] : []),
+        numField('annualTaxPaidMan', '최근 1년 실제 납부 세금', { ph: '연동 데이터가 없으면 비워두세요' }),
+        numField('desiredFundingMan', '희망 대출 금액', { ph: '예: 2,000' }),
+        numField('desiredGrantUseMan', '지원금 사용 예정액', { ph: '예: 500' }),
+        numField('desiredSavingsMan', '적금에 매달 넣을 금액', { ph: '예: 30' }),
       ],
     },
     needs: {
@@ -375,6 +381,40 @@ export default function InfoScreen({
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            {sheet === 'finance' && (
+              <div style={{ marginTop: 16 }}>
+                <p style={{ marginBottom: 8, fontSize: 12.5, fontWeight: 800, color: 'var(--muted)' }}>기존 대출이 있나요?</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[
+                    ['NONE', '대출 없음'],
+                    ['YES', '대출 있음'],
+                  ].map(([value, label]) => {
+                    const on = diag.hasExistingDebt === value;
+                    return (
+                      <button key={value} type="button" onClick={() => set(value === 'NONE'
+                        ? {
+                            hasExistingDebt: value,
+                            existingDebtMan: '0',
+                            existingMonthlyPaymentMan: '0',
+                            existingLoanRatePct: '0',
+                            existingLoanRemainingMonths: '0',
+                          }
+                        : {
+                            hasExistingDebt: value,
+                            existingDebtMan: diag.hasExistingDebt === 'NONE' ? '' : diag.existingDebtMan,
+                            existingMonthlyPaymentMan: diag.hasExistingDebt === 'NONE' ? '' : diag.existingMonthlyPaymentMan,
+                            existingLoanRatePct: diag.hasExistingDebt === 'NONE' ? '' : diag.existingLoanRatePct,
+                            existingLoanRemainingMonths: diag.hasExistingDebt === 'NONE' ? '' : diag.existingLoanRemainingMonths,
+                          })}
+                        style={{ height: 43, borderRadius: 12, cursor: 'pointer', border: on ? '1.5px solid var(--green-deep)' : '1.5px solid var(--border)', background: on ? 'var(--green-bg-soft)' : '#fff', color: on ? 'var(--green-text)' : 'var(--muted)', fontSize: 12.5, fontWeight: 900 }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
