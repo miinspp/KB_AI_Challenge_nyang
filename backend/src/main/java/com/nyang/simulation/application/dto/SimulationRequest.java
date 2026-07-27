@@ -32,8 +32,46 @@ public record SimulationRequest(
         Integer simulationCount,
         Long randomSeed,
         Diagnosis diagnosis,
-        @Valid List<SelectedItem> selectedItems
+        @Valid List<SelectedItem> selectedItems,
+        @Valid List<MonthlyExpense> monthlyExpenseHistory,
+        @Valid List<ExistingLoan> existingLoans,
+        @Valid List<ScheduledTaxPayment> scheduledTaxPayments,
+        List<String> monthlySalesMonths,
+        @Valid List<MonthlyAccountCashFlow> monthlyAccountCashFlows
 ) {
+    public SimulationRequest(
+            List<BigDecimal> monthlySales, BigDecimal fixedCost, Double variableCostRatio,
+            BigDecimal currentCash, BigDecimal existingMonthlyPayment, BigDecimal existingDebtBalance,
+            Double existingLoanInterestRate, Integer existingLoanRemainingMonths,
+            CostStructure costStructure, Double taxReserveRatio, BigDecimal minimumCashBuffer,
+            String safetyThresholdType, BigDecimal customSafetyThreshold, Integer horizonMonths,
+            Integer simulationCount, Long randomSeed, Diagnosis diagnosis, List<SelectedItem> selectedItems
+    ) {
+        this(monthlySales, fixedCost, variableCostRatio, currentCash, existingMonthlyPayment,
+                existingDebtBalance, existingLoanInterestRate, existingLoanRemainingMonths,
+                costStructure, taxReserveRatio, minimumCashBuffer, safetyThresholdType,
+                customSafetyThreshold, horizonMonths, simulationCount, randomSeed, diagnosis,
+                selectedItems, null, null, null, null, null);
+    }
+
+    public SimulationRequest(
+            List<BigDecimal> monthlySales, BigDecimal fixedCost, Double variableCostRatio,
+            BigDecimal currentCash, BigDecimal existingMonthlyPayment, BigDecimal existingDebtBalance,
+            Double existingLoanInterestRate, Integer existingLoanRemainingMonths,
+            CostStructure costStructure, Double taxReserveRatio, BigDecimal minimumCashBuffer,
+            String safetyThresholdType, BigDecimal customSafetyThreshold, Integer horizonMonths,
+            Integer simulationCount, Long randomSeed, Diagnosis diagnosis, List<SelectedItem> selectedItems,
+            List<MonthlyExpense> monthlyExpenseHistory, List<ExistingLoan> existingLoans,
+            List<ScheduledTaxPayment> scheduledTaxPayments, List<String> monthlySalesMonths
+    ) {
+        this(monthlySales, fixedCost, variableCostRatio, currentCash, existingMonthlyPayment,
+                existingDebtBalance, existingLoanInterestRate, existingLoanRemainingMonths,
+                costStructure, taxReserveRatio, minimumCashBuffer, safetyThresholdType,
+                customSafetyThreshold, horizonMonths, simulationCount, randomSeed, diagnosis,
+                selectedItems, monthlyExpenseHistory, existingLoans, scheduledTaxPayments,
+                monthlySalesMonths, null);
+    }
+
     public record Diagnosis(
             @DecimalMin("0.0") Double industryCv,
             String marketRiskLevel,
@@ -51,6 +89,42 @@ public record SimulationRequest(
             @PositiveOrZero BigDecimal otherFixedExpense,
             @PositiveOrZero BigDecimal materialCost,
             @DecimalMin("0.0") @DecimalMax("1.0") Double salesLinkedExpenseRate
+    ) {}
+
+    public record MonthlyExpense(
+            String month,
+            @PositiveOrZero BigDecimal totalExpense,
+            @PositiveOrZero BigDecimal rent,
+            @PositiveOrZero BigDecimal laborCost,
+            @PositiveOrZero BigDecimal materialCost,
+            @PositiveOrZero BigDecimal cardFee,
+            @PositiveOrZero BigDecimal otherExpense
+    ) {}
+
+    public record ExistingLoan(
+            String id,
+            String name,
+            @PositiveOrZero BigDecimal balance,
+            @DecimalMin("0.0") Double annualRate,
+            String repaymentType,
+            @PositiveOrZero BigDecimal monthlyPayment,
+            @PositiveOrZero Integer remainingMonths,
+            String nextPaymentDate,
+            String maturityDate
+    ) {}
+
+    public record ScheduledTaxPayment(
+            @PositiveOrZero Integer month,
+            String type,
+            String dueDate,
+            @PositiveOrZero BigDecimal amount
+    ) {}
+
+    public record MonthlyAccountCashFlow(
+            String month,
+            @PositiveOrZero BigDecimal inflow,
+            @PositiveOrZero BigDecimal outflow,
+            BigDecimal netCashFlow
     ) {}
 
     public record SelectedItem(

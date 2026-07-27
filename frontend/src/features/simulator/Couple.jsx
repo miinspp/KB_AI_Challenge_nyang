@@ -14,13 +14,17 @@ function Character({ src, label, variant }) {
   );
 }
 
-export default function Couple() {
+export default function Couple({ reaction = 'idle', reactionKey = 0, needsAttention = false }) {
   return (
-    <div className="owner-couple">
+    <div key={reactionKey} className={`owner-couple owner-couple--${reaction}`}>
       <div className="owner-couple__characters">
         <Character src={bearOwner} label="곰 사장님" variant="bear" />
         <Character src={rabbitOwner} label="토끼 사장님" variant="rabbit" />
       </div>
+      {reaction === 'success' && <span className="owner-couple__spark owner-couple__spark--two" aria-hidden="true">✦</span>}
+      {needsAttention && (
+        <span className="owner-couple__notice"><i aria-hidden="true" />확인 필요</span>
+      )}
     </div>
   );
 }

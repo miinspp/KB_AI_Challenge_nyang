@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Couple from './Couple';
 import { buildSimulationDetail, SIM_VIEWS } from './sim';
 
 export default function SimulatorScreen({ equipped, options, toggle, simRows, simulation, loading, error }) {
   const [view, setView] = useState('cash');
   const [salesCase, setSalesCase] = useState('average');
+  const [activeMonth, setActiveMonth] = useState(null);
+  const [reaction, setReaction] = useState({ type: 'idle', key: 0 });
+  const previousEquippedCount = useRef(equipped.length);
+  const previousGoodCombination = useRef(false);
+  const reactionKey = useRef(0);
   const detail = useMemo(() => buildSimulationDetail(simulation), [simulation]);
   const baseView = detail.views[view] || detail.views.cash;
   const current = view === 'sales' && baseView.scenarios?.[salesCase]
@@ -15,6 +20,33 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
     ? 'base'
     : hasConstraintIssue || detail.riskAfter > detail.riskBefore ? 'bad'
     : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
+  const hasSimulationData = Boolean(simulation?.baseline?.monthlyCashFlows?.length);
+  const hasFailedEligibility = equipped.some((item) => item.eligibilityStatus === 'FAIL');
+  const duplicateGroups = equipped.map((item) => item.duplicateGroup).filter(Boolean);
+  const hasDuplicateProducts = new Set(duplicateGroups).size !== duplicateGroups.length;
+  const needsAttention = equipped.length > 0 && (hasConstraintIssue || hasFailedEligibility || hasDuplicateProducts);
+  const isGoodCombination = hasSimulationData
+    && equipped.length > 0
+    && simulation?.confidence?.level !== 'LOW'
+    && detail.riskAfter < detail.riskBefore
+    && !needsAttention;
+
+  const triggerReaction = (type) => {
+    reactionKey.current += 1;
+    setReaction({ type, key: reactionKey.current });
+  };
+
+  useLayoutEffect(() => {
+    if (previousEquippedCount.current !== equipped.length) {
+      triggerReaction(equipped.length > previousEquippedCount.current ? 'equip' : 'idle');
+      previousEquippedCount.current = equipped.length;
+    }
+  }, [equipped.length]);
+
+  useEffect(() => {
+    if (isGoodCombination && !previousGoodCombination.current) triggerReaction('success');
+    previousGoodCombination.current = isGoodCombination;
+  }, [isGoodCombination]);
 
   return (
     <div className="scr" style={{ padding: '0 0 200px', gap: 0 }}>
@@ -25,26 +57,34 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
       }}>
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 34, background: 'linear-gradient(180deg,#B9D69A,#9DC47B)' }} />
         {/* Landscape is the background; Couple only renders transparent character layers. */}
-        <Couple />
-        <EquippedProducts equipped={equipped} toggle={toggle} />
+        <Couple reaction={reaction.type} reactionKey={reaction.key} needsAttention={needsAttention} />
+        <EquippedBubble equipped={equipped} toggle={toggle} />
       </div>
 
+
       <section style={{ margin: '12px 22px 0' }}>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#8A8178', margin: '0 0 9px 2px' }}>추천 상품</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#8A8178', margin: '0 0 9px 2px' }}>추천 상품 {options.length}개</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
           {options.map((item) => {
             const selected = equipped.some((equippedItem) => equippedItem.key === item.key);
             const conflicts = !selected && item.duplicateGroup
               && equipped.some((equippedItem) => equippedItem.duplicateGroup === item.duplicateGroup);
+            const eligibility = eligibilityLabel(item.eligibilityStatus);
+            const terms = productTerms(item);
             return (
-              <button key={item.key} onClick={() => toggle(item)} type="button" style={{
+              <button key={item.key} onClick={() => toggle(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
                 border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #F0E7D6',
                 background: selected ? '#FFF6DD' : conflicts ? '#FBF3F1' : '#fff', borderRadius: 14, padding: '11px 12px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left', minHeight: 56,
+                display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', minHeight: 60,
               }}>
-                <span className="icon-badge" style={{ width: 30, height: 30, borderRadius: 10, fontSize: 14, background: item.iconBg, color: item.iconColor }}>{item.icon}</span>
+                <span className="icon-badge" style={{ flex: 'none', width: 30, height: 30, borderRadius: 10, fontSize: 14, background: item.iconBg, color: item.iconColor, marginTop: 1 }}>{item.icon}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: '#2B2825', lineHeight: 1.35 }}>{item.short}</span>
+                  <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#2B2825', lineHeight: 1.42, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
+                  {item.reason && <span style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 10.5, lineHeight: 1.35, fontWeight: 700, color: '#8A8178' }}>{item.reason}</span>}
+                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5 }}>
+                    <span style={{ padding: '3px 6px', borderRadius: 7, background: '#F7F1E4', color: '#8A8178', fontSize: 9.5, fontWeight: 800 }}>{terms}</span>
+                    <span style={{ padding: '3px 6px', borderRadius: 7, background: eligibility.background, color: eligibility.color, fontSize: 9.5, fontWeight: 800 }}>{eligibility.label}</span>
+                  </span>
                   {(conflicts || item.duplicateNotice) && (
                     <span style={{ display: 'block', marginTop: 2, fontSize: 9.5, fontWeight: 800, color: '#B45A51' }}>
                       중복 가입 불가
@@ -73,10 +113,12 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
         {loading && <p style={{ fontSize: 12, fontWeight: 800, color: '#8A8178' }}>월별 시나리오를 계산하고 있어요.</p>}
         {error && <p style={{ fontSize: 12, fontWeight: 800, color: '#D0564C' }}>계산 확인 필요: {friendlyError(error)}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && !hasSimulationData && <SimulationAwaiting />}
+
+        {!loading && !error && hasSimulationData && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {simRows.map((metric) => (
+              {simRows.slice(0, 4).map((metric) => (
                 <div key={metric.name} style={{ background: '#FBF7EE', border: '1px solid #F0E7D6', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
                   <p style={{ fontSize: 10.5, fontWeight: 800, color: '#A79C8E' }}>{metric.name}</p>
                   <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#2B2825', whiteSpace: 'nowrap' }}>{metric.after}</p>
@@ -89,7 +131,7 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
               {SIM_VIEWS.map((item) => {
                 const selected = view === item.key;
                 return (
-                  <button key={item.key} type="button" onClick={() => setView(item.key)} style={{
+                  <button key={item.key} type="button" onClick={() => { setView(item.key); setActiveMonth(null); }} style={{
                     height: 32, border: 'none', borderRadius: 10, cursor: 'pointer', background: selected ? '#fff' : 'transparent',
                     color: selected ? '#2B2825' : '#8A8178', fontSize: 10.5, fontWeight: 900,
                     boxShadow: selected ? '0 2px 8px rgba(80,60,20,.08)' : 'none',
@@ -102,17 +144,20 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
               {view === 'sales' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 10, padding: 4, background: '#F7F1E4', borderRadius: 12 }}>
                   {[
-                    ['conservative', '보수적'],
-                    ['average', '평균'],
-                    ['optimistic', '좋은 경우'],
+                    ['conservative', '낮은 전망'],
+                    ['average', '기준 전망'],
+                    ['optimistic', '높은 전망'],
                   ].map(([key, label]) => (
-                    <button key={key} type="button" onClick={() => setSalesCase(key)} style={{
+                    <button key={key} type="button" onClick={() => { setSalesCase(key); setActiveMonth(null); }} style={{
                       height: 30, border: 'none', borderRadius: 9, cursor: 'pointer',
                       background: salesCase === key ? '#fff' : 'transparent',
                       color: salesCase === key ? '#2B2825' : '#8A8178', fontSize: 10.5, fontWeight: 900,
                       boxShadow: salesCase === key ? '0 2px 8px rgba(80,60,20,.08)' : 'none',
                     }}>{label}</button>
                   ))}
+                  <p style={{ gridColumn: '1 / -1', padding: '2px 6px 3px', fontSize: 9.5, lineHeight: 1.4, fontWeight: 700, color: '#A79C8E' }}>
+                    앞으로의 매출은 최근 연동 이력을 바탕으로 계산한 추정치예요.
+                  </p>
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
@@ -121,7 +166,6 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
                   {current.unavailable ? '최근 6개월 매출 필요' : `${current.displayBefore ?? current.before} → ${current.displayAfter ?? `${current.after}${current.unit}`}`}
                 </p>
               </div>
-              <p style={{ marginTop: 4, fontSize: 11.5, color: '#8A8178', lineHeight: 1.55 }}>{current.lead}</p>
             </div>
 
             {current.unavailable ? (
@@ -129,8 +173,10 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
                 최근 6개월 이상의 실제 매출 이력이 연결되면<br />월별로 현금이 모자랄 가능성을 보여드려요.
               </div>
             ) : (
-              <MiniCompareChart points={current.points} scaleValues={current.scaleValues} scaleFromZero={current.scaleFromZero} inverse={current.inverse} unit={current.unit} title={current.title} />
+              <MiniCompareChart points={current.points} scaleValues={current.scaleValues} scaleFromZero={current.scaleFromZero} inverse={current.inverse} unit={current.unit} title={current.title} onPointChange={setActiveMonth} />
             )}
+
+            {activeMonth && <MonthlyChangeSheet point={activeMonth} unit={current.unit} view={view} />}
 
             {view === 'risk' && !current.unavailable && (
               <RiskGauge
@@ -170,6 +216,121 @@ function friendlyError(error) {
   return error;
 }
 
+function eligibilityLabel(status) {
+  if (status === 'PASS') return { label: '조건 충족', background: '#EDF5E1', color: '#5E8A3E' };
+  if (status === 'FAIL') return { label: '조건 확인 필요', background: '#FDE8E6', color: '#D0564C' };
+  return { label: '조건 확인', background: '#F5EFE3', color: '#8A8178' };
+}
+
+function productTerms(item) {
+  const terms = item.simulationTerms || {};
+  if (item.type === 'LOAN' && terms.annualRate != null) {
+    const duration = terms.totalTermMonths ? ` · ${terms.totalTermMonths}개월` : '';
+    return `연 ${Number(terms.annualRate).toFixed(1)}%${duration}`;
+  }
+  if (item.type === 'SAVINGS' || item.type === 'MUTUAL_AID') return '매달 현금 쌓기';
+  if (item.type === 'INSURANCE') return '위험 대비';
+  return item.category || '지원 조건 확인';
+}
+
+function SimulationAwaiting() {
+  return (
+    <div style={{ marginTop: 4, padding: '23px 16px', border: '1.5px dashed #E4D8C2', borderRadius: 16, background: '#FFF9EF', textAlign: 'center' }}>
+      <p style={{ fontSize: 13, fontWeight: 900, color: '#6F685E' }}>분석을 마치면 월별 변화가 보여요</p>
+      <p style={{ marginTop: 5, fontSize: 11, lineHeight: 1.5, fontWeight: 700, color: '#A79C8E' }}>우리 가게 진단에서 분석하기를 완료해 주세요.</p>
+    </div>
+  );
+}
+
+function MonthlyChangeSheet({ point, unit, view }) {
+  const difference = Math.round((Number(point.after) - Number(point.before)) * 10) / 10;
+  const improved = view === 'repay' || view === 'risk' ? difference <= 0 : difference >= 0;
+  const context = {
+    cash: '매출·운영비·상환액을 함께 반영했어요.',
+    sales: '선택한 매출 시나리오 기준이에요.',
+    repay: '기존 대출과 새 대출 상환액을 합산했어요.',
+    risk: '매출 변동과 상환 부담을 함께 반영했어요.',
+  }[view] || '';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, padding: '10px 11px', borderRadius: 12, background: '#F7F1E4' }}>
+      <span style={{ width: 28, height: 28, flex: 'none', display: 'grid', placeItems: 'center', borderRadius: 9, background: '#fff', color: improved ? '#5E8A3E' : '#D0564C', fontSize: 12, fontWeight: 900 }}>{point.label}</span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 11, fontWeight: 900, color: '#2B2825' }}>{point.label}개월차 변화 <span style={{ color: improved ? '#5E8A3E' : '#D0564C' }}>{difference > 0 ? '+' : ''}{difference}{unit}</span></p>
+        <p style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: '#8A8178' }}>{context}</p>
+      </div>
+    </div>
+  );
+}
+
+function OutcomeStrip({ metric, riskTone }) {
+  if (!metric) return null;
+
+  const tone = riskTone === 'good'
+    ? { background: '#EDF5E1', border: '#CFE2B8', color: '#5E8A3E' }
+    : riskTone === 'bad'
+      ? { background: '#FDECE9', border: '#F3C7C0', color: '#D0564C' }
+      : { background: '#FFF9EF', border: '#F0E7D6', color: '#8A8178' };
+
+  return (
+    <section style={{ margin: '12px 22px 0', padding: '12px 14px', border: `1.5px solid ${tone.border}`, borderRadius: 16, background: tone.background, display: 'flex', alignItems: 'center', gap: 11 }}>
+      <span style={{ width: 30, height: 30, flex: 'none', display: 'grid', placeItems: 'center', borderRadius: 10, background: '#fff', color: tone.color, fontSize: 15 }}>✦</span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 10.5, fontWeight: 800, color: '#8A8178' }}>이번 조합으로</p>
+        <p style={{ marginTop: 2, fontSize: 14, fontWeight: 900, color: '#2B2825' }}>{metric.name} <span style={{ color: tone.color }}>{metric.after}</span></p>
+      </div>
+      <span style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: tone.color }}>{metric.delta}</span>
+    </section>
+  );
+}
+
+function EquippedBubble({ equipped, toggle }) {
+  const [visibleItems, setVisibleItems] = useState(() => equipped.map((item) => ({ ...item, leaving: false })));
+  const hasItems = visibleItems.length > 0;
+
+  useLayoutEffect(() => {
+    setVisibleItems((currentItems) => {
+      const selectedKeys = new Set(equipped.map((item) => item.key));
+      const kept = currentItems
+        .filter((item) => selectedKeys.has(item.key))
+        .map((item) => ({ ...item, leaving: false }));
+      const added = equipped
+        .filter((item) => !currentItems.some((current) => current.key === item.key))
+        .map((item) => ({ ...item, leaving: false }));
+      const leaving = currentItems
+        .filter((item) => !selectedKeys.has(item.key))
+        .map((item) => ({ ...item, leaving: true }));
+      return [...kept, ...added, ...leaving];
+    });
+  }, [equipped]);
+
+  const removeLeavingItem = (key) => {
+    setVisibleItems((items) => items.filter((item) => item.key !== key || !item.leaving));
+  };
+
+  return (
+    <aside aria-label={`장착 상품 ${equipped.length}개`} style={{ position: 'absolute', zIndex: 5, top: 20, right: 12, width: 176, padding: '10px 9px 9px', border: '1.5px solid rgba(240,231,214,.96)', borderRadius: '18px 18px 18px 7px', background: 'rgba(255,253,248,.94)', boxShadow: '0 6px 16px rgba(79,61,25,.1)' }}>
+      {/* 말풍선 꼬리는 캐릭터가 있는 왼쪽을 향한다. */}
+      <span aria-hidden="true" style={{ position: 'absolute', left: -11, bottom: 31, width: 0, height: 0, borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderRight: '12px solid rgba(255,253,248,.94)', filter: 'drop-shadow(-1px 0 0 rgba(240,231,214,.96))' }} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasItems ? 7 : 0 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 900, color: '#6F685E' }}>{hasItems ? `함께 챙길 것 ${equipped.length}개` : '상품을 골라보세요'}</span>
+        <span style={{ color: '#E5A600', fontSize: 12 }}>✦</span>
+      </div>
+      {hasItems && (
+        <div className="equipped-bubble__list" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 126, overflowY: 'auto', overscrollBehavior: 'contain', paddingRight: 1 }}>
+          {visibleItems.map((item) => (
+            <button key={item.key} type="button" className={`equipped-bubble__item${item.leaving ? ' is-leaving' : ''}`} disabled={item.leaving} onAnimationEnd={() => item.leaving && removeLeavingItem(item.key)} onClick={() => toggle(item)} title={`${item.name || item.short} 해제`} style={{ width: '100%', minHeight: 31, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', border: `1.5px solid ${item.iconColor}`, borderRadius: 10, background: item.iconBg, color: '#2B2825', cursor: item.leaving ? 'default' : 'pointer', textAlign: 'left' }}>
+              <span className="icon-badge" style={{ flex: 'none', width: 20, height: 20, borderRadius: 7, background: '#fff', color: item.iconColor, fontSize: 10 }}>{item.icon}</span>
+              <span style={{ flex: 1, minWidth: 0, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, fontSize: 9.5, lineHeight: 1.2, fontWeight: 900 }}>{item.short || item.name}</span>
+              <span aria-hidden="true" style={{ flex: 'none', color: item.iconColor, fontSize: 14, lineHeight: 1 }}>×</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </aside>
+  );
+}
+
 function EquippedProducts({ equipped, toggle }) {
   if (equipped.length === 0) return null;
 
@@ -198,8 +359,9 @@ function EquippedProducts({ equipped, toggle }) {
   );
 }
 
-function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse, unit, title }) {
+function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse, unit, title, onPointChange }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
   const values = scaleValues?.length ? scaleValues : points.flatMap((point) => [point.before, point.after]);
   const rawMax = Math.max(...values, 1);
   const rawMin = Math.min(...values);
@@ -217,7 +379,8 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
   const zeroLineY = hasNegativeValue ? y(0) : null;
   const areaBaseY = zeroLineY ?? 76;
   const areaPath = `${path('after')} L ${x(points.length - 1)} ${areaBaseY} L ${x(0)} ${areaBaseY} Z`;
-  const hovered = hoveredIndex == null ? null : points[hoveredIndex];
+  const activeIndex = hoveredIndex ?? selectedIndex;
+  const activePoint = activeIndex == null ? null : points[activeIndex];
 
   return (
     <div style={{ background: '#FFF9EF', border: '1.5px solid #F0E7D6', borderRadius: 14, padding: '13px 11px 10px' }}>
@@ -232,12 +395,12 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
         </div>
       </div>
       <div className="sim-chart-tooltip-slot" aria-live="polite">
-        {hovered && (
+        {activePoint && (
           <div className="sim-chart-tooltip">
             <span className="sim-chart-tooltip__dot" style={{ background: afterColor }} />
-            <strong>{hovered.label}개월차</strong>
-            <span>기존 {hovered.before}{unit}</span>
-            <span>장착 후 {hovered.after}{unit}</span>
+            <strong>{activePoint.label}개월차</strong>
+            <span>기존 {activePoint.before}{unit}</span>
+            <span>장착 후 {activePoint.after}{unit}</span>
           </div>
         )}
       </div>
@@ -258,13 +421,31 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
           <path d={path('before')} fill="none" stroke="#BFB3A2" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           <path d={path('after')} fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           <path d={path('after')} fill="none" stroke={afterColor} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
-          {hoveredIndex != null && <line x1={x(hoveredIndex)} y1="0" x2={x(hoveredIndex)} y2="84" stroke="#D6C7AF" strokeWidth=".8" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+          {activeIndex != null && <>
+            <rect x={x(activeIndex) - 3.5} y="3" width="7" height="73" rx="2" fill={afterColor} opacity=".1" pointerEvents="none" />
+            <line x1={x(activeIndex)} y1="4" x2={x(activeIndex)} y2="76" stroke={afterColor} strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          </>}
           {points.map((point, index) => (
-            <rect key={point.label} x={x(index) - 4.2} y="0" width="8.4" height="84" fill="transparent"
+            <rect key={point.label} className="sim-chart-hit-area" x={x(index) - 4.2} y="0" width="8.4" height="84" fill="transparent"
               onMouseEnter={() => setHoveredIndex(index)} onMouseLeave={() => setHoveredIndex(null)}
               onFocus={() => setHoveredIndex(index)} onBlur={() => setHoveredIndex(null)}
-              onClick={() => setHoveredIndex(index)} tabIndex="0" role="button" aria-label={`${point.label}개월차 상세 보기`} style={{ cursor: 'pointer' }} />
+              onClick={() => {
+                setSelectedIndex(index);
+                onPointChange?.(points[index]);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedIndex(index);
+                  onPointChange?.(points[index]);
+                }
+              }}
+              tabIndex="0" role="button" aria-label={`${point.label}개월차 상세 보기`} style={{ cursor: 'pointer', outline: 'none' }} />
           ))}
+          {activeIndex != null && <>
+            <circle cx={x(activeIndex)} cy={y(points[activeIndex].before)} r="1.7" fill="#FFF9EF" stroke="#BFB3A2" strokeWidth="1" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            <circle cx={x(activeIndex)} cy={y(points[activeIndex].after)} r="2.3" fill="#FFF9EF" stroke={afterColor} strokeWidth="1.6" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          </>}
         </svg>
         <div style={{ position: 'absolute', left: 34, right: 0, bottom: 0, display: 'flex', justifyContent: 'space-between' }}>
           {points.map((point, index) => <span key={point.label} style={{ fontSize: 9, fontWeight: 800, color: index % 2 === 0 || index === points.length - 1 ? '#B9B0A4' : 'transparent' }}>{point.label}월</span>)}

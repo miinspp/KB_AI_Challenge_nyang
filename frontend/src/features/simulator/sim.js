@@ -124,12 +124,19 @@ function selectedItem(option, diag) {
   };
 }
 
-export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
+export function buildSimulationPayload({ rank, diag, hometax, kb, equipped }) {
   const currentSales = Math.max(0, Number(rank?.sales?.value) || Number(diag.salesMan) * 10_000 || 0);
-  const history = (hometax?.salesHistory || [])
+  const monthlyHistory = Array.isArray(hometax?.monthlyHistory) ? hometax.monthlyHistory : [];
+  const historySource = monthlyHistory.length
+    ? monthlyHistory.map((entry) => ({ month: entry.month, amount: entry.sales }))
+    : (hometax?.salesHistory || []);
+  const history = historySource
     .map((entry) => Number(entry?.amount ?? entry))
-    .filter((amount) => Number.isFinite(amount) && amount > 0);
+    .filter((amount) => Number.isFinite(amount) && amount >= 0);
   const monthlySales = history.length >= 3 ? history : [currentSales, currentSales, currentSales];
+  const monthlySalesMonths = history.length >= 3
+    ? historySource.map((entry) => entry?.month).filter(Boolean)
+    : [];
 
   const expense = Math.max(0, Number(diag.expenseMan || 0) * 10_000);
   const purchaseCost = Math.max(0, Number(diag.purchaseMan || 0) * 10_000);
@@ -140,7 +147,8 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
   const otherFixedExpense = Math.max(0, totalExpense - knownCosts);
   const variableCostRatio = currentSales > 0 ? clamp(purchaseCost / currentSales, 0, 0.8) : 0;
   const fixedCost = Math.max(0, totalExpense - purchaseCost);
-  const currentCash = Math.max(0, Number(diag.currentCashMan || 0) * 10_000);
+  const linkedAccountCash = (kb?.accounts || []).reduce((sum, account) => sum + Math.max(0, Number(account.balance) || 0), 0);
+  const currentCash = linkedAccountCash || Math.max(0, Number(diag.currentCashMan || 0) * 10_000);
   const existingDebtTotal = Math.max(0, Number(diag.existingDebtMan || 0) * 10_000);
   const existingMonthlyPayment = Math.max(0, Number(diag.existingMonthlyPaymentMan || 0) * 10_000);
   const hasCostBreakdown = totalExpense > 0 || knownCosts > 0;
@@ -149,9 +157,44 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
   const taxReserveRatio = annualTaxPaid > 0 && averageHistorySales > 0
     ? clamp(annualTaxPaid / (averageHistorySales * 12), 0, 0.3)
     : null;
+  const monthlyExpenseHistory = monthlyHistory.map((entry) => ({
+    month: entry.month,
+    totalExpense: Math.max(0, Number(entry.totalExpense) || 0),
+    rent: Math.max(0, Number(entry.rent) || 0),
+    laborCost: Math.max(0, Number(entry.laborCost) || 0),
+    materialCost: Math.max(0, Number(entry.purchaseCost ?? entry.materialCost) || 0),
+    cardFee: Math.max(0, Number(entry.cardFee) || 0),
+    otherExpense: Math.max(0, Number(entry.otherExpense) || 0),
+  }));
+  const existingLoans = (kb?.loans || []).map((loan) => ({
+    id: loan.id,
+    name: loan.name,
+    balance: Math.max(0, Number(loan.balance) || 0),
+    annualRate: Math.max(0, Number(loan.annualRate) || 0),
+    repaymentType: loan.repaymentType,
+    monthlyPayment: Math.max(0, Number(loan.monthlyPayment) || 0),
+    remainingMonths: Math.max(0, Number(loan.remainingMonths) || 0),
+    nextPaymentDate: loan.nextPaymentDate,
+    maturityDate: loan.maturityDate,
+  }));
+  const scheduledTaxPayments = (hometax?.scheduledTaxPayments || []).map((payment) => ({
+    month: Number(payment.month),
+    type: payment.type,
+    dueDate: payment.dueDate ?? payment.date,
+    amount: Math.max(0, Number(payment.amount) || 0),
+  }));
+  const monthlyAccountCashFlows = (kb?.monthlyCashFlowHistory || []).map((flow) => ({
+    month: flow.month,
+    inflow: Math.max(0, Number(flow.inflow) || 0),
+    outflow: Math.max(0, Number(flow.outflow) || 0),
+    netCashFlow: Number.isFinite(Number(flow.netCashFlow))
+      ? Number(flow.netCashFlow)
+      : (Number(flow.inflow) || 0) - (Number(flow.outflow) || 0),
+  }));
 
   return {
     monthlySales,
+    monthlySalesMonths,
     fixedCost,
     variableCostRatio,
     currentCash,
@@ -167,7 +210,7 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
       materialCost: purchaseCost,
       salesLinkedExpenseRate: 0,
     } : null,
-    taxReserveRatio,
+    taxReserveRatio: scheduledTaxPayments.length ? null : taxReserveRatio,
     safetyThresholdType: 'FIXED_COST_PLUS_DEBT_PAYMENT',
     horizonMonths: HORIZON,
     simulationCount: 5000,
@@ -179,6 +222,10 @@ export function buildSimulationPayload({ rank, diag, hometax, equipped }) {
       region: diag.areaText || '서울',
     },
     selectedItems: equipped.map((option) => selectedItem(option, diag)).filter(Boolean),
+    monthlyExpenseHistory,
+    existingLoans,
+    scheduledTaxPayments,
+    monthlyAccountCashFlows,
   };
 }
 
@@ -356,9 +403,9 @@ export function buildSimulationDetail(simulation) {
     };
   };
   const salesScenarios = {
-    conservative: salesScenario('p10', '최근 매출 흐름이 불리하게 이어지는 경우예요.'),
-    average: salesScenario('p50', '최근 매출의 평균과 추세가 이어지는 경우예요.'),
-    optimistic: salesScenario('p90', '최근 매출 흐름이 좋게 이어지는 경우예요.'),
+    conservative: salesScenario('p10', '최근 매출 범위의 낮은 수준이 이어지는 경우예요.'),
+    average: salesScenario('p50', '최근 매출 범위의 기준 수준이 이어지는 경우예요.'),
+    optimistic: salesScenario('p90', '최근 매출 범위의 높은 수준이 이어지는 경우예요.'),
   };
   const salesScaleValues = Object.values(salesScenarios)
     .flatMap((scenario) => scenario.points.flatMap((point) => [point.before, point.after]));

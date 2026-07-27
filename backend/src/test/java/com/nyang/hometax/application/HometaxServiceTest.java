@@ -41,10 +41,12 @@ class HometaxServiceTest {
         assertTrue(res.consented());
         assertTrue(f.simulated());
         assertEquals("512-81-*****", f.maskedBusinessNumber());
-        assertEquals(6, f.salesHistory().size());
+        assertEquals(12, f.salesHistory().size());
+        assertEquals(12, f.monthlyHistory().size());
         assertTrue(f.monthlySalesAvg() > 0);
-        assertEquals(f.purchaseCost() + f.laborCost() + f.rent() + f.otherExpense(),
+        assertEquals(f.purchaseCost() + f.laborCost() + f.rent() + f.cardFee() + f.otherExpense(),
                 f.totalMonthlyExpense());
+        assertFalse(f.scheduledTaxPayments().isEmpty());
         // 월평균 매출 = 월별 이력 평균 (반올림 오차 이내)
         double histAvg = f.salesHistory().stream().mapToLong(HometaxFinancials.MonthlyAmount::amount).average().orElse(0);
         assertEquals(histAvg, f.monthlySalesAvg(), 10_000.0);

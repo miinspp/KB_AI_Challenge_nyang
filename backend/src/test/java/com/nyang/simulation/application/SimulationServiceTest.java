@@ -50,6 +50,40 @@ class SimulationServiceTest {
     }
 
     @Test
+    void linkedMonthlyExpensesLoansAndTaxScheduleDriveMonthlyCashFlow() {
+        List<SimulationRequest.MonthlyExpense> expenses = List.of(
+                new SimulationRequest.MonthlyExpense("2025-08", bd(5_600_000), bd(1_000_000), bd(1_000_000), bd(3_000_000), bd(100_000), bd(500_000)),
+                new SimulationRequest.MonthlyExpense("2025-09", bd(5_800_000), bd(1_000_000), bd(1_000_000), bd(3_200_000), bd(100_000), bd(500_000)),
+                new SimulationRequest.MonthlyExpense("2025-10", bd(6_000_000), bd(1_000_000), bd(1_000_000), bd(3_400_000), bd(100_000), bd(500_000)));
+        List<SimulationRequest.ExistingLoan> loans = List.of(
+                new SimulationRequest.ExistingLoan("bullet", "Bullet loan", bd(1_200_000), .12,
+                        "BULLET", bd(12_000), 12, "2026-08-15", "2027-07-15"),
+                new SimulationRequest.ExistingLoan("principal", "Principal loan", bd(2_400_000), .12,
+                        "EQUAL_PRINCIPAL", bd(224_000), 12, "2026-08-25", "2027-07-25"));
+        List<SimulationRequest.ScheduledTaxPayment> taxes = List.of(
+                new SimulationRequest.ScheduledTaxPayment(2, "VAT", "2026-09-25", bd(500_000)));
+        List<SimulationRequest.MonthlyAccountCashFlow> accountFlows = List.of(
+                new SimulationRequest.MonthlyAccountCashFlow("2025-08", bd(8_000_000), bd(6_000_000), bd(2_000_000)),
+                new SimulationRequest.MonthlyAccountCashFlow("2025-09", bd(8_400_000), bd(6_200_000), bd(2_200_000)),
+                new SimulationRequest.MonthlyAccountCashFlow("2025-10", bd(8_100_000), bd(6_500_000), bd(1_600_000)));
+        SimulationRequest linked = new SimulationRequest(
+                sales(), bd(4_200_000), .38, bd(6_000_000), bd(236_000), bd(3_600_000),
+                .12, 12, null, null, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(null, "MEDIUM", "CAFE", "SEOUL"),
+                List.of(), expenses, loans, taxes,
+                List.of("2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01"),
+                accountFlows);
+
+        SimulationResponse result = service.simulate(linked);
+        assertEquals(2_500_000, result.baseline().monthlyCashFlows().get(0).fixedCost(), 1);
+        assertEquals(236_000, result.baseline().monthlyCashFlows().get(0).existingRepayment(), 1);
+        assertEquals(0, result.baseline().monthlyCashFlows().get(0).taxReserve(), 1);
+        assertEquals(500_000, result.baseline().monthlyCashFlows().get(1).taxReserve(), 1);
+        assertTrue(result.inputAssumptions().messages().stream()
+                .anyMatch(message -> message.contains("account cash flows")));
+    }
+
+    @Test
     void largerCurrentCashReducesBufferBreachRisk() {
         SimulationResponse low = service.simulate(request(List.of(), bd(500_000), bd(900_000), null, "ONE_MONTH_FIXED_COST"));
         SimulationResponse high = service.simulate(request(List.of(), bd(20_000_000), bd(900_000), null, "ONE_MONTH_FIXED_COST"));
@@ -260,7 +294,8 @@ class SimulationServiceTest {
         return new SimulationRequest(
                 sales(), bd(4_200_000), .38, currentCash, monthlyPayment, bd(12_000_000),
                 .08, 24, cost, .08, null, thresholdType, null,
-                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), items);
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), items,
+                null, null, null, null);
     }
 
     private static List<BigDecimal> sales() {

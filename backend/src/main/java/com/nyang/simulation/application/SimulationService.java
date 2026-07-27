@@ -62,7 +62,8 @@ public class SimulationService {
         SalesForecast forecast = forecastProvider.forecast(new SalesForecastInput(
                 request.monthlySales(), horizon, assumptions.maxMonthlyTrendRatio(), risk.mixedCv(),
                 request.diagnosis() == null ? null : request.diagnosis().industryCode(),
-                request.diagnosis() == null ? null : request.diagnosis().region()));
+                request.diagnosis() == null ? null : request.diagnosis().region(),
+                request.monthlySalesMonths()));
         List<NormalizedItem> items = normalizeAndValidateItems(request.selectedItems(), input);
 
         ScenarioComputation baselineCalc = computeScenario(input, forecast, List.of(), horizon);
@@ -93,7 +94,8 @@ public class SimulationService {
                         input.taxReserveRatio(), money(input.safetyThreshold()).doubleValue(), input.safetyThresholdType(),
                         risk.industryCv(), risk.mixedCv(), risk.personalCv(), risk.personalWeight(),
                         assumptions.maxMonthlyTrendRatio(), assumptions.salesShockAutocorrelation(),
-                        assumptions.fixedCostCv(), assumptions.variableCostCv(),
+                        input.observedFixedCostCv() == null ? assumptions.fixedCostCv() : input.observedFixedCostCv(),
+                        input.observedVariableCostCv() == null ? assumptions.variableCostCv() : input.observedVariableCostCv(),
                         assumptions.repaymentBurdenLimit(), assumptions.excessFundingRatioLimit(), assumptions.seasonalitySource()),
                 inputAssumptions(input),
                 protectionResult(items),
@@ -149,10 +151,29 @@ public class SimulationService {
         boolean debtAssumed = false;
         boolean paymentAssumed = false;
         BigDecimal currentCash = request.currentCash();
-        BigDecimal existingDebt = request.existingDebtBalance();
-        BigDecimal existingPayment = request.existingMonthlyPayment();
+        List<SimulationRequest.ExistingLoan> existingLoans = resolveExistingLoans(request);
+        BigDecimal existingDebt = existingLoans.isEmpty()
+                ? request.existingDebtBalance()
+                : existingLoans.stream().map(SimulationRequest.ExistingLoan::balance).reduce(ZERO, BigDecimal::add);
+        BigDecimal existingPayment = existingLoans.isEmpty()
+                ? request.existingMonthlyPayment()
+                : existingLoans.stream().map(loan -> value(loan.monthlyPayment(), ZERO)).reduce(ZERO, BigDecimal::add);
+        double existingRate = existingLoans.isEmpty()
+                ? value(request.existingLoanInterestRate(), 0)
+                : weightedLoanRate(existingLoans);
+        int existingRemainingMonths = existingLoans.isEmpty()
+                ? value(request.existingLoanRemainingMonths(), 0)
+                : existingLoans.stream().mapToInt(loan -> value(loan.remainingMonths(), 0)).max().orElse(0);
+        Map<Integer, BigDecimal> scheduledTaxes = resolveScheduledTaxes(request.scheduledTaxPayments());
+        Double observedCashFlowResidualCv = resolveAccountCashFlowResidualCv(
+                request, averageSales, existingPayment);
         List<String> inputMessages = new ArrayList<>(cost.messages());
-        if (request.taxReserveRatio() == null) {
+        if (!existingLoans.isEmpty()) inputMessages.add("Linked loan-level repayment schedules were used.");
+        if (!scheduledTaxes.isEmpty()) inputMessages.add("Linked scheduled tax payments were applied in their due months.");
+        if (observedCashFlowResidualCv != null) {
+            inputMessages.add("Linked monthly account cash flows were used to calibrate unclassified cash-flow volatility.");
+        }
+        if (request.taxReserveRatio() == null && scheduledTaxes.isEmpty()) {
             inputMessages.add("Tax reserve was not estimated because verified tax payment history was unavailable.");
         }
 
@@ -178,18 +199,78 @@ public class SimulationService {
 
         return new ResolvedInput(
                 request.monthlySales(), currentCash, existingDebt, existingPayment,
-                value(request.existingLoanInterestRate(), 0), value(request.existingLoanRemainingMonths(), 0),
+                existingRate, existingRemainingMonths, existingLoans,
                 cost.fixedCost(), cost.variableCostRatio(), taxRatio, threshold, thresholdType,
+                scheduledTaxes, cost.observedFixedCostCv(), cost.observedVariableCostCv(),
+                observedCashFlowResidualCv,
                 currentCashAssumed, debtAssumed, paymentAssumed, cost.legacy(), List.copyOf(inputMessages));
     }
 
+    private Double resolveAccountCashFlowResidualCv(SimulationRequest request, BigDecimal averageSales,
+                                                    BigDecimal existingPayment) {
+        List<SimulationRequest.MonthlyAccountCashFlow> cashFlows = request.monthlyAccountCashFlows();
+        List<SimulationRequest.MonthlyExpense> expenses = request.monthlyExpenseHistory();
+        List<String> months = request.monthlySalesMonths();
+        if (cashFlows == null || cashFlows.size() < 3 || expenses == null || expenses.size() < 3
+                || months == null || months.size() != request.monthlySales().size()
+                || averageSales.signum() <= 0) {
+            return null;
+        }
+
+        Map<String, BigDecimal> salesByMonth = new LinkedHashMap<>();
+        for (int i = 0; i < months.size(); i++) {
+            if (months.get(i) != null) salesByMonth.put(months.get(i), request.monthlySales().get(i));
+        }
+        Map<String, BigDecimal> expenseByMonth = new LinkedHashMap<>();
+        for (SimulationRequest.MonthlyExpense expense : expenses) {
+            if (expense.month() != null) {
+                expenseByMonth.put(expense.month(), value(expense.totalExpense(), ZERO));
+            }
+        }
+
+        List<BigDecimal> residuals = new ArrayList<>();
+        for (SimulationRequest.MonthlyAccountCashFlow flow : cashFlows) {
+            if (flow.month() == null || flow.inflow() == null || flow.outflow() == null
+                    || flow.inflow().signum() < 0 || flow.outflow().signum() < 0) {
+                throw new IllegalArgumentException(
+                        "Monthly account cash flows require a month and non-negative inflow/outflow.");
+            }
+            BigDecimal sales = salesByMonth.get(flow.month());
+            BigDecimal expense = expenseByMonth.get(flow.month());
+            if (sales == null || expense == null) continue;
+            BigDecimal accountNet = flow.inflow().subtract(flow.outflow());
+            BigDecimal modeledNet = sales.subtract(expense).subtract(existingPayment);
+            residuals.add(accountNet.subtract(modeledNet));
+        }
+        if (residuals.size() < 3) return null;
+        double normalizedResidualVolatility = standardDeviation(residuals) / averageSales.doubleValue();
+        return round4(clamp(normalizedResidualVolatility, 0, .15));
+    }
+
     private CostModel resolveCostModel(SimulationRequest request, BigDecimal averageSales) {
+        if (request.monthlyExpenseHistory() != null && request.monthlyExpenseHistory().size() >= 3) {
+            List<SimulationRequest.MonthlyExpense> history = request.monthlyExpenseHistory();
+            List<BigDecimal> fixedHistory = history.stream().map(row -> value(row.rent(), ZERO)
+                    .add(value(row.laborCost(), ZERO)).add(value(row.otherExpense(), ZERO))).toList();
+            List<BigDecimal> variableHistory = history.stream().map(row -> value(row.materialCost(), ZERO)
+                    .add(value(row.cardFee(), ZERO))).toList();
+            BigDecimal fixed = average(fixedHistory);
+            BigDecimal variable = average(variableHistory);
+            double linkedRatio = averageSales.signum() > 0
+                    ? variable.divide(averageSales, 8, RoundingMode.HALF_UP).doubleValue() : 0;
+            if (linkedRatio < 0 || linkedRatio >= 1) {
+                throw new IllegalArgumentException("Linked monthly variable expenses must be below average sales.");
+            }
+            return new CostModel(money(fixed), linkedRatio, false,
+                    coefficientOfVariation(fixedHistory), coefficientOfVariation(variableHistory),
+                    List.of("Linked monthly expense history was used for cost averages and volatility."));
+        }
         SimulationRequest.CostStructure structure = request.costStructure();
         if (structure == null) {
             if (request.fixedCost() == null || request.variableCostRatio() == null) {
                 throw new IllegalArgumentException("fixedCost and variableCostRatio are required when costStructure is absent.");
             }
-            return new CostModel(request.fixedCost(), request.variableCostRatio(), true,
+            return new CostModel(request.fixedCost(), request.variableCostRatio(), true, null, null,
                     List.of("Legacy fixedCost/variableCostRatio cost model was used."));
         }
 
@@ -230,7 +311,45 @@ public class SimulationService {
         if (linkedRatio < 0 || linkedRatio > 1) {
             throw new IllegalArgumentException("Resolved variable cost ratio must be between 0 and 1.");
         }
-        return new CostModel(money(fixed), linkedRatio, false, List.copyOf(messages));
+        return new CostModel(money(fixed), linkedRatio, false, null, null, List.copyOf(messages));
+    }
+
+    private List<SimulationRequest.ExistingLoan> resolveExistingLoans(SimulationRequest request) {
+        if (request.existingLoans() == null || request.existingLoans().isEmpty()) return List.of();
+        List<SimulationRequest.ExistingLoan> result = new ArrayList<>();
+        for (SimulationRequest.ExistingLoan loan : request.existingLoans()) {
+            BigDecimal balance = value(loan.balance(), ZERO);
+            if (balance.signum() <= 0) continue;
+            double annualRate = value(loan.annualRate(), 0);
+            int remainingMonths = value(loan.remainingMonths(), 0);
+            if (annualRate <= 0 || remainingMonths <= 0) {
+                throw new IllegalArgumentException("Linked loan requires rate and remaining term: " + loan.id());
+            }
+            result.add(new SimulationRequest.ExistingLoan(
+                    loan.id(), loan.name(), balance, annualRate,
+                    upper(loan.repaymentType(), "EQUAL_PAYMENT"), value(loan.monthlyPayment(), ZERO),
+                    remainingMonths, loan.nextPaymentDate(), loan.maturityDate()));
+        }
+        return List.copyOf(result);
+    }
+
+    private double weightedLoanRate(List<SimulationRequest.ExistingLoan> loans) {
+        BigDecimal total = loans.stream().map(SimulationRequest.ExistingLoan::balance).reduce(ZERO, BigDecimal::add);
+        if (total.signum() <= 0) return 0;
+        double weighted = loans.stream().mapToDouble(loan -> loan.balance().doubleValue() * loan.annualRate()).sum();
+        return weighted / total.doubleValue();
+    }
+
+    private Map<Integer, BigDecimal> resolveScheduledTaxes(List<SimulationRequest.ScheduledTaxPayment> payments) {
+        if (payments == null || payments.isEmpty()) return Map.of();
+        Map<Integer, BigDecimal> result = new LinkedHashMap<>();
+        for (SimulationRequest.ScheduledTaxPayment payment : payments) {
+            if (payment.month() == null || payment.month() < 1 || payment.amount() == null || payment.amount().signum() < 0) {
+                throw new IllegalArgumentException("Scheduled tax payments require a positive month and non-negative amount.");
+            }
+            result.merge(payment.month(), payment.amount(), BigDecimal::add);
+        }
+        return Map.copyOf(result);
     }
 
     private List<NormalizedItem> normalizeAndValidateItems(List<SimulationRequest.SelectedItem> selected, ResolvedInput input) {
@@ -355,7 +474,9 @@ public class SimulationService {
             BigDecimal sales = money(forecast.months().get(i).p50().multiply(BigDecimal.valueOf(1 + salesUplift)));
             BigDecimal variableCost = money(sales.multiply(BigDecimal.valueOf(input.variableCostRatio())));
             BigDecimal fixedCost = money(input.fixedCost().multiply(BigDecimal.valueOf(1 - costReduction)));
-            BigDecimal taxReserve = money(sales.multiply(BigDecimal.valueOf(input.taxReserveRatio())));
+            BigDecimal taxReserve = input.scheduledTaxPayments().isEmpty()
+                    ? money(sales.multiply(BigDecimal.valueOf(input.taxReserveRatio())))
+                    : money(input.scheduledTaxPayments().getOrDefault(month, ZERO));
             BigDecimal scheduledExistingPayment = existingRepayments[i];
             BigDecimal existingPayment = vectors.refinanceEffectiveMonth() > 0 && month >= vectors.refinanceEffectiveMonth()
                     ? ZERO : scheduledExistingPayment;
@@ -448,6 +569,12 @@ public class SimulationService {
      */
     private BigDecimal[] existingRepaymentSchedule(ResolvedInput input, int horizon) {
         BigDecimal[] payments = zeros(horizon);
+        if (!input.existingLoans().isEmpty()) {
+            for (SimulationRequest.ExistingLoan loan : input.existingLoans()) {
+                addExistingLoanSchedule(loan, payments, horizon);
+            }
+            return payments;
+        }
         if (input.existingDebt().signum() <= 0) {
             Arrays.fill(payments, input.existingMonthlyPayment());
             return payments;
@@ -474,6 +601,28 @@ public class SimulationService {
             balance = balance.subtract(principal).max(ZERO);
         }
         return payments;
+    }
+
+    private void addExistingLoanSchedule(SimulationRequest.ExistingLoan loan, BigDecimal[] payments, int horizon) {
+        BigDecimal balance = loan.balance();
+        int remainingMonths = loan.remainingMonths();
+        double monthlyRate = loan.annualRate() / 12.0;
+        String repaymentType = upper(loan.repaymentType(), "EQUAL_PAYMENT");
+        BigDecimal equalPrincipal = balance.divide(BigDecimal.valueOf(remainingMonths), 8, RoundingMode.HALF_UP);
+        BigDecimal equalPayment = value(loan.monthlyPayment(), ZERO).signum() > 0
+                ? loan.monthlyPayment() : equalPayment(balance, monthlyRate, remainingMonths);
+
+        for (int i = 0; i < Math.min(horizon, remainingMonths) && balance.signum() > 0; i++) {
+            BigDecimal interest = money(balance.multiply(BigDecimal.valueOf(monthlyRate)));
+            BigDecimal principal = switch (repaymentType) {
+                case "EQUAL_PRINCIPAL" -> equalPrincipal.min(balance);
+                case "BULLET", "INTEREST_ONLY" -> i == remainingMonths - 1 ? balance : ZERO;
+                default -> equalPayment.subtract(interest).max(ZERO).min(balance);
+            };
+            if (i == remainingMonths - 1) principal = balance;
+            payments[i] = payments[i].add(money(interest.add(principal)));
+            balance = balance.subtract(principal).max(ZERO);
+        }
     }
 
     private BigDecimal safetyThresholdForMonth(ResolvedInput input, BigDecimal fixedCost,
@@ -523,8 +672,11 @@ public class SimulationService {
         double[] endings = new double[runs];
         double rho = clamp(assumptions.salesShockAutocorrelation(), 0, 0.95);
         double innovationScale = Math.sqrt(1 - rho * rho);
-        double fixedCostCv = clamp(assumptions.fixedCostCv(), 0, .3);
-        double variableCostCv = clamp(assumptions.variableCostCv(), 0, .4);
+        double fixedCostCv = clamp(input.observedFixedCostCv() == null
+                ? assumptions.fixedCostCv() : input.observedFixedCostCv(), 0, .3);
+        double variableCostCv = clamp(input.observedVariableCostCv() == null
+                ? assumptions.variableCostCv() : input.observedVariableCostCv(), 0, .4);
+        double accountResidualCv = clamp(value(input.observedCashFlowResidualCv(), 0), 0, .15);
 
         for (int run = 0; run < runs; run++) {
             double cash = input.currentCash().doubleValue();
@@ -538,11 +690,15 @@ public class SimulationService {
                 double variable = sales * input.variableCostRatio()
                         * clamp(1 + random.nextGaussian() * variableCostCv, .7, 1.4);
                 double fixed = flow.fixedCost() * clamp(1 + random.nextGaussian() * fixedCostCv, .8, 1.25);
-                double tax = sales * input.taxReserveRatio();
+                double tax = input.scheduledTaxPayments().isEmpty()
+                        ? sales * input.taxReserveRatio() : flow.taxReserve();
+                double accountResidual = accountResidualCv == 0 ? 0
+                        : clamp(random.nextGaussian() * flow.expectedSales() * accountResidualCv,
+                        -flow.expectedSales() * .25, flow.expectedSales() * .25);
                 cash += flow.financingInflow() + flow.subsidyInflow() - flow.projectSpending()
                         - flow.existingRepayment() - flow.newRepayment() - flow.financingFee()
                         - flow.financialAssetContribution() + flow.financialAssetMaturityInflow()
-                        + sales - variable - fixed - tax;
+                        + sales - variable - fixed - tax + accountResidual;
                 double safetyThreshold = safetyThresholdForMonth(input, BigDecimal.valueOf(flow.fixedCost()),
                         BigDecimal.valueOf(flow.existingRepayment()), BigDecimal.valueOf(flow.newRepayment())).doubleValue();
                 boolean bufferNow = cash < safetyThreshold;
@@ -828,6 +984,12 @@ public class SimulationService {
         return Math.sqrt(variance) / average;
     }
 
+    private static double standardDeviation(List<BigDecimal> values) {
+        double average = values.stream().mapToDouble(BigDecimal::doubleValue).average().orElse(0);
+        double variance = values.stream().mapToDouble(v -> Math.pow(v.doubleValue() - average, 2)).average().orElse(0);
+        return Math.sqrt(variance);
+    }
+
     private static BigDecimal decimal(JsonNode node, String field, BigDecimal fallback) {
         return node != null && node.path(field).isNumber() ? node.path(field).decimalValue() : fallback;
     }
@@ -868,12 +1030,18 @@ public class SimulationService {
     private static double percentile(double[] sorted, double p) { int i = (int) Math.floor((sorted.length - 1) * p); return Math.rint(sorted[Math.max(0, Math.min(sorted.length - 1, i))]); }
     private static void requireNonNegative(BigDecimal value, String field) { if (value != null && value.signum() < 0) throw new IllegalArgumentException(field + " cannot be negative."); }
 
-    private record CostModel(BigDecimal fixedCost, double variableCostRatio, boolean legacy, List<String> messages) {}
+    private record CostModel(BigDecimal fixedCost, double variableCostRatio, boolean legacy,
+                             Double observedFixedCostCv, Double observedVariableCostCv, List<String> messages) {}
     private record RiskModel(double personalCv, double industryCv, double personalWeight, double mixedCv) {}
     private record ResolvedInput(List<BigDecimal> monthlySales, BigDecimal currentCash, BigDecimal existingDebt,
                                  BigDecimal existingMonthlyPayment, double existingLoanRate, int existingLoanRemainingMonths,
+                                 List<SimulationRequest.ExistingLoan> existingLoans,
                                  BigDecimal fixedCost, double variableCostRatio, double taxReserveRatio,
-                                 BigDecimal safetyThreshold, String safetyThresholdType, boolean currentCashAssumed,
+                                 BigDecimal safetyThreshold, String safetyThresholdType,
+                                 Map<Integer, BigDecimal> scheduledTaxPayments,
+                                 Double observedFixedCostCv, Double observedVariableCostCv,
+                                 Double observedCashFlowResidualCv,
+                                 boolean currentCashAssumed,
                                  boolean debtAssumed, boolean paymentAssumed, boolean legacyCostModel, List<String> costMessages) {}
     private record MonthlyVectors(BigDecimal[] financingInflow, BigDecimal[] subsidyInflow, BigDecimal[] projectSpending,
                                   BigDecimal[] newRepayment, BigDecimal[] interest, BigDecimal[] financingFee,

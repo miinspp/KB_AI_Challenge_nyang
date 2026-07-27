@@ -16,15 +16,22 @@ import java.util.List;
  */
 public record HometaxFinancials(
         String maskedBusinessNumber,   // 예: 123-45-*****
-        String basisPeriod,            // 예: "최근 6개월"
+        String basisPeriod,            // 예: "최근 12개월"
         long monthlySalesAvg,          // 월평균 매출 (원) = salesHistory 평균
-        List<MonthlyAmount> salesHistory,  // 최근 6개월 월별 매출 (과거→최근 순)
+        List<MonthlyAmount> salesHistory,  // 최근 6~12개월 월별 매출 (과거→최근 순)
+        List<MonthlyFinancial> monthlyHistory, // 매출·비용 항목을 같은 월 기준으로 정렬한 이력
         long purchaseCost,             // 월평균 매입(재료비 등, 원)
         long laborCost,                // 월평균 인건비 (원)
         long rent,                     // 월평균 임대료 (원)
+        long cardFee,                  // 월평균 카드·결제 수수료 (원)
         long otherExpense,             // 월평균 기타 지출 (원)
-        long totalMonthlyExpense,      // 위 4개 항목 합계 (원)
+        long totalMonthlyExpense,      // 위 5개 항목 합계 (원)
+        List<TaxPayment> recentTaxPayments,
+        List<TaxPayment> scheduledTaxPayments,
         boolean simulated              // true = 챌린지 데모용 시뮬레이션 데이터
 ) {
     public record MonthlyAmount(String month, long amount) {}  // month: "YYYY-MM"
+    public record MonthlyFinancial(String month, long sales, long purchaseCost, long laborCost,
+                                   long rent, long cardFee, long otherExpense, long totalExpense) {}
+    public record TaxPayment(Integer month, String type, String date, long amount) {}
 }
