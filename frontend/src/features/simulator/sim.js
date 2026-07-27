@@ -230,7 +230,7 @@ export function buildSimulationPayload({ rank, diag, hometax, kb, equipped }) {
 }
 
 function tone(delta, goodUp) {
-  if (Math.abs(delta) < 0.0001) return { color: '#B9B0A4', dark: '#8A8178', bg: '#F5EFE3' };
+  if (Math.abs(delta) < 0.0001) return { color: '#B0B8C1', dark: '#8B95A1', bg: '#EEF0F3' };
   const good = goodUp ? delta > 0 : delta < 0;
   return good
     ? { color: '#5E8A3E', dark: '#A8D284', bg: '#EDF5E1' }
@@ -298,9 +298,9 @@ export function buildSimRows(simulation) {
         after: '추정 보류',
         delta: '최근 6개월 필요',
         strike: 'none',
-        deltaColor: '#A79C8E',
-        deltaColorDark: '#8A8178',
-        deltaBg: '#F5EFE3',
+        deltaColor: '#9FA6B0',
+        deltaColorDark: '#8B95A1',
+        deltaBg: '#EEF0F3',
       }
     : probabilityRow(
         simulation.baseline.stochastic.bufferBreachProbability,

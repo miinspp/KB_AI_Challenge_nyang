@@ -117,7 +117,7 @@ export const HOMETAX_FINANCIALS = {
  */
 export const JOINED_PRODUCTS = [
   {
-    id: 'joined-loan', icon: '₩', iconBg: '#FFF1CC', iconColor: 'var(--gold-link)',
+    id: 'joined-loan', icon: '₩', iconBg: '#E4EEF9', iconColor: 'var(--blue)',
     name: 'KB 소상공인 든든 운영자금 대출',
     spec: `잔액 ${(KB_LINK.existingDebtBalance / 10000).toLocaleString()}만원 · 연 ${KB_LINK.existingLoanRatePct}% · ${KB_LINK.existingLoanRemainingMonths}개월 남음`,
     status: '상환중',
@@ -129,7 +129,7 @@ export const JOINED_PRODUCTS = [
     status: '납입중',
   },
   {
-    id: 'joined-card', icon: '▣', iconBg: '#E4EEF9', iconColor: 'var(--blue)',
+    id: 'joined-card', icon: '▣', iconBg: '#EEF0F8', iconColor: '#7E8BC4',
     name: 'KB 사업자 체크카드',
     spec: '이번 달 사용 320만원',
     status: '사용중',

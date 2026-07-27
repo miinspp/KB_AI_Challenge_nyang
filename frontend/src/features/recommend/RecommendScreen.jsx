@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { IconTip, IconArrowRight } from '../../shared/Icons';
 
 // 상품 → 카테고리 (재현본 규칙 + 실제 추천 API 상품의 isFinance 반영)
 const CATS = [['all', '전체'], ['loan', '대출'], ['save', '적금'], ['ins', '보험'], ['gov', '정부 지원']];
@@ -24,7 +25,10 @@ export default function RecommendScreen({ products, percentile }) {
       </div>
 
       <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'center' }}>
-        <span style={{ flex: 'none', fontSize: 16 }}>💡</span>
+        <span style={{
+          flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', color: '#fff', background: 'var(--gold-link)',
+        }}><IconTip size={15} /></span>
         <p style={{ fontSize: 12.5, color: '#8A7A55', lineHeight: 1.55, fontWeight: 600 }}>
           아래 체험 상품을 탭하면 간략한 정보를 볼 수 있어요.<br />다음 화면에서 직접 <b style={{ color: 'var(--ink)' }}>장착해 보며 체험</b>할 수 있어요!
         </p>
@@ -84,8 +88,9 @@ export default function RecommendScreen({ products, percentile }) {
                     <span style={{ flex: 1, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.55 }}>{d.v}</span>
                   </div>
                 ))}
-                <p style={{ fontSize: 11.5, color: '#8A7A55', background: '#FFF6DD', borderRadius: 10, padding: '9px 11px', lineHeight: 1.55, fontWeight: 600 }}>
-                  👉 다음 화면의 시뮬레이터에서 이 상품을 장착하면, 우리 가게 현금흐름이 어떻게 바뀌는지 미리 체험할 수 있어요.
+                <p style={{ fontSize: 11.5, color: '#8A7A55', background: '#FFF6DD', borderRadius: 10, padding: '9px 11px', lineHeight: 1.55, fontWeight: 600, display: 'flex', gap: 7 }}>
+                  <IconArrowRight size={14} style={{ flex: 'none', marginTop: 2 }} />
+                  <span>다음 화면의 시뮬레이터에서 이 상품을 장착하면, 우리 가게 현금흐름이 어떻게 바뀌는지 미리 체험할 수 있어요.</span>
                 </p>
               </div>
             )}

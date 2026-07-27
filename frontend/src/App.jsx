@@ -21,6 +21,7 @@ import { postAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
+import { IconSparkle } from './shared/Icons';
 
 // AI 에이전트 trace 표시용 도구 한글 라벨
 const TOOL_KO = {
@@ -459,7 +460,7 @@ export default function App() {
             style={cta.disabled
               ? { background: 'var(--border-strong)', color: 'var(--muted-faint)', boxShadow: 'none', cursor: 'default' }
               : cta.green
-                ? { background: 'var(--green-deep)', color: '#fff', boxShadow: '0 8px 20px -8px rgba(63,107,46,.45)' }
+                ? { background: 'var(--green-deep)', color: '#fff', boxShadow: 'none' }
                 : undefined}>
             {cta.label}
           </button>
@@ -468,10 +469,12 @@ export default function App() {
             <button className="cta" onClick={runAgent} disabled={!canAnalyze || agentRunning}
               style={{
                 marginTop: 8,
-                background: (!canAnalyze || agentRunning) ? '#F3E4C0' : '#FFC01E',
+                background: (!canAnalyze || agentRunning) ? '#F3E4C0' : '#FFBC00',
                 color: 'var(--ink)', boxShadow: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
               }}>
-              {agentRunning ? '든든이 AI가 판단 중…' : '✨ 든든이 AI에게 맡기기'}
+              {!agentRunning && <IconSparkle size={17} />}
+              {agentRunning ? '든든이 AI가 판단 중…' : '든든이 AI에게 맡기기'}
             </button>
           )}
         </div>
@@ -481,13 +484,16 @@ export default function App() {
 
       {(agentRunning || agentResult || agentError) && (
         <div onClick={() => { if (!agentRunning) { setAgentResult(null); setAgentError(''); } }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(43,40,37,.5)', display: 'flex',
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,21,24,.5)', display: 'flex',
             alignItems: 'flex-end', zIndex: 70 }}>
           <div onClick={(e) => e.stopPropagation()}
             style={{ width: '100%', maxWidth: 480, margin: '0 auto', maxHeight: '82%', overflowY: 'auto',
               background: 'var(--canvas)', borderRadius: '24px 24px 0 0', padding: '22px 20px 28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: 18 }}>✨</span>
+              <span style={{
+                flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: '#fff', background: 'var(--gold-link)',
+              }}><IconSparkle size={15} /></span>
               <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>든든이 AI</span>
               {!agentRunning && (
                 <button onClick={() => { setAgentResult(null); setAgentError(''); }}

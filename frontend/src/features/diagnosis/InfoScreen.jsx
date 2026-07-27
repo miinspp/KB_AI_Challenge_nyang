@@ -4,6 +4,7 @@ import LinkCard from './LinkCard';
 import { topPercentOf } from './percentile';
 import { manToWon, fmtMan } from '../../shared/format';
 import { HOMETAX_FINANCIALS } from '../account/accountMock';
+import { IconMapPin, IconReceipt, IconWallet, IconStar, IconTrendUp } from '../../shared/Icons';
 
 // 관심사 칩 — api/recommend.js NEED_PHRASES 와 키를 맞춘다 (need_keywords 로 전달됨)
 const NEEDS = [
@@ -105,26 +106,26 @@ export default function InfoScreen({
   const needLabels = needs.map((k) => NEEDS.find((n) => n.key === k)?.label).filter(Boolean).join(' · ');
   const optionalRows = [
     {
-      mark: '상', badgeBg: 'var(--green-bright)', label: '상권 유형', sheet: 'area',
+      Icon: IconMapPin, badgeBg: 'var(--green-bright)', label: '상권 유형', sheet: 'area',
       filled: diag.areaType !== '',
       desc: diag.areaType === '' ? '같은 유형 상권끼리 비교하고 싶다면' : `${diag.areaType} 안에서도 순위를 알려드려요`,
     },
     {
-      mark: '비', badgeBg: '#E0A93C', label: '지출 세부', sheet: 'cost',
+      Icon: IconReceipt, badgeBg: '#E0A93C', label: '지출 세부', sheet: 'cost',
       sourced: sources.rentMan === 'hometax', srcLabel: '홈택스', filled: costFilled,
       desc: costFilled
         ? `임대료 ${manText(diag.rentMan || 0)} · 인건비 ${manText(diag.laborMan || 0)} · 재료비 ${manText(diag.purchaseMan || 0)}`
         : '넣으면 비용구조 진단이 추가돼요',
     },
     {
-      mark: '자', badgeBg: 'var(--blue)', label: '자금 상황', sheet: 'finance',
+      Icon: IconWallet, badgeBg: 'var(--blue)', label: '자금 상황', sheet: 'finance',
       sourced: sources.currentCashMan === 'kb', srcLabel: 'KB', filled: financeFilled,
       desc: financeFilled
         ? `보유현금 ${manText(diag.currentCashMan || 0)} · 대출 ${manText(diag.existingDebtMan || 0)}`
         : '시뮬레이터 계산에 쓰여요 · KB 연동 시 자동',
     },
     {
-      mark: '관', badgeBg: '#C4884A', label: '관심사 · 업력', sheet: 'needs',
+      Icon: IconStar, badgeBg: '#C4884A', label: '관심사 · 업력', sheet: 'needs',
       filled: needs.length > 0 || diag.bizAgeYears !== '',
       desc: (needs.length > 0 || diag.bizAgeYears !== '')
         ? [needLabels, diag.bizAgeYears !== '' ? `업력 ${diag.bizAgeYears}년` : ''].filter(Boolean).join(' · ')
@@ -251,15 +252,15 @@ export default function InfoScreen({
       {/* ── 선택 입력 ── */}
       <div>
         <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--muted-mid)', marginBottom: 8 }}>
-          더 정확하게 <span style={{ fontWeight: 500, color: 'var(--muted-faint)' }}>· 선택</span>
+          선택
         </p>
         <div className="list-box">
           {optionalRows.map((r) => (
             <button key={r.label} className="list-row" onClick={() => setSheet(r.sheet)}>
               <span style={{
                 flex: 'none', width: 34, height: 34, borderRadius: 11, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff', background: r.badgeBg,
-              }}>{r.mark}</span>
+                justifyContent: 'center', color: '#fff', background: r.badgeBg,
+              }}><r.Icon size={17} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>{r.label}</p>
@@ -285,7 +286,10 @@ export default function InfoScreen({
           background: 'linear-gradient(165deg,var(--green-bg),var(--canvas))', border: '1.5px solid var(--green-border)',
           borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
         }}>
-          <span style={{ fontSize: 22 }}>✨</span>
+          <span style={{
+            flex: 'none', width: 34, height: 34, borderRadius: 11, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: '#fff', background: 'var(--green-bright)',
+          }}><IconTrendUp size={18} /></span>
           <div>
             <p style={{ fontSize: 12.5, color: '#5E6E4A', fontWeight: 600 }}>
               입력하신 매출이면 <b style={{ color: 'var(--ink)' }}>{selected?.name}</b> 매출 기준

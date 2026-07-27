@@ -35,9 +35,9 @@ export default function ProfileScreen({
 
       <div className="acct-card" style={{ gap: 14, padding: 18 }}>
         <span style={{
-          flex: 'none', width: 56, height: 56, borderRadius: 20, background: '#FFC01E',
+          flex: 'none', width: 56, height: 56, borderRadius: 20, background: '#FFBC00',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Jua', sans-serif", fontSize: 22, color: 'var(--ink)',
+          fontWeight: 800, fontSize: 20, color: 'var(--ink)',
         }}>든</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>김민서 사장님</p>

@@ -15,7 +15,7 @@ export default function TabBar({ tab, overlay, onGo }) {
         return (
           <button key={t.id} className="tabbar-item" onClick={() => onGo(t.id)} aria-current={on ? 'page' : undefined}>
             <span className="tabbar-badge" style={{
-              background: on ? 'var(--gold)' : '#F5EFE2',
+              background: on ? 'var(--gold)' : '#EDEFF2',
               color: on ? 'var(--ink)' : 'var(--muted-soft)',
             }}>{t.mark}</span>
             <span className="tabbar-label" style={{ color: on ? 'var(--ink)' : 'var(--muted-soft)' }}>{t.label}</span>

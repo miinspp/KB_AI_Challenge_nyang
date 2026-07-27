@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fmtMan } from '../../shared/format';
 import { postTxnCorrection } from '../../api/txn';
+import { IconTip } from '../../shared/Icons';
 
 // 교정 시 고를 수 있는 카테고리(코드, 라벨) — taxonomy 주요 항목.
 const PICK = [
@@ -86,10 +87,10 @@ function CategoryBar({ cat, max }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
       <span style={{ flex: 'none', width: 88, fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</span>
-      <div style={{ flex: 1, height: 16, background: '#F5EFE2', borderRadius: 6, overflow: 'hidden' }}>
+      <div style={{ flex: 1, height: 16, background: '#EDEFF2', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: meta.color, borderRadius: 6 }} />
       </div>
-      <span style={{ flex: 'none', width: 76, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#4A453E' }}>
+      <span style={{ flex: 'none', width: 76, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#191B1F' }}>
         {fmtMan(cat.amount)}
       </span>
     </div>
@@ -162,7 +163,7 @@ export default function CostReportScreen({ report }) {
               style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12.5, fontWeight: 800, letterSpacing: -.2,
-                background: active ? 'var(--gold)' : '#F5EFE2', color: active ? 'var(--ink)' : 'var(--muted-mid)',
+                background: active ? 'var(--gold)' : '#EDEFF2', color: active ? 'var(--ink)' : 'var(--muted-mid)',
               }}>
               {mm.month.slice(5)}월
             </button>
@@ -176,8 +177,9 @@ export default function CostReportScreen({ report }) {
         <StatCard label="비용" value={fmtMan(m.expense)} color="var(--danger)" />
         <StatCard label="손익" value={fmtMan(m.profit)} color={m.profit >= 0 ? 'var(--green-mid)' : 'var(--danger)'} />
       </div>
-      <p style={{ fontSize: 11.5, color: '#8A7A55', background: 'var(--warm)', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600 }}>
-        💡 손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.
+      <p style={{ fontSize: 11.5, color: '#8A7A55', background: 'var(--warm)', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600, display: 'flex', gap: 7 }}>
+        <IconTip size={14} style={{ flex: 'none', marginTop: 2 }} />
+        <span>손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.</span>
       </p>
 
       {/* 그룹별 분류 — 접이식 */}
@@ -189,7 +191,7 @@ export default function CostReportScreen({ report }) {
               <button onClick={() => setOpenGroup(open ? null : g.group)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '15px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                 <span className="tag" style={{ marginTop: 0, flex: 'none', color: g.meta.color, background: g.meta.bg, padding: '3px 9px' }}>{g.group}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#B0A697', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#9FA6B0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
                 <span style={{ flex: 'none', fontSize: 13.5, fontWeight: 900, color: g.meta.color }}>{fmtMan(g.subtotal)}</span>
                 <span style={{ flex: 'none', fontSize: 12, color: 'var(--muted-faint)' }}>{open ? '▲' : '▼'}</span>
               </button>
@@ -215,7 +217,11 @@ export default function CostReportScreen({ report }) {
               <div key={s.metric} className="list-box" style={{ borderRadius: 20 }}>
                 <button onClick={() => steps && setOpenTip(open ? null : s.metric)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', background: 'none', border: 'none', cursor: steps ? 'pointer' : 'default', textAlign: 'left' }}>
-                  <span style={{ flex: 'none', fontSize: 16 }}>{warn ? '⚠️' : '✅'}</span>
+                  <span style={{
+                    flex: 'none', width: 22, height: 22, borderRadius: '50%', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900,
+                    background: warn ? 'var(--danger-bg)' : 'var(--green-bg)', color: warn ? 'var(--danger)' : 'var(--green-mid)',
+                  }}>{warn ? '!' : '✓'}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
                       {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
@@ -231,7 +237,7 @@ export default function CostReportScreen({ report }) {
                 {open && steps && (
                   <div className="pop" style={{ padding: '2px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
                     {steps.map((st) => (
-                      <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: '1.5px solid #F6EFE2', paddingTop: 9 }}>
+                      <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: '1.5px solid #EAECEF', paddingTop: 9 }}>
                         <span style={{ flex: 'none', width: 58, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{st.k}</span>
                         <span style={{ flex: 1, fontSize: 11.5, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.55 }}>{st.v}</span>
                       </div>
@@ -253,7 +259,7 @@ export default function CostReportScreen({ report }) {
           </p>
           {queue.length > 0
             ? <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
-            : <p style={{ fontSize: 12, color: 'var(--green-mid)', fontWeight: 700, marginTop: -4 }}>모두 확인했어요 🎉 다음부터 자동으로 분류돼요.</p>}
+            : <p style={{ fontSize: 12, color: 'var(--green-mid)', fontWeight: 700, marginTop: -4 }}>모두 확인했어요. 다음부터 자동으로 분류돼요.</p>}
           {queue.map((r) => (
             <div key={r.txnId} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '10px 13px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { fmtWon, fmtMan } from '../../shared/format';
 import { KB_ACCOUNT, HOMETAX_FINANCIALS, JOINED_PRODUCTS } from '../account/accountMock';
+import bearOwner from '../../assets/simulator/bear-owner-cutout.png';
+import { IconDiagnose } from '../../shared/Icons';
 
 /**
  * 연동 카드 — 연동 전에는 '연결' 버튼, 연동 후에는 카드 전체가 상세 화면으로 가는 버튼이 된다.
@@ -57,9 +59,23 @@ export default function HomeScreen({
     <div className="home">
       <p className="home-logo">든든이</p>
 
-      <button className="home-cta" onClick={onGoDiagnose}>
-        <p style={{ fontSize: 18.5, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
-        <p style={{ fontSize: 12.5, fontWeight: 600, color: '#7A6420', marginTop: 6 }}>1분이면 상권 속 내 위치를 알 수 있어요</p>
+      <div className="home-hero">
+        <p className="home-hero-bubble">사장님, 오늘도 든든하게 챙길게요!</p>
+        <svg className="home-hero-wave" viewBox="0 0 400 168" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,96 C56,74 92,116 150,100 C214,82 250,118 322,96 C356,86 380,92 400,84 L400,168 L0,168 Z" fill="#FFEFC4" />
+          <path d="M0,118 C64,100 108,134 172,116 C230,100 268,128 336,110 C364,102 384,106 400,100 L400,168 L0,168 Z" fill="#FFE39C" />
+        </svg>
+        <img src={bearOwner} className="home-hero-char" alt="" aria-hidden="true" />
+      </div>
+
+      <div style={{ padding: '2px 4px 0' }}>
+        <p style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
+        <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginTop: 5 }}>1분이면 상권 속 내 위치를 알 수 있어요 · 아래 진단하기 버튼을 눌러보세요</p>
+      </div>
+
+      <button className="home-fab" onClick={onGoDiagnose} aria-label="우리 가게 진단하기">
+        <span className="home-fab-label">진단하기</span>
+        <span className="home-fab-circle"><IconDiagnose size={27} /></span>
       </button>
 
       <LinkTile

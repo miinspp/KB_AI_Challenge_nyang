@@ -4,7 +4,7 @@ export const BASE = { cash: 182, interest: 12.0, debt: 38, credit: 742 };
 
 export const PRODUCTS = [
   { id: 'op', name: 'KB 소상공인 든든 운영자금 대출', short: '든든 운영자금 대출', tag: '운영자금 대출',
-    icon: '₩', iconBg: '#FFF1CC', iconColor: 'var(--gold-link)', tagBg: '#FFF1CC', tagColor: 'var(--gold-link)', fit: 94,
+    icon: '₩', iconBg: '#E4EEF9', iconColor: 'var(--blue)', tagBg: '#E4EEF9', tagColor: 'var(--blue)', fit: 94,
     reason: '매출 대비 현금 여유가 빠듯한 달이 있어요. 한도 내에서 필요한 만큼만 쓰는 운영자금이 잘 맞아요.',
     spec1: '한도 최대 5,000만원', spec2: '금리 연 4.8%~',
     eff: { cash: 34, interest: 6.2, debt: 9, credit: -8 },
