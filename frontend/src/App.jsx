@@ -14,10 +14,11 @@ import InfoScreen from './features/diagnosis/InfoScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
+import RiskProfileScreen from './features/risk/RiskProfileScreen';
 import ProfileScreen from './features/profile/ProfileScreen';
 import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
-import { postAgent } from './api/agent';
+import { streamAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
@@ -52,6 +53,8 @@ export default function App() {
   // 진단·시뮬 탭은 탭 안에서 단계를 오간다. overlay 는 탭 위에 덮이는 상세 화면.
   const [tab, setTab] = useState(1);
   const [diagSub, setDiagSub] = useState('input');   // input | report | cost
+  const [recSub, setRecSub] = useState('list');      // list | risk (추천 목록 → 성향분석 → 시뮬레이터)
+  const [riskProfile, setRiskProfile] = useState(null);  // 성향분석 결과 — 시뮬레이터/에이전트 입력값으로 전달
   const [simSub, setSimSub] = useState('sim');       // sim | portfolio
   const [overlay, setOverlay] = useState(null);      // null | 'account' | 'hometax'
   const [requestSheet, setRequestSheet] = useState(null);  // 내 정보 → 진단 입력 시트 열기
@@ -73,7 +76,9 @@ export default function App() {
   const [equipped, setEquipped] = useState([]);
   const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
   const [agentRunning, setAgentRunning] = useState(false);
-  const [agentResult, setAgentResult] = useState(null);
+  const [agentSteps, setAgentSteps] = useState([]);      // 실시간으로 쌓이는 도구 호출 진행 상황
+  const [agentThinking, setAgentThinking] = useState(''); // 도구 호출 사이 모델의 중간 판단 텍스트
+  const [agentFinal, setAgentFinal] = useState(null);     // 최종 제안 텍스트
   const [agentError, setAgentError] = useState('');
   const [simulation, setSimulation] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
@@ -226,21 +231,47 @@ export default function App() {
     }
   };
 
-  // AI에게 맡기기 — 진단 입력을 넘기면 에이전트가 진단→추천→시뮬→포트폴리오를 자율 실행
+  // 실행 중인 도구 단계들 중 이름이 같은 마지막 항목을 찾아 결과를 채워 넣는다.
+  // (한 턴에 도구가 여러 개 호출될 수 있어 tool_start/tool_result 를 이름만으로 단순 매칭하면 안 된다)
+  const patchLastRunningStep = (steps, tool, patch) => {
+    for (let i = steps.length - 1; i >= 0; i -= 1) {
+      if (steps[i].tool === tool && steps[i].running) {
+        const next = steps.slice();
+        next[i] = { ...next[i], ...patch };
+        return next;
+      }
+    }
+    return steps;
+  };
+
+  // AI에게 맡기기 — 진단 입력을 넘기면 에이전트가 진단→추천→시뮬→포트폴리오를 자율 실행.
+  // /api/agent/stream 을 실시간으로 받아서 도구를 호출할 때마다 즉시 화면에 반영한다(SSE).
   const runAgent = async () => {
-    setAgentError(''); setAgentResult(null); setAgentRunning(true);
+    setAgentError(''); setAgentSteps([]); setAgentThinking(''); setAgentFinal(null); setAgentRunning(true);
     try {
       const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
-      const result = await postAgent({
+      await streamAgent({
         industryCode: diag.industryCode,
         industry: industryName,
         monthlySales: manToWon(diag.salesMan),
         monthlyExpense: manToWon(diag.expenseMan || 0),
         currentCash: manToWon(diag.currentCashMan || 0),
         existingMonthlyPayment: manToWon(diag.existingMonthlyPaymentMan || 0),
+      }, (ev) => {
+        if (ev.type === 'thinking') {
+          setAgentThinking(ev.text);
+        } else if (ev.type === 'tool_start') {
+          setAgentThinking('');
+          setAgentSteps((prev) => [...prev, { tool: ev.tool, input: ev.input, output: null, running: true }]);
+        } else if (ev.type === 'tool_result') {
+          setAgentSteps((prev) => patchLastRunningStep(prev, ev.tool, { output: ev.output, running: false }));
+        } else if (ev.type === 'final') {
+          setAgentThinking('');
+          setAgentFinal(ev.final);
+        } else if (ev.type === 'error') {
+          setAgentError(ev.message);
+        }
       });
-      if (result?.error) throw new Error(result.error);
-      setAgentResult(result);
     } catch (e) {
       setAgentError(e.message);
     } finally {
@@ -285,7 +316,7 @@ export default function App() {
     setDiag(DIAG_INIT); setNeeds([]); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError(''); setKbLinked(false);
-    setTab(1); setDiagSub('input'); setSimSub('sim'); setOverlay(null);
+    setTab(1); setDiagSub('input'); setRecSub('list'); setRiskProfile(null); setSimSub('sim'); setOverlay(null);
     window.scrollTo(0, 0);
   };
 
@@ -301,8 +332,8 @@ export default function App() {
       cta = { label: '비용 리포트 보기', onClick: () => { setDiagSub('cost'); window.scrollTo(0, 0); } };
     } else if (tab === 2 && diagSub === 'cost') {
       cta = { label: '맞춤 상품 추천 받기', onClick: () => go(3) };
-    } else if (tab === 3) {
-      cta = { label: '시뮬레이터에서 장착해보기', onClick: () => go(4) };
+    } else if (tab === 3 && recSub === 'list') {
+      cta = { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } };
     } else if (tab === 4 && simSub === 'sim') {
       cta = { label: '포트폴리오 확인하기', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
@@ -321,7 +352,12 @@ export default function App() {
         window.scrollTo(0, 0);
       };
     }
-    if (tab === 3) return () => go(1);
+    if (tab === 3) {
+      return () => {
+        if (recSub === 'risk') { setRecSub('list'); window.scrollTo(0, 0); }
+        else go(1);
+      };
+    }
     if (tab === 4) {
       return () => {
         if (simSub === 'portfolio') { setSimSub('sim'); window.scrollTo(0, 0); }
@@ -334,7 +370,7 @@ export default function App() {
 
   const titleOf = () => {
     if (tab === 2) return diagSub === 'input' ? '우리 가게 진단' : diagSub === 'report' ? '진단 리포트' : '비용 리포트';
-    if (tab === 3) return '맞춤 상품 추천';
+    if (tab === 3) return recSub === 'risk' ? '사업 성향분석' : '맞춤 상품 추천';
     if (tab === 4) return simSub === 'sim' ? '금융 시뮬레이터' : '분석 포트폴리오';
     return '';
   };
@@ -409,7 +445,19 @@ export default function App() {
           </>
         )}
 
-        {!overlay && tab === 3 && <RecommendScreen products={products} percentile={topPercent} />}
+        {!overlay && tab === 3 && recSub === 'list' && (
+          <RecommendScreen products={products} percentile={topPercent} />
+        )}
+
+        {!overlay && tab === 3 && recSub === 'risk' && (
+          <RiskProfileScreen
+            onComplete={(profile) => {
+              setRiskProfile(profile);
+              setRecSub('list');
+              go(4);
+            }}
+          />
+        )}
 
         {!overlay && tab === 4 && (
           <>
@@ -482,8 +530,8 @@ export default function App() {
 
       <TabBar tab={tab} overlay={!!overlay} onGo={go} />
 
-      {(agentRunning || agentResult || agentError) && (
-        <div onClick={() => { if (!agentRunning) { setAgentResult(null); setAgentError(''); } }}
+      {(agentRunning || agentFinal || agentSteps.length > 0 || agentError) && (
+        <div onClick={() => { if (!agentRunning) { setAgentSteps([]); setAgentFinal(null); setAgentError(''); } }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(20,21,24,.5)', display: 'flex',
             alignItems: 'flex-end', zIndex: 70 }}>
           <div onClick={(e) => e.stopPropagation()}
@@ -496,19 +544,10 @@ export default function App() {
               }}><IconSparkle size={15} /></span>
               <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>든든이 AI</span>
               {!agentRunning && (
-                <button onClick={() => { setAgentResult(null); setAgentError(''); }}
+                <button onClick={() => { setAgentSteps([]); setAgentFinal(null); setAgentError(''); }}
                   style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: 20, color: 'var(--muted-faint)', cursor: 'pointer' }}>×</button>
               )}
             </div>
-
-            {agentRunning && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-                <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
-                  진단 → 추천 → 시뮬레이션을 스스로 판단하고 있어요…
-                </span>
-              </div>
-            )}
 
             {agentError && (
               <p style={{ fontSize: 13.5, color: 'var(--danger)', fontWeight: 700, lineHeight: 1.6 }}>
@@ -517,34 +556,57 @@ export default function App() {
               </p>
             )}
 
-            {agentResult && (
-              <>
-                {Array.isArray(agentResult.trace) && agentResult.trace.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                    {agentResult.trace.map((t, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                        <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: 'var(--green-soft)' }}>{i + 1}</span>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>{TOOL_KO[t.tool] || t.tool}</p>
-                          {t.tool === 'run_simulation' && t.output && (
-                            <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
-                              상환부담 {(t.output.repayment_burden_ratio * 100).toFixed(0)}% · {t.output.repayment_burden_passed ? '기준 통과' : '기준 초과 → 재검토'}
-                            </p>
-                          )}
-                          {t.tool === 'recommend_policies' && t.output && (
-                            <p style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+            {agentSteps.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                {agentSteps.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    {t.running
+                      ? <span className="spinner" style={{ flex: 'none', width: 16, height: 16, borderWidth: 2.5, marginTop: 1 }} />
+                      : <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: 'var(--green-soft)', width: 16, textAlign: 'center' }}>✓</span>}
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 800, color: t.running ? 'var(--muted)' : 'var(--ink)' }}>
+                        {TOOL_KO[t.tool] || t.tool}{t.running && <span style={{ fontWeight: 600 }}> · 진행 중…</span>}
+                      </p>
+                      {t.tool === 'run_simulation' && t.output && (
+                        <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
+                          상환부담 {(t.output.repayment_burden_ratio * 100).toFixed(0)}% · {t.output.repayment_burden_passed ? '기준 통과' : '기준 초과 → 재검토'}
+                        </p>
+                      )}
+                      {t.tool === 'recommend_policies' && t.output && (
+                        <p style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
+                      )}
+                      {t.tool === 'optimize_portfolio' && t.output && (
+                        <p style={{ fontSize: 11.5, color: t.output.feasible ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
+                          {t.output.feasible ? `최적 조합 ${t.output.combo?.length ?? 0}개 상품 확정` : '조건 미충족 → 재시도'}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-                <div className="card">
-                  <p style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                    {agentResult.final}
-                  </p>
-                </div>
-              </>
+                ))}
+              </div>
+            )}
+
+            {agentRunning && agentThinking && (
+              <p style={{ fontSize: 12.5, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.6, marginBottom: 14, fontStyle: 'italic' }}>
+                “{agentThinking}”
+              </p>
+            )}
+
+            {agentRunning && agentSteps.length === 0 && !agentThinking && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
+                <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
+                  진단 → 추천 → 시뮬레이션을 스스로 판단하고 있어요…
+                </span>
+              </div>
+            )}
+
+            {agentFinal && (
+              <div className="card">
+                <p style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {agentFinal}
+                </p>
+              </div>
             )}
           </div>
         </div>
