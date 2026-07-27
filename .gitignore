@@ -46,3 +46,6 @@ pipeline/txn/data/
 
 # === misc ===
 *.log
+
+# 추천 서비스 임베딩 캐시 (app.py 가 기동 시 자동 생성/재생성)
+recommend-service/data/reco_vectors.npy
