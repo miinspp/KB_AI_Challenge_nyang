@@ -186,7 +186,7 @@ export default function InfoScreen({
     <div className="scr" style={{ paddingBottom: 215 }}>
       <div>
         <h1 className="h1">3가지만 알려주시면<br />바로 진단해 드려요</h1>
-        <p className="sub">홈택스를 연동하면 매출·지출·6개월 추이까지 한 번에 채워져요.</p>
+        <p className="sub">홈택스를 연동하면 매출·지출·12개월 추이까지 한 번에 채워져요.</p>
       </div>
 
       {/* 필수 진행바 */}
@@ -200,7 +200,7 @@ export default function InfoScreen({
         <LinkCard
           iconLabel="홈택스" iconBg="var(--green)"
           title="국세청 홈택스 연동"
-          desc="매출·지출·6개월 추이 한 번에"
+          desc="매출·지출·12개월 추이 한 번에"
           summary={`${HOMETAX_FINANCIALS.maskedBusinessNumber} · ${HOMETAX_FINANCIALS.basisPeriod} 불러옴`}
           linked={hometaxLinked}
           buildFinancials={() => HOMETAX_FINANCIALS}
@@ -275,7 +275,7 @@ export default function InfoScreen({
           ))}
         </div>
         <p style={{ marginTop: 9, fontSize: 11, color: 'var(--muted-soft)', lineHeight: 1.6 }}>
-          지출 세부를 넣으면 <b style={{ color: 'var(--muted)' }}>비용구조</b> 축이, 6개월 매출이 있으면 <b style={{ color: 'var(--muted)' }}>매출안정성</b> 축이 진단에 추가돼요.
+          지출 세부를 넣으면 <b style={{ color: 'var(--muted)' }}>비용구조</b> 축이, 월별 매출 이력이 있으면 <b style={{ color: 'var(--muted)' }}>매출안정성</b> 축이 진단에 추가돼요.
         </p>
       </div>
 

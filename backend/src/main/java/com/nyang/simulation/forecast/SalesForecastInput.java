@@ -9,5 +9,13 @@ public record SalesForecastInput(
         double maximumMonthlyTrendRatio,
         double volatility,
         String industryCode,
-        String region
-) {}
+        String region,
+        List<String> monthlySalesMonths
+) {
+    public SalesForecastInput(List<BigDecimal> monthlySales, int horizonMonths,
+                              double maximumMonthlyTrendRatio, double volatility,
+                              String industryCode, String region) {
+        this(monthlySales, horizonMonths, maximumMonthlyTrendRatio, volatility,
+                industryCode, region, null);
+    }
+}

@@ -31,7 +31,7 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, link
     onUnlink && onUnlink();
   };
 
-  // desc: 상태별 안내문(예: 연동 전 "매출·지출·6개월 추이 한 번에" / 완료 "…불러옴"). 없으면 기본 안심 문구.
+  // desc: 상태별 안내문(예: 연동 전 "매출·지출·12개월 추이 한 번에" / 완료 "…불러옴"). 없으면 기본 안심 문구.
   const descText = (status === 'done' ? summary : desc) || desc || '조회 전용 · 출금 불가';
 
   return (

@@ -1,59 +1,92 @@
-export default function PortfolioScreen({ equipped, simRows, percentile, simulation }) {
-  const eq = equipped;
-  const headline = eq.length === 0
-    ? '상품을 장착하면 변화를 보여드려요'
-    : '상품 ' + eq.length + '개 조합의 12개월 계산 결과예요';
+const ROLE_LABELS = {
+  LOAN: '운영 현금 마련',
+  GRANT: '지원금 활용',
+  SAVINGS: '현금 여유 준비',
+  MUTUAL_AID: '안전망 준비',
+  INSURANCE: '위험 대비',
+};
+
+function eligibility(product) {
+  if (product.eligibilityStatus === 'PASS') return { label: '신청 조건에 맞아요', color: '#5E8A3E', background: '#EDF5E1' };
+  if (product.eligibilityStatus === 'FAIL') return { label: '현재 조건과 맞지 않아요', color: '#D0564C', background: '#FDE8E6' };
+  return { label: '신청 전 조건 확인', color: '#8A8178', background: '#F5EFE3' };
+}
+
+function preparation(product) {
+  if (product.type === 'LOAN') return '최근 매출과 기존 대출 내역';
+  if (product.type === 'GRANT') return '사업자등록 정보와 지원 요건';
+  if (product.type === 'SAVINGS') return 'KB 계좌 정보';
+  return '공고에 안내된 신청 서류';
+}
+
+export default function PortfolioScreen({ equipped = [], simRows = [], percentile, simulation }) {
+  const primaryMetric = simRows[0];
+  const summary = simRows.slice(0, 2);
+  const constraint = simulation?.constraints?.violations?.[0];
+  const selectedProducts = equipped;
+  const headline = primaryMetric
+    ? `이번 조합은 ${primaryMetric.name}을\n${primaryMetric.delta} 바꿔요`
+    : '선택한 상품으로\n실행 계획을 만들어요';
 
   return (
-    <div className="scr">
-      <div style={{ background: '#2B2825', borderRadius: 22, padding: '20px 22px', color: '#fff' }}>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#FFD873' }}>사장님의 최종 포트폴리오</p>
-        <p style={{ marginTop: 8, fontSize: 20, fontWeight: 900, lineHeight: 1.45, letterSpacing: -.4 }}>{headline}</p>
-        <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {simRows.map((m) => (
-            <div key={m.name} style={{ background: 'rgba(255,255,255,.07)', borderRadius: 14, padding: '12px 14px' }}>
-              <p style={{ fontSize: 11, color: '#B9B0A4', fontWeight: 700 }}>{m.name}</p>
-              <p style={{ marginTop: 5, fontSize: 16, fontWeight: 900, color: '#fff' }}>{m.after}</p>
-              <p style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: m.deltaColorDark }}>
-                {m.delta} <span style={{ color: '#8A8178', fontWeight: 500 }}>(기존 {m.before})</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {eq.length > 0 ? (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p className="label-sm">가입하러 가기 <span style={{ fontWeight: 500, color: '#C4BAAD' }}>· KB스타뱅킹으로 이동해요</span></p>
-            {eq.map((p) => (
-              <a key={p.id} href={p.link} target="_blank" rel="noreferrer" className="card" style={{ display: 'block' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="icon-badge" style={{ width: 40, height: 40, background: p.iconBg, color: p.iconColor, fontSize: 18 }}>{p.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 15, fontWeight: 800, color: '#2B2825', letterSpacing: -.3 }}>{p.name}</p>
-                    <p style={{ marginTop: 2, fontSize: 11.5, color: '#A79C8E' }}>{p.spec1} · {p.spec2}</p>
-                  </div>
-                  <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: '#C98A00' }}>가입 ↗</span>
-                </div>
-                <div style={{ marginTop: 12, background: '#FFF9EA', borderRadius: 12, padding: '11px 13px' }}>
-                  <p style={{ fontSize: 12, color: '#8A7A55', lineHeight: 1.65 }}>{p.reason}</p>
-                </div>
-              </a>
+    <div className="scr" style={{ padding: '14px 22px 112px', gap: 14 }}>
+      <section style={{ overflow: 'hidden', borderRadius: 22, padding: '19px 18px 16px', color: '#fff', background: 'linear-gradient(135deg,#2B2825,#48413A)' }}>
+        <p style={{ fontSize: 11.5, fontWeight: 900, color: '#FFD873' }}>나의 금융 실행 계획</p>
+        <p style={{ marginTop: 7, fontSize: 19, fontWeight: 900, lineHeight: 1.38, whiteSpace: 'pre-line' }}>{headline}</p>
+        {summary.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${summary.length}, minmax(0, 1fr))`, gap: 8, marginTop: 15 }}>
+            {summary.map((metric) => (
+              <div key={metric.name} style={{ minWidth: 0, padding: '10px 11px', borderRadius: 13, background: 'rgba(255,255,255,.09)' }}>
+                <p style={{ fontSize: 10, fontWeight: 800, color: '#D8D0C5', lineHeight: 1.35 }}>{metric.name}</p>
+                <p style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap' }}>{metric.after}</p>
+                <p style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: metric.deltaColorDark || '#FFD873' }}>{metric.delta}</p>
+              </div>
             ))}
           </div>
-          <div style={{ background: '#EDF5E1', borderRadius: 16, padding: '14px 16px' }}>
-            <p style={{ fontSize: 12.5, color: '#5E6E4A', lineHeight: 1.65, fontWeight: 600 }}>
-              사장님은 상위 {percentile}% 위치예요. {simulation?.constraints?.violations?.[0]
-                || '현재 조합은 계산 엔진의 상환부담·중복수혜·초과조달 기준을 통과했어요.'} 실제 자격과 금리는 각 상품 페이지에서 확인하세요.
+        )}
+      </section>
+
+      {equipped.length > 0 ? (
+        <>
+          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#2B2825' }}>선택한 상품 {selectedProducts.length}개</p>
+
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {selectedProducts.map((product) => {
+              const status = eligibility(product);
+              const role = ROLE_LABELS[product.type] || product.category || '맞춤 상품';
+              const docs = preparation(product);
+              return (
+                <a key={product.key || product.id} href={product.link || undefined} target={product.link ? '_blank' : undefined} rel={product.link ? 'noreferrer' : undefined} style={{ display: 'block', padding: '12px', border: '1.5px solid #F0E7D6', borderRadius: 17, background: '#fff', textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <span className="icon-badge" style={{ flex: 'none', width: 34, height: 34, borderRadius: 11, background: product.iconBg, color: product.iconColor, fontSize: 15 }}>{product.icon}</span>
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: '#2B2825', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{product.name || product.short}</span>
+                      <span style={{ display: 'block', marginTop: 2, fontSize: 10.5, fontWeight: 800, color: '#8A8178' }}>{product.reason || role}</span>
+                    </span>
+                    <span style={{ flex: 'none', color: '#C98A00', fontSize: 11, fontWeight: 900 }}>{product.link ? '신청하기 ↗' : '확인하기 ›'}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginTop: 10 }}>
+                    <span style={{ padding: '6px 7px', borderRadius: 9, background: status.background, color: status.color, fontSize: 9.5, fontWeight: 900 }}>{status.label}</span>
+                    <span style={{ padding: '6px 7px', borderRadius: 9, background: '#FFF9EA', color: '#8A7A55', fontSize: 9.5, fontWeight: 900 }}>{role}</span>
+                    <span style={{ gridColumn: '1 / -1', padding: '6px 7px', borderRadius: 9, background: '#F7F1E4', color: '#8A8178', fontSize: 9.5, fontWeight: 800 }}>신청 전 준비: {docs}</span>
+                  </div>
+                </a>
+              );
+            })}
+          </section>
+
+          <section style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '12px 13px', borderRadius: 15, background: '#EDF5E1' }}>
+            <span style={{ flex: 'none', marginTop: 1, color: '#5E8A3E', fontSize: 14 }}>✓</span>
+            <p style={{ fontSize: 11, lineHeight: 1.55, fontWeight: 700, color: '#5E6E4A' }}>
+              {constraint || (percentile != null ? `현재 업종·매출 기준 상위 ${percentile}% 위치예요. 실제 조건은 상품 페이지에서 확인하세요.` : '실제 조건은 상품 페이지에서 확인하세요.')}
             </p>
-          </div>
+          </section>
         </>
       ) : (
-        <div style={{ background: '#fff', border: '1.5px dashed #E4D8C2', borderRadius: 20, padding: 28, textAlign: 'center' }}>
-          <p style={{ fontSize: 14, fontWeight: 800, color: '#8A8178' }}>아직 장착한 상품이 없어요</p>
-          <p style={{ marginTop: 6, fontSize: 12.5, color: '#C4BAAD' }}>이전 화면에서 상품을 장착해 보세요.</p>
-        </div>
+        <section style={{ padding: 26, border: '1.5px dashed #E4D8C2', borderRadius: 20, background: '#fff', textAlign: 'center' }}>
+          <p style={{ fontSize: 14, fontWeight: 900, color: '#6F685E' }}>아직 선택한 상품이 없어요</p>
+          <p style={{ marginTop: 5, fontSize: 11.5, fontWeight: 700, color: '#A79C8E' }}>시뮬레이터에서 상품을 골라보세요.</p>
+        </section>
       )}
     </div>
   );

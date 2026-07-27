@@ -68,7 +68,7 @@ export default function ProfileScreen({
           <LinkCard
             iconLabel="홈택스" iconBg="var(--green)"
             title="국세청 홈택스 연동"
-            desc="매출·지출·6개월 추이 한 번에"
+            desc="매출·지출·12개월 추이 한 번에"
             summary={`${HOMETAX_FINANCIALS.maskedBusinessNumber} · ${HOMETAX_FINANCIALS.basisPeriod} 불러옴`}
             linked={hometaxLinked}
             buildFinancials={() => HOMETAX_FINANCIALS}

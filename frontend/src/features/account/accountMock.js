@@ -4,32 +4,110 @@
 
 /**
  * 연동 시 온보딩 입력을 자동으로 채우는 값 — 진단 입력 v2 역할 분담:
- *   홈택스 = 매출·지출·지출세부·6개월 이력 / KB = 보유현금·기존 대출 (홈택스엔 없는 계좌·여신 정보)
+ *   홈택스 = 매출·지출·지출세부·12개월 이력 / KB = 보유현금·기존 대출 (홈택스엔 없는 계좌·여신 정보)
  */
+const LINKED_ACCOUNTS = [
+  { id: 'KB-BIZ-001', name: 'KB 사업자통장', balance: 8_420_000 },
+  { id: 'KB-RESERVE-001', name: '세금·운영 예비통장', balance: 6_580_000 },
+];
+
+const KB_MONTHLY_CASH_FLOW = [
+  ['2025-08', 22_420_000, 20_350_000],
+  ['2025-09', 23_180_000, 20_790_000],
+  ['2025-10', 23_910_000, 21_240_000],
+  ['2025-11', 24_730_000, 21_680_000],
+  ['2025-12', 26_780_000, 22_910_000],
+  ['2026-01', 23_650_000, 24_410_000],
+  ['2026-02', 22_960_000, 21_270_000],
+  ['2026-03', 25_080_000, 22_120_000],
+  ['2026-04', 24_410_000, 21_730_000],
+  ['2026-05', 25_690_000, 25_430_000],
+  ['2026-06', 24_920_000, 22_050_000],
+  ['2026-07', 26_180_000, 25_120_000],
+].map(([month, inflow, outflow]) => ({
+  month,
+  inflow,
+  outflow,
+  netCashFlow: inflow - outflow,
+}));
+
+const LINKED_LOANS = [
+  {
+    id: 'KB-LOAN-001', name: 'KB 소상공인 든든 운영자금 대출',
+    balance: 30_000_000, annualRate: 0.052, repaymentType: 'EQUAL_PAYMENT',
+    monthlyPayment: 1_285_000, remainingMonths: 24,
+    nextPaymentDate: '2026-08-15', maturityDate: '2028-07-15',
+  },
+  {
+    id: 'KB-LOAN-002', name: '사업자 시설자금 대출',
+    balance: 12_000_000, annualRate: 0.046, repaymentType: 'EQUAL_PRINCIPAL',
+    monthlyPayment: 545_000, remainingMonths: 24,
+    nextPaymentDate: '2026-08-25', maturityDate: '2028-07-25',
+  },
+];
+
 export const KB_LINK = {
-  currentCash: 15_000_000,
-  existingDebtBalance: 42_000_000,
-  monthlyLoanPayment: 1_800_000,
-  existingLoanRatePct: '5.2',
-  existingLoanRemainingMonths: '24',
+  accounts: LINKED_ACCOUNTS,
+  loans: LINKED_LOANS,
+  monthlyCashFlowHistory: KB_MONTHLY_CASH_FLOW,
+  currentCash: LINKED_ACCOUNTS.reduce((sum, account) => sum + account.balance, 0),
+  existingDebtBalance: LINKED_LOANS.reduce((sum, loan) => sum + loan.balance, 0),
+  monthlyLoanPayment: LINKED_LOANS.reduce((sum, loan) => sum + loan.monthlyPayment, 0),
+  existingLoanRatePct: String((LINKED_LOANS.reduce((sum, loan) => sum + loan.balance * loan.annualRate, 0)
+    / LINKED_LOANS.reduce((sum, loan) => sum + loan.balance, 0) * 100).toFixed(2)),
+  existingLoanRemainingMonths: String(Math.max(...LINKED_LOANS.map((loan) => loan.remainingMonths))),
 };
 
 /**
- * 국세청 홈택스 연동 결과 — 업종·매출·지출·지출세부·6개월 이력.
+ * 국세청 홈택스 연동 결과 — 업종·매출·지출·지출세부·12개월 이력.
  * (InfoScreen 자동채움 + HometaxScreen 상세 표시)
  */
+const HOMETAX_MONTHLY_HISTORY = [
+  ['2025-08', 22_800_000, 8_650_000, 3_800_000, 2_500_000, 410_000, 3_240_000],
+  ['2025-09', 23_600_000, 8_920_000, 3_850_000, 2_500_000, 425_000, 3_260_000],
+  ['2025-10', 24_400_000, 9_150_000, 3_900_000, 2_500_000, 439_000, 3_310_000],
+  ['2025-11', 25_200_000, 9_420_000, 4_050_000, 2_500_000, 454_000, 3_350_000],
+  ['2025-12', 27_300_000, 10_180_000, 4_250_000, 2_500_000, 491_000, 3_490_000],
+  ['2026-01', 24_100_000, 9_080_000, 4_050_000, 2_500_000, 434_000, 3_360_000],
+  ['2026-02', 23_400_000, 8_860_000, 3_950_000, 2_500_000, 421_000, 3_300_000],
+  ['2026-03', 25_600_000, 9_520_000, 4_100_000, 2_500_000, 461_000, 3_390_000],
+  ['2026-04', 24_900_000, 9_310_000, 4_050_000, 2_500_000, 448_000, 3_370_000],
+  ['2026-05', 26_200_000, 9_760_000, 4_150_000, 2_500_000, 472_000, 3_430_000],
+  ['2026-06', 25_400_000, 9_470_000, 4_100_000, 2_500_000, 457_000, 3_400_000],
+  ['2026-07', 26_700_000, 9_920_000, 4_200_000, 2_500_000, 481_000, 3_450_000],
+].map(([month, sales, purchaseCost, laborCost, rent, cardFee, otherExpense]) => ({
+  month, sales, purchaseCost, laborCost, rent, cardFee, otherExpense,
+  totalExpense: purchaseCost + laborCost + rent + cardFee + otherExpense,
+}));
+
+const monthlyAverage = (key) => Math.round(
+  HOMETAX_MONTHLY_HISTORY.reduce((sum, row) => sum + row[key], 0) / HOMETAX_MONTHLY_HISTORY.length,
+);
+
 export const HOMETAX_FINANCIALS = {
   industryCode: 'CS100001',        // 한식음식점
   industryName: '한식음식점',
   maskedBusinessNumber: '123-45-*****',
-  basisPeriod: '최근 6개월',
-  monthlySalesAvg: 25_000_000,
-  totalMonthlyExpense: 19_000_000,
-  rent: 2_500_000,
-  laborCost: 4_000_000,
-  purchaseCost: 9_000_000,
-  otherExpense: 3_500_000,
-  salesHistory: [23_800_000, 24_100_000, 25_600_000, 24_900_000, 26_200_000, 25_400_000],
+  basisPeriod: '최근 12개월',
+  monthlySalesAvg: monthlyAverage('sales'),
+  totalMonthlyExpense: monthlyAverage('totalExpense'),
+  rent: monthlyAverage('rent'),
+  laborCost: monthlyAverage('laborCost'),
+  purchaseCost: monthlyAverage('purchaseCost'),
+  cardFee: monthlyAverage('cardFee'),
+  otherExpense: monthlyAverage('otherExpense'),
+  monthlyHistory: HOMETAX_MONTHLY_HISTORY,
+  salesHistory: HOMETAX_MONTHLY_HISTORY.map(({ month, sales }) => ({ month, amount: sales })),
+  recentTaxPayments: [
+    { type: '부가가치세', paidDate: '2026-01-26', amount: 2_740_000 },
+    { type: '종합소득세', paidDate: '2026-05-31', amount: 3_180_000 },
+    { type: '부가가치세', paidDate: '2026-07-27', amount: 2_960_000 },
+  ],
+  scheduledTaxPayments: [
+    { month: 3, type: '부가가치세 예정고지', dueDate: '2026-10-26', amount: 2_850_000 },
+    { month: 6, type: '부가가치세 확정신고', dueDate: '2027-01-25', amount: 3_050_000 },
+    { month: 10, type: '종합소득세', dueDate: '2027-05-31', amount: 3_300_000 },
+  ],
 };
 
 /**

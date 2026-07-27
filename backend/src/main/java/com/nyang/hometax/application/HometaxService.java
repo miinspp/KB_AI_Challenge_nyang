@@ -42,30 +42,58 @@ public class HometaxService {
     private HometaxFinancials simulate(String digits) {
         Random rnd = new Random(Long.parseLong(digits));
 
-        // 월별 매출 6개월: 기준 매출 1,500만~6,000만 × 완만한 추세 ± 지터
+        // 월별 매출·비용 12개월: 같은 달의 손익을 함께 보관해 추세와 변동성을 계산한다.
         long base = round(15_000_000L + (long) (rnd.nextDouble() * 45_000_000L), 100_000);
         double trend = (rnd.nextDouble() - 0.5) * 0.04;           // 월 -2% ~ +2%
         YearMonth now = YearMonth.now();
         List<HometaxFinancials.MonthlyAmount> history = new ArrayList<>();
-        long sum = 0;
-        for (int i = 6; i >= 1; i--) {                            // 과거 → 최근
+        List<HometaxFinancials.MonthlyFinancial> monthlyHistory = new ArrayList<>();
+        long salesSum = 0;
+        long purchaseSum = 0;
+        long laborSum = 0;
+        long rentSum = 0;
+        long cardFeeSum = 0;
+        long otherSum = 0;
+        for (int i = 12; i >= 1; i--) {                           // 과거 → 최근
             double jitter = (rnd.nextDouble() - 0.5) * 0.2;       // ±10%
-            long amt = round((long) (base * (1 + trend * (6 - i - 2.5) + jitter)), 100_000);
-            amt = Math.max(amt, 1_000_000);
-            history.add(new HometaxFinancials.MonthlyAmount(now.minusMonths(i).toString(), amt));
-            sum += amt;
+            long sales = round((long) (base * (1 + trend * (12 - i - 5.5) + jitter)), 100_000);
+            sales = Math.max(sales, 1_000_000);
+            long purchase = round((long) (sales * (0.40 + rnd.nextDouble() * 0.12)), 10_000);
+            long labor = round((long) (sales * (0.13 + rnd.nextDouble() * 0.08)), 10_000);
+            long rent = round((long) (base * (0.07 + rnd.nextDouble() * 0.02)), 10_000);
+            long cardFee = round((long) (sales * (0.016 + rnd.nextDouble() * 0.006)), 1_000);
+            long other = round((long) (sales * (0.03 + rnd.nextDouble() * 0.04)), 10_000);
+            long total = purchase + labor + rent + cardFee + other;
+            String month = now.minusMonths(i).toString();
+            history.add(new HometaxFinancials.MonthlyAmount(month, sales));
+            monthlyHistory.add(new HometaxFinancials.MonthlyFinancial(
+                    month, sales, purchase, labor, rent, cardFee, other, total));
+            salesSum += sales;
+            purchaseSum += purchase;
+            laborSum += labor;
+            rentSum += rent;
+            cardFeeSum += cardFee;
+            otherSum += other;
         }
-        long salesAvg = round(sum / 6, 10_000);
+        int months = monthlyHistory.size();
+        long salesAvg = round(salesSum / months, 10_000);
+        long purchase = round(purchaseSum / months, 10_000);
+        long labor = round(laborSum / months, 10_000);
+        long rent = round(rentSum / months, 10_000);
+        long cardFee = round(cardFeeSum / months, 1_000);
+        long other = round(otherSum / months, 10_000);
 
-        // 비용 구조: 실태조사 기준 현실 구간 (매출 대비 비율)
-        long purchase = round((long) (salesAvg * (0.40 + rnd.nextDouble() * 0.15)), 10_000); // 40~55%
-        long labor    = round((long) (salesAvg * (0.13 + rnd.nextDouble() * 0.12)), 10_000); // 13~25%
-        long rent     = round((long) (salesAvg * (0.05 + rnd.nextDouble() * 0.07)), 10_000); // 5~12%
-        long other    = round((long) (salesAvg * (0.03 + rnd.nextDouble() * 0.05)), 10_000); // 3~8%
+        List<HometaxFinancials.TaxPayment> recentTaxes = List.of(
+                new HometaxFinancials.TaxPayment(null, "부가가치세", now.minusMonths(6).atDay(25).toString(), round((long) (salesAvg * .11), 10_000)),
+                new HometaxFinancials.TaxPayment(null, "종합소득세", now.minusMonths(2).atEndOfMonth().toString(), round((long) (salesAvg * .13), 10_000)));
+        List<HometaxFinancials.TaxPayment> scheduledTaxes = List.of(
+                new HometaxFinancials.TaxPayment(3, "부가가치세 예정고지", now.plusMonths(3).atDay(25).toString(), round((long) (salesAvg * .115), 10_000)),
+                new HometaxFinancials.TaxPayment(6, "부가가치세 확정신고", now.plusMonths(6).atDay(25).toString(), round((long) (salesAvg * .12), 10_000)));
 
         String masked = digits.substring(0, 3) + "-" + digits.substring(3, 5) + "-*****";
-        return new HometaxFinancials(masked, "최근 6개월", salesAvg, history,
-                purchase, labor, rent, other, purchase + labor + rent + other, true);
+        return new HometaxFinancials(masked, "최근 12개월", salesAvg, history, monthlyHistory,
+                purchase, labor, rent, cardFee, other, purchase + labor + rent + cardFee + other,
+                recentTaxes, scheduledTaxes, true);
     }
 
     private static long round(long v, long unit) {

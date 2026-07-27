@@ -115,8 +115,10 @@ export default function App() {
       )
     );
   const simulationPayload = useMemo(
-    () => (rank && simulationReady ? buildSimulationPayload({ rank, diag, hometax, equipped }) : null),
-    [rank, diag, hometax, equipped, simulationReady],
+    () => (rank && simulationReady ? buildSimulationPayload({
+      rank, diag, hometax, kb: kbLinked ? KB_LINK : null, equipped,
+    }) : null),
+    [rank, diag, hometax, kbLinked, equipped, simulationReady],
   );
   const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
 
@@ -236,6 +238,7 @@ export default function App() {
         currentCash: manToWon(diag.currentCashMan || 0),
         existingMonthlyPayment: manToWon(diag.existingMonthlyPaymentMan || 0),
       });
+      if (result?.error) throw new Error(result.error);
       setAgentResult(result);
     } catch (e) {
       setAgentError(e.message);
@@ -244,8 +247,11 @@ export default function App() {
     }
   };
 
-  // 홈택스 연동 완료 → 업종·매출·지출·지출세부를 채우고 6개월 이력을 보관
+  // 홈택스 연동 완료 → 업종·매출·지출·지출세부를 채우고 12개월 이력을 보관
   const onHometaxLinked = (f = HOMETAX_FINANCIALS) => {
+    const linkedAnnualTax = (f.recentTaxPayments || []).reduce(
+      (sum, payment) => sum + Math.max(0, Number(payment.amount) || 0), 0,
+    );
     setHometax(f);
     setDiag((d) => ({
       ...d,
@@ -256,6 +262,7 @@ export default function App() {
       laborMan: String(wonToMan(f.laborCost)),
       purchaseMan: String(wonToMan(f.purchaseCost)),
       otherMan: f.otherExpense != null ? String(wonToMan(f.otherExpense)) : d.otherMan,
+      annualTaxPaidMan: linkedAnnualTax > 0 ? String(wonToMan(linkedAnnualTax)) : d.annualTaxPaidMan,
     }));
   };
 

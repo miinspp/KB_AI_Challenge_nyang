@@ -71,7 +71,7 @@ export default function HomeScreen({
 
       <LinkTile
         linked={hometaxLinked} badge="홈택스" badgeBg="var(--green)"
-        title="국세청 홈택스 연동하기" desc="매출·지출·6개월 추이 한 번에"
+        title="국세청 홈택스 연동하기" desc="매출·지출·12개월 추이 한 번에"
         headline={fmtWon(HOMETAX_FINANCIALS.monthlySalesAvg)}
         sub={`${HOMETAX_FINANCIALS.basisPeriod} 월평균 매출 · 홈택스`} cta="상세"
         onLink={onLinkHometax} onOpen={onOpenHometax}
