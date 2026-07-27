@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 
 import httpx
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 import engine  # 로컬 추천 엔진 재사용 (하드필터·규칙·임베딩)
@@ -292,7 +293,13 @@ class AgentRequest(BaseModel):
     areaType: str | None = None
 
 
-def run_agent(req: AgentRequest) -> dict:
+def run_agent_events(req: AgentRequest):
+    """
+    도구 호출 한 번마다 이벤트를 yield 하는 제너레이터 — 실시간 스트리밍(SSE)의 기반.
+    이벤트 종류: thinking(도구 호출 전 모델의 중간 판단 텍스트) · tool_start(호출 시작)
+              · tool_result(호출 완료+결과) · final(최종 제안) · error
+    마지막은 항상 final 이벤트로 끝난다(정상 종료·최대턴 도달 모두 포함).
+    """
     import anthropic
     client = anthropic.Anthropic()
     ctx = RunState(financials={
@@ -309,30 +316,84 @@ def run_agent(req: AgentRequest) -> dict:
     for _ in range(MAX_TURNS):
         resp = client.messages.create(model=MODEL, max_tokens=1500, system=SYSTEM, tools=TOOLS, messages=messages)
         messages.append({"role": "assistant", "content": resp.content})
+        text = "".join(b.text for b in resp.content if b.type == "text").strip()
+
         if resp.stop_reason != "tool_use":
-            final = "".join(b.text for b in resp.content if b.type == "text")
-            return {"final": final, "trace": ctx.trace, "rank": ctx.rank}
+            yield {"type": "final", "final": text or "포트폴리오 제안을 완료했어요.", "trace": ctx.trace, "rank": ctx.rank}
+            return
+
+        if text:
+            yield {"type": "thinking", "text": text}
 
         results = []
         for block in resp.content:
             if block.type != "tool_use":
                 continue
+            yield {"type": "tool_start", "tool": block.name, "input": block.input}
             try:
                 out = DISPATCH[block.name](block.input, ctx)
             except Exception as e:
                 out = {"error": str(e)}
             ctx.trace.append({"tool": block.name, "input": block.input, "output": out})
+            yield {"type": "tool_result", "tool": block.name, "input": block.input, "output": out}
             results.append({"type": "tool_result", "tool_use_id": block.id,
                             "content": json.dumps(out, ensure_ascii=False)})
         messages.append({"role": "user", "content": results})
 
-    return {"final": "최대 시도 횟수에 도달했어요. 현재까지의 판단을 참고하세요.", "trace": ctx.trace, "rank": ctx.rank}
+    yield {"type": "final", "final": "최대 시도 횟수에 도달했어요. 현재까지의 판단을 참고하세요.",
+           "trace": ctx.trace, "rank": ctx.rank}
+
+
+def run_agent(req: AgentRequest) -> dict:
+    """기존 비-스트리밍 방식(하위 호환) — 제너레이터를 끝까지 돌려 final 이벤트만 반환."""
+    final_event = None
+    for ev in run_agent_events(req):
+        if ev["type"] == "final":
+            final_event = ev
+    return final_event or {"final": "응답을 받지 못했어요.", "trace": [], "rank": None}
+
+
+def _unconfigured_error() -> str | None:
+    if _CTX["policies"] is None:
+        return "엔진 미초기화 — app startup 에서 agent.configure(...) 를 호출하세요."
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return "ANTHROPIC_API_KEY 가 필요합니다."
+    return None
 
 
 @router.post("/api/agent")
 def agent_endpoint(req: AgentRequest):
-    if _CTX["policies"] is None:
-        return {"error": "엔진 미초기화 — app startup 에서 agent.configure(...) 를 호출하세요."}
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        return {"error": "ANTHROPIC_API_KEY 가 필요합니다."}
+    err = _unconfigured_error()
+    if err:
+        return {"error": err}
     return run_agent(req)
+
+
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+
+@router.post("/api/agent/stream")
+def agent_stream_endpoint(req: AgentRequest):
+    """
+    /api/agent 와 동일한 에이전트 루프를 SSE(text/event-stream)로 실시간 전달한다.
+    프론트는 도구 호출마다 즉시 이벤트를 받아 '지금 이 도구를 쓰고 있어요' 를 그려낼 수 있다.
+    """
+    err = _unconfigured_error()
+    if err:
+        def error_gen():
+            yield _sse({"type": "error", "message": err})
+        return StreamingResponse(error_gen(), media_type="text/event-stream")
+
+    def gen():
+        try:
+            for ev in run_agent_events(req):
+                yield _sse(ev)
+        except Exception as e:
+            yield _sse({"type": "error", "message": str(e)})
+
+    return StreamingResponse(gen(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+        "Connection": "keep-alive",
+    })

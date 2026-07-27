@@ -3,7 +3,7 @@
 // vite.config.js 의 프록시가 /api → http://localhost:8080 으로 전달합니다.
 // VITE_API_BASE 를 지정하면 절대 주소로도 호출할 수 있습니다.
 // ─────────────────────────────────────────────
-const BASE = import.meta.env.VITE_API_BASE || '';
+export const BASE = import.meta.env.VITE_API_BASE || '';
 
 export async function req(path, options) {
   const res = await fetch(BASE + path, options);
