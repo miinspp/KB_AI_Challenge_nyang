@@ -1,15 +1,15 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Couple from './Couple';
-import { buildSimulationDetail, SIM_VIEWS } from './sim';
+import { buildSimulationDetail, SIM_VIEWS, summarizeSimulationForAdvisor } from './sim';
 
-export default function SimulatorScreen({ equipped, options, toggle, simRows, simulation, loading, error }) {
+export default function SimulatorScreen({
+  equipped, options, toggle, simRows, simulation, loading, error,
+  riskProfile, simulationReady, topCombos = [], comboSimulations = {},
+  comboAnalysisLoading, comboAnalysisDone, comboAnalysisError, equippedComboId, onApplyCombo, onRetryComboAnalysis,
+}) {
   const [view, setView] = useState('cash');
   const [salesCase, setSalesCase] = useState('average');
   const [activeMonth, setActiveMonth] = useState(null);
-  const [reaction, setReaction] = useState({ type: 'idle', key: 0 });
-  const previousEquippedCount = useRef(equipped.length);
-  const previousGoodCombination = useRef(false);
-  const reactionKey = useRef(0);
   const detail = useMemo(() => buildSimulationDetail(simulation), [simulation]);
   const baseView = detail.views[view] || detail.views.cash;
   const current = view === 'sales' && baseView.scenarios?.[salesCase]
@@ -21,49 +21,35 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
     : hasConstraintIssue || detail.riskAfter > detail.riskBefore ? 'bad'
     : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
   const hasSimulationData = Boolean(simulation?.baseline?.monthlyCashFlows?.length);
-  const hasFailedEligibility = equipped.some((item) => item.eligibilityStatus === 'FAIL');
-  const duplicateGroups = equipped.map((item) => item.duplicateGroup).filter(Boolean);
-  const hasDuplicateProducts = new Set(duplicateGroups).size !== duplicateGroups.length;
-  const needsAttention = equipped.length > 0 && (hasConstraintIssue || hasFailedEligibility || hasDuplicateProducts);
-  const isGoodCombination = hasSimulationData
-    && equipped.length > 0
-    && simulation?.confidence?.level !== 'LOW'
-    && detail.riskAfter < detail.riskBefore
-    && !needsAttention;
 
-  const triggerReaction = (type) => {
-    reactionKey.current += 1;
-    setReaction({ type, key: reactionKey.current });
-  };
-
-  useLayoutEffect(() => {
-    if (previousEquippedCount.current !== equipped.length) {
-      triggerReaction(equipped.length > previousEquippedCount.current ? 'equip' : 'idle');
-      previousEquippedCount.current = equipped.length;
-    }
-  }, [equipped.length]);
-
+  // AI 조합 분석 중엔 전체화면 테이크오버로 전환한다 — 헤더·탭바·CTA까지 전부 가려서
+  // 로딩 중에 뒤로가거나 다른 탭으로 못 옮겨가게 막는다(계산이 끝나야만 사라짐).
+  // "분석 시작 전"과 "분석 완료 후"를 comboAnalysisDone 하나로 판단한다 — comboAnalysisLoading은
+  // 마운트 직후 아주 잠깐(App.jsx 이펙트가 도는 그 찰나) false일 수 있어서, 그걸로만 판단하면
+  // 정상 화면이 한 프레임 노출되거나 테이크오버가 뜨자마자 "완료"로 오인해 닫힐 수 있다.
+  const [takeoverVisible, setTakeoverVisible] = useState(
+    () => Boolean(riskProfile && simulationReady && !comboAnalysisDone),
+  );
   useEffect(() => {
-    if (isGoodCombination && !previousGoodCombination.current) triggerReaction('success');
-    previousGoodCombination.current = isGoodCombination;
-  }, [isGoodCombination]);
+    if (riskProfile && simulationReady && !comboAnalysisDone) setTakeoverVisible(true);
+  }, [riskProfile, simulationReady, comboAnalysisDone]);
+
+  if (takeoverVisible) {
+    return <ComboLoadingTakeover active={comboAnalysisLoading} onDone={() => setTakeoverVisible(false)} />;
+  }
 
   return (
-    <div className="scr" style={{ padding: '0 0 200px', gap: 0 }}>
-      <div style={{
-        margin: '2px 22px 0', position: 'relative', height: 230, overflow: 'hidden',
-        background: 'linear-gradient(180deg,#FFF3D2 0%,#FFFFFF 68%,#E9F2DB 86%,#D8E8C2 100%)',
-        border: '1.5px solid #EAECEF', borderRadius: 22,
-      }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 34, background: 'linear-gradient(180deg,#B9D69A,#9DC47B)' }} />
-        {/* Landscape is the background; Couple only renders transparent character layers. */}
-        <Couple reaction={reaction.type} reactionKey={reaction.key} needsAttention={needsAttention} />
-        <EquippedBubble equipped={equipped} toggle={toggle} />
-      </div>
-
+    <div className="scr" style={{ padding: '18px 0 200px', gap: 0 }}>
+      {riskProfile && simulationReady && (
+        <ComboAdvisorSection
+          riskProfile={riskProfile} topCombos={topCombos} comboSimulations={comboSimulations}
+          loading={comboAnalysisLoading} error={comboAnalysisError}
+          equippedComboId={equippedComboId} onApply={onApplyCombo} onRetry={onRetryComboAnalysis}
+        />
+      )}
 
       <section style={{ margin: '12px 22px 0' }}>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#8B95A1', margin: '0 0 9px 2px' }}>추천 상품 {options.length}개</p>
+        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#8B95A1', margin: '0 0 9px 2px' }}>추천 상품 {options.length}개 · 하나씩 골라볼 수도 있어요</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
           {options.map((item) => {
             const selected = equipped.some((equippedItem) => equippedItem.key === item.key);
@@ -207,6 +193,181 @@ export default function SimulatorScreen({ equipped, options, toggle, simRows, si
   );
 }
 
+// ── 조합 분석 AI — 성향분석 완료 후 Top3 조합 계산 로딩 + 결과 카드 ──
+const RANK_TONE = ['#FFD873', '#D8DEE6', '#E7C7A2'];
+
+function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading, error, equippedComboId, onApply, onRetry }) {
+  const showEmpty = !loading && !error && topCombos.length === 0;
+  return (
+    <section style={{ margin: '14px 22px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 9 }}>
+        <p style={{ fontSize: 13.5, fontWeight: 900, color: '#191B1F' }}>AI 추천 조합 Top3</p>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--gold-link)', background: '#FFF6DD', padding: '2px 8px', borderRadius: 8 }}>
+          {riskProfile.profileLabel || '내'} 성향 기준
+        </span>
+      </div>
+
+      {!loading && error && (
+        <div style={{ padding: '18px 16px', border: '1.5px dashed var(--border-deep)', borderRadius: 16, textAlign: 'center', background: '#fff' }}>
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--danger)' }}>{friendlyError(error)}</p>
+          <button type="button" onClick={onRetry} style={{ marginTop: 8, border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>다시 분석하기</button>
+        </div>
+      )}
+
+      {showEmpty && (
+        <div style={{ padding: '18px 16px', border: '1.5px dashed var(--border-deep)', borderRadius: 16, textAlign: 'center', background: '#fff' }}>
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: '#525A64' }}>지금 조건으로는 만들 수 있는 조합이 없어요</p>
+          <p style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: '#9FA6B0' }}>아래 목록에서 직접 골라볼 수 있어요.</p>
+        </div>
+      )}
+
+      {!loading && !error && topCombos.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {topCombos.map((combo) => (
+            <ComboAdviceCard key={combo.comboId} combo={combo} simulation={comboSimulations[combo.comboId]}
+              isEquipped={equippedComboId === combo.comboId} onApply={() => onApply?.(combo.items)} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ComboLoadingRing({ percent }) {
+  const size = 128; const stroke = 10; const radius = (size - stroke) / 2; const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - percent / 100);
+  return (
+    <div style={{ position: 'relative', width: size, height: size, margin: '4px auto 0' }}>
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: -20, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(255,188,0,.32), rgba(255,188,0,0) 70%)',
+      }} />
+      <svg width={size} height={size} style={{ position: 'relative', display: 'block' }}>
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--border)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--gold)" strokeWidth={stroke}
+          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: 'stroke-dashoffset .35s ease' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 27, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.5 }}>{Math.round(percent)}%</span>
+      </div>
+    </div>
+  );
+}
+
+const COMBO_LOADING_STEPS = [
+  '성향에 맞는 상품을 고르고 있어요',
+  '조합별로 현금흐름을 계산하고 있어요',
+  'AI가 성향에 가장 맞는 조합을 분석하고 있어요',
+];
+
+/**
+ * AI 조합 분석 중 전체화면을 덮는 테이크오버 — 헤더·탭바·CTA까지 전부 이 위에 가려지므로
+ * 로딩 중엔 뒤로가기·다른 탭 이동이 화면상 불가능해진다(클릭이 이 오버레이에서 막힘).
+ * 배경은 그라데이션 없이 순백, 캐릭터 두 마리만 크게 띄운다.
+ * active(=comboAnalysisLoading)가 꺼지면 곧장 사라지지 않고 100%를 잠깐 보여준 뒤 onDone을 호출한다.
+ */
+function ComboLoadingTakeover({ active, onDone }) {
+  const [percent, setPercent] = useState(4);
+  const [stepIndex, setStepIndex] = useState(0);
+  // active가 "아직 시작 전(false)"인지 "이미 시작했다가 끝나서(false)"인지 구분하기 위한 플래그.
+  // 이게 없으면 마운트 직후(App.jsx 이펙트가 돌기 전 그 찰나) active=false를 완료로 오인해
+  // 시작하자마자 100%를 찍고 사라져버린다.
+  const wasActive = useRef(false);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    wasActive.current = true;
+    const tick = setInterval(() => setPercent((p) => (p < 92 ? p + Math.max(1, (92 - p) * 0.07) : p)), 220);
+    const step = setInterval(() => setStepIndex((i) => (i + 1) % COMBO_LOADING_STEPS.length), 1500);
+    return () => { clearInterval(tick); clearInterval(step); };
+  }, [active]);
+
+  useEffect(() => {
+    if (active || !wasActive.current) return undefined;
+    setPercent(100);
+    const timeout = setTimeout(() => onDone?.(), 550);
+    return () => clearTimeout(timeout);
+  }, [active, onDone]);
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 95, background: 'var(--canvas)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px',
+    }}>
+      <div style={{ position: 'relative', width: 210, height: 190, transform: 'scale(1.4)' }}>
+        <Couple reaction="idle" reactionKey={0} needsAttention={false} />
+      </div>
+      <div style={{ marginTop: 58 }}>
+        <ComboLoadingRing percent={percent} />
+      </div>
+      <p style={{ marginTop: 22, fontSize: 16, fontWeight: 900, color: 'var(--ink)', textAlign: 'center' }}>
+        {percent >= 100 ? '분석이 끝났어요' : COMBO_LOADING_STEPS[stepIndex]}
+      </p>
+      <p style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--muted)', minHeight: 18 }}>
+        {percent >= 100 ? '' : '보통 10초 이내에 끝나요.'}
+      </p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, warn }) {
+  return (
+    <div style={{ background: 'var(--warm)', border: '1px solid var(--border)', borderRadius: 10, padding: '7px 9px', minWidth: 0 }}>
+      <p style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{label}</p>
+      <p style={{ marginTop: 2, fontSize: 12.5, fontWeight: 900, color: warn ? 'var(--danger)' : 'var(--ink)' }}>{value}</p>
+    </div>
+  );
+}
+
+function ComboAdviceCard({ combo, simulation, isEquipped, onApply }) {
+  const metrics = summarizeSimulationForAdvisor(simulation);
+  return (
+    <div style={{
+      border: isEquipped ? '1.5px solid var(--gold-deep)' : '1.5px solid var(--border)',
+      background: isEquipped ? '#FFF6DD' : '#fff', borderRadius: 18, padding: '14px 15px',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{
+          flex: 'none', width: 25, height: 25, borderRadius: 9, display: 'grid', placeItems: 'center',
+          background: RANK_TONE[combo.rank - 1] || '#EEF0F3', fontSize: 12, fontWeight: 900, color: '#191B1F',
+        }}>{combo.rank}</span>
+        <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', flex: 1, minWidth: 0 }}>{combo.headline}</p>
+        {isEquipped && <span style={{ flex: 'none', fontSize: 10.5, fontWeight: 900, color: 'var(--gold-link)' }}>선택됨</span>}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+        {combo.items.map((item) => (
+          <span key={item.key} style={{
+            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px 4px 4px', borderRadius: 9,
+            background: 'var(--chip)', fontSize: 10.5, fontWeight: 800, color: 'var(--ink-soft)',
+          }}>
+            <span className="icon-badge" style={{ width: 17, height: 17, borderRadius: 6, background: item.iconBg, color: item.iconColor, fontSize: 8.5 }}>{item.icon}</span>
+            {item.short || item.name}
+          </span>
+        ))}
+      </div>
+
+      {metrics && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <MiniStat label="월 여유현금" value={`${metrics.monthlyNetCashManwon}만원`} />
+          <MiniStat label="현금부족 위험" value={`${Math.round(metrics.cashShortageRisk * 100)}%`} warn={metrics.cashShortageRisk >= .2} />
+        </div>
+      )}
+
+      <p style={{ fontSize: 11.5, lineHeight: 1.55, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
+      {combo.caution && <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>}
+
+      <button type="button" onClick={onApply} disabled={isEquipped} style={{
+        height: 40, border: 'none', borderRadius: 12, fontSize: 12.5, fontWeight: 900,
+        cursor: isEquipped ? 'default' : 'pointer',
+        background: isEquipped ? 'var(--chip)' : 'var(--gold)', color: 'var(--ink)',
+      }}>{isEquipped ? '적용 중인 조합이에요' : '이 조합 확인하기'}</button>
+    </div>
+  );
+}
+
 function friendlyError(error) {
   if (error.includes('Duplicate benefit group')) return '함께 선택할 수 없는 상품 조합이에요.';
   if (error.includes('existingDebtBalance is required')) return '기존 대출 내역을 입력하거나 내역 없음을 선택해 주세요.';
@@ -281,53 +442,6 @@ function OutcomeStrip({ metric, riskTone }) {
       </div>
       <span style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: tone.color }}>{metric.delta}</span>
     </section>
-  );
-}
-
-function EquippedBubble({ equipped, toggle }) {
-  const [visibleItems, setVisibleItems] = useState(() => equipped.map((item) => ({ ...item, leaving: false })));
-  const hasItems = visibleItems.length > 0;
-
-  useLayoutEffect(() => {
-    setVisibleItems((currentItems) => {
-      const selectedKeys = new Set(equipped.map((item) => item.key));
-      const kept = currentItems
-        .filter((item) => selectedKeys.has(item.key))
-        .map((item) => ({ ...item, leaving: false }));
-      const added = equipped
-        .filter((item) => !currentItems.some((current) => current.key === item.key))
-        .map((item) => ({ ...item, leaving: false }));
-      const leaving = currentItems
-        .filter((item) => !selectedKeys.has(item.key))
-        .map((item) => ({ ...item, leaving: true }));
-      return [...kept, ...added, ...leaving];
-    });
-  }, [equipped]);
-
-  const removeLeavingItem = (key) => {
-    setVisibleItems((items) => items.filter((item) => item.key !== key || !item.leaving));
-  };
-
-  return (
-    <aside aria-label={`장착 상품 ${equipped.length}개`} style={{ position: 'absolute', zIndex: 5, top: 20, right: 12, width: 176, padding: '10px 9px 9px', border: '1.5px solid rgba(240,231,214,.96)', borderRadius: '18px 18px 18px 7px', background: 'rgba(255,253,248,.94)', boxShadow: '0 6px 16px rgba(79,61,25,.1)' }}>
-      {/* 말풍선 꼬리는 캐릭터가 있는 왼쪽을 향한다. */}
-      <span aria-hidden="true" style={{ position: 'absolute', left: -11, bottom: 31, width: 0, height: 0, borderTop: '9px solid transparent', borderBottom: '9px solid transparent', borderRight: '12px solid rgba(255,253,248,.94)', filter: 'drop-shadow(-1px 0 0 rgba(240,231,214,.96))' }} />
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasItems ? 7 : 0 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 900, color: '#525A64' }}>{hasItems ? `함께 챙길 것 ${equipped.length}개` : '상품을 골라보세요'}</span>
-        <span style={{ color: '#E5A600', fontSize: 12 }}>✦</span>
-      </div>
-      {hasItems && (
-        <div className="equipped-bubble__list" style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 126, overflowY: 'auto', overscrollBehavior: 'contain', paddingRight: 1 }}>
-          {visibleItems.map((item) => (
-            <button key={item.key} type="button" className={`equipped-bubble__item${item.leaving ? ' is-leaving' : ''}`} disabled={item.leaving} onAnimationEnd={() => item.leaving && removeLeavingItem(item.key)} onClick={() => toggle(item)} title={`${item.name || item.short} 해제`} style={{ width: '100%', minHeight: 31, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px', border: `1.5px solid ${item.iconColor}`, borderRadius: 10, background: item.iconBg, color: '#191B1F', cursor: item.leaving ? 'default' : 'pointer', textAlign: 'left' }}>
-              <span className="icon-badge" style={{ flex: 'none', width: 20, height: 20, borderRadius: 7, background: '#fff', color: item.iconColor, fontSize: 10 }}>{item.icon}</span>
-              <span style={{ flex: 1, minWidth: 0, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, fontSize: 9.5, lineHeight: 1.2, fontWeight: 900 }}>{item.short || item.name}</span>
-              <span aria-hidden="true" style={{ flex: 'none', color: item.iconColor, fontSize: 14, lineHeight: 1 }}>×</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </aside>
   );
 }
 

@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { summarizeSimulationForAdvisor } from './sim';
+import { requestPortfolioDetail } from '../../api/portfolio';
+
 const ROLE_LABELS = {
   LOAN: '운영 현금 마련',
   GRANT: '지원금 활용',
@@ -19,32 +23,143 @@ function preparation(product) {
   return '공고에 안내된 신청 서류';
 }
 
-export default function PortfolioScreen({ equipped = [], simRows = [], percentile, simulation }) {
+const RANK_TONE = ['#FFD873', '#D8DEE6', '#E7C7A2'];
+
+// 카드를 누르면 펼쳐져서 AI에게 이 조합만 더 자세히 설명해달라고 온디맨드로 요청한다.
+// (Top3 산정 때 이미 계산해둔 조합별 지표를 그대로 재사용 — 새 숫자를 만들지 않는다)
+function ComboAnalysisCard({ combo, isEquipped, riskProfile, simulation }) {
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+
+  const fetchDetail = async () => {
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const metrics = summarizeSimulationForAdvisor(simulation);
+      const res = await requestPortfolioDetail({
+        riskProfile,
+        candidate: {
+          comboId: combo.comboId,
+          products: combo.items.map((item) => ({ id: item.id, name: item.short || item.name, type: item.type })),
+          metrics,
+        },
+        headline: combo.headline,
+        reason: combo.reason,
+        caution: combo.caution || '',
+      });
+      setDetail(res && (res.fit || res.strength) ? res : { fit: combo.reason, strength: '', caution: combo.caution || '' });
+    } catch (e) {
+      setDetailError(e.message);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && !detail && !detailLoading) fetchDetail();
+  };
+
+  return (
+    <div style={{
+      border: isEquipped ? '1.5px solid var(--gold-deep)' : '1.5px solid var(--border)',
+      background: isEquipped ? '#FFF6DD' : '#fff', borderRadius: 16, padding: '12px 14px',
+    }}>
+      <button type="button" onClick={toggleOpen} style={{
+        width: '100%', border: 'none', background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            flex: 'none', width: 22, height: 22, borderRadius: 8, display: 'grid', placeItems: 'center',
+            background: RANK_TONE[combo.rank - 1] || '#EEF0F3', fontSize: 11, fontWeight: 900, color: '#191B1F',
+          }}>{combo.rank}</span>
+          <p style={{ fontSize: 13, fontWeight: 900, color: '#191B1F', flex: 1, minWidth: 0 }}>{combo.headline}</p>
+          {isEquipped && <span style={{ flex: 'none', fontSize: 10, fontWeight: 900, color: 'var(--gold-link)' }}>지금 보는 조합</span>}
+          <span aria-hidden="true" style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: '#B0B8C1' }}>{open ? '▲' : '▼'}</span>
+        </div>
+        <p style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.55, fontWeight: 600, color: '#525A64' }}>{combo.reason}</p>
+        {combo.caution && <p style={{ marginTop: 4, fontSize: 10.5, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>}
+        <p style={{ marginTop: 6, fontSize: 10.5, fontWeight: 800, color: 'var(--gold-link)' }}>
+          {open ? '분석 결과 접기' : '분석 결과 자세히 보기'}
+        </p>
+      </button>
+
+      {open && (
+        <div className="evidence-box" style={{ marginTop: 8 }}>
+          {detailLoading && (
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>AI가 더 자세히 분석하고 있어요…</p>
+          )}
+          {!detailLoading && detailError && (
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>
+              불러오지 못했어요: {detailError}{' '}
+              <button type="button" onClick={fetchDetail} style={{ border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, cursor: 'pointer', padding: 0 }}>다시 시도</button>
+            </p>
+          )}
+          {!detailLoading && !detailError && detail && (
+            <>
+              {detail.fit && (
+                <div className="evidence-row">
+                  <span className="evidence-k">왜 맞나요</span>
+                  <span className="evidence-v">{detail.fit}</span>
+                </div>
+              )}
+              {detail.strength && (
+                <div className="evidence-row">
+                  <span className="evidence-k">장점</span>
+                  <span className="evidence-v">{detail.strength}</span>
+                </div>
+              )}
+              {detail.caution && (
+                <div className="evidence-row">
+                  <span className="evidence-k">확인할 점</span>
+                  <span className="evidence-v">{detail.caution}</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PortfolioScreen({
+  equipped = [], simRows = [], percentile, simulation, topCombos = [], equippedComboId,
+  riskProfile, comboSimulations = {},
+}) {
   const primaryMetric = simRows[0];
-  const summary = simRows.slice(0, 2);
   const constraint = simulation?.constraints?.violations?.[0];
   const selectedProducts = equipped;
-  const headline = primaryMetric
-    ? `이번 조합은 ${primaryMetric.name}을\n${primaryMetric.delta} 바꿔요`
-    : '선택한 상품으로\n실행 계획을 만들어요';
 
   return (
     <div className="scr" style={{ padding: '14px 22px 112px', gap: 14 }}>
-      <section style={{ overflow: 'hidden', borderRadius: 22, padding: '19px 18px 16px', color: '#fff', background: 'linear-gradient(135deg,#191B1F,#2E323A)' }}>
+      <section style={{ overflow: 'hidden', borderRadius: 22, padding: '19px 18px 18px', color: '#fff', background: 'linear-gradient(135deg,#191B1F,#2E323A)' }}>
         <p style={{ fontSize: 11.5, fontWeight: 900, color: '#FFD873' }}>나의 금융 실행 계획</p>
-        <p style={{ marginTop: 7, fontSize: 19, fontWeight: 900, lineHeight: 1.38, whiteSpace: 'pre-line' }}>{headline}</p>
-        {summary.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${summary.length}, minmax(0, 1fr))`, gap: 8, marginTop: 15 }}>
-            {summary.map((metric) => (
-              <div key={metric.name} style={{ minWidth: 0, padding: '10px 11px', borderRadius: 13, background: 'rgba(255,255,255,.09)' }}>
-                <p style={{ fontSize: 10, fontWeight: 800, color: '#C7CDD3', lineHeight: 1.35 }}>{metric.name}</p>
-                <p style={{ marginTop: 4, fontSize: 14, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap' }}>{metric.after}</p>
-                <p style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: metric.deltaColorDark || '#FFD873' }}>{metric.delta}</p>
-              </div>
-            ))}
-          </div>
+        {primaryMetric ? (
+          <>
+            <p style={{ marginTop: 9, fontSize: 12, fontWeight: 700, color: '#C7CDD3' }}>{primaryMetric.name}</p>
+            <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 9 }}>
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: -.4 }}>{primaryMetric.after}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: primaryMetric.deltaColorDark || '#FFD873' }}>{primaryMetric.delta}</span>
+            </div>
+          </>
+        ) : (
+          <p style={{ marginTop: 9, fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.4 }}>상품을 선택하면<br />실행 계획을 보여드려요</p>
         )}
       </section>
+
+      {topCombos.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#191B1F' }}>AI 조합 분석</p>
+          {topCombos.map((combo) => (
+            <ComboAnalysisCard key={combo.comboId} combo={combo} isEquipped={equippedComboId === combo.comboId}
+              riskProfile={riskProfile} simulation={comboSimulations[combo.comboId]} />
+          ))}
+        </section>
+      )}
 
       {equipped.length > 0 ? (
         <>
