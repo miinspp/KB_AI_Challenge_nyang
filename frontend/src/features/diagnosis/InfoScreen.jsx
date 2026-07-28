@@ -197,9 +197,11 @@ export default function InfoScreen({
       </div>
 
       {/* 정보제공 동의 — 홈택스(매출·지출·이력) / KB(보유현금·기존대출) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <section className="sec-card sec-card--split">
+        <div className="sec-card-head"><p className="sec-card-title">자동으로 채우기</p></div>
         <LinkCard
-          iconLabel="홈택스" iconBg="var(--green)"
+          row
+          iconLabel="홈택스" iconBg="var(--hometax)"
           title="국세청 홈택스 연동"
           desc="매출·지출·12개월 추이 한 번에"
           summary={`${HOMETAX_FINANCIALS.maskedBusinessNumber} · ${HOMETAX_FINANCIALS.basisPeriod} 불러옴`}
@@ -209,7 +211,8 @@ export default function InfoScreen({
           onUnlink={unlinkHometax}
         />
         <LinkCard
-          iconLabel="KB" iconBg="var(--green-bright)"
+          row
+          iconLabel="KB" iconBg="var(--kb)" iconColor="var(--ink)"
           title="KB 계좌 연동"
           desc="보유현금 · 기존 대출 (홈택스엔 없어요)"
           summary="보유현금 · 기존 대출까지 불러옴"
@@ -218,11 +221,11 @@ export default function InfoScreen({
           onLinked={() => onKbLinked()}
           onUnlink={unlinkKb}
         />
-      </div>
+      </section>
 
       {/* ── 필수 3항목 ── */}
-      <div>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--muted-mid)', marginBottom: 8 }}>필수</p>
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">필수</p></div>
         <div className="list-box">
           {[
             {
@@ -247,13 +250,11 @@ export default function InfoScreen({
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* ── 선택 입력 ── */}
-      <div>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--muted-mid)', marginBottom: 8 }}>
-          선택
-        </p>
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">선택</p></div>
         <div className="list-box">
           {optionalRows.map((r) => (
             <button key={r.label} className="list-row" onClick={() => setSheet(r.sheet)}>
@@ -275,10 +276,10 @@ export default function InfoScreen({
             </button>
           ))}
         </div>
-        <p style={{ marginTop: 9, fontSize: 11, color: 'var(--muted-soft)', lineHeight: 1.6 }}>
+        <p style={{ marginTop: 12, fontSize: 11, color: 'var(--muted-soft)', lineHeight: 1.6, padding: '0 2px' }}>
           지출 세부를 넣으면 <b style={{ color: 'var(--muted)' }}>비용구조</b> 축이, 월별 매출 이력이 있으면 <b style={{ color: 'var(--muted)' }}>매출안정성</b> 축이 진단에 추가돼요.
         </p>
-      </div>
+      </section>
 
       {/* 실시간 미리보기 */}
       {livePreview != null && (

@@ -50,6 +50,10 @@
 
   /* 정책자금 계열 */
   --blue: #4A79B8;
+
+  /* 연동 기관 배지 — 기관 브랜드색이라 그린/골드 계열과 별도로 둔다 */
+  --kb: #FFBC00;            /* KB 노랑 (배지 글씨는 --ink) */
+  --hometax: var(--green);  /* 홈택스 — 앱 그린 계열에 맞춘다 (배지 글씨는 흰색) */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
@@ -270,22 +274,7 @@ button { font-family: inherit; }
 .steptab.on { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(25,27,31,.08); }
 .steptab:disabled { color: var(--muted-faint); cursor: default; }
 
-/* ── 홈: 진단하기 플로팅 버튼 — 탭바 위에 살짝 걸치는 원형 액션 버튼 ── */
-.home-fab { position: fixed; left: 50%; bottom: 42px; transform: translateX(-50%); z-index: 26; display: flex; flex-direction: column; align-items: center; gap: 7px; border: none; background: none; cursor: pointer; padding: 0; }
-.home-fab-label { font-size: 11px; font-weight: 800; color: var(--ink); background: #fff; padding: 3px 11px; border-radius: 8px; box-shadow: 0 2px 6px rgba(25,27,31,.1); white-space: nowrap; }
-.home-fab-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--gold); color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 22px -6px rgba(255,188,0,.6), 0 0 0 6px #fff; animation: fabPulse 2.6s ease-in-out infinite; transition: transform .15s ease; }
-.home-fab:active .home-fab-circle { transform: scale(.92); animation-play-state: paused; }
-@keyframes fabPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 12px 22px -6px rgba(255,188,0,.6), 0 0 0 6px #fff; }
-  50% { transform: scale(1.05); box-shadow: 0 15px 26px -6px rgba(255,188,0,.75), 0 0 0 6px #fff; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-fab-circle { animation: none; }
-}
-
-/* ── 홈: 가입 상품 · 진단 요약 ── */
-.joined-card { display: flex; align-items: center; gap: 12px; width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 18px; padding: 14px 16px; }
-.joined-empty { width: 100%; background: #fff; border: 1.5px dashed var(--border-deep); border-radius: 18px; padding: 20px 18px; cursor: pointer; text-align: center; }
+/* ── 홈: 진단 요약 ── */
 .rank-card { width: 100%; text-align: left; background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 20px 22px; cursor: pointer; transition: transform .15s ease; }
 .rank-card:active { transform: scale(.985); }
 .ghost-btn { width: 100%; height: 52px; border: 1.5px solid var(--border); border-radius: 16px; background: #fff; color: var(--muted); font-size: 14px; font-weight: 800; cursor: pointer; }
@@ -326,13 +315,38 @@ button { font-family: inherit; }
 .menu-badge { flex: none; width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #fff; }
 .menu-chev { flex: none; font-size: 19px; color: #C7CDD3; line-height: 1; }
 
-/* 홈 상단 계좌 카드 (연결 전 · 연결 후 공용) */
+/* 홈 상단 계좌 카드 (연결 전 · 연결 후 공용) — 내 정보 화면에서도 쓴다 */
 .acct-card { display: flex; align-items: center; gap: 12px; width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 15px 16px; box-shadow: 0 1px 2px rgba(25,27,31,.05); }
 .acct-card.is-linked { cursor: pointer; text-align: left; transition: transform .15s ease; }
 .acct-card.is-linked:active { transform: scale(.985); }
 .acct-card-balance { font-size: 21px; font-weight: 900; color: var(--ink); letter-spacing: -.6px; }
 .acct-card-cta { flex: none; font-size: 12.5px; font-weight: 800; color: var(--ink-soft); background: var(--chip); border-radius: 10px; padding: 8px 13px; }
 .kb-badge { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--green-bright); display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 900; color: #fff; }
+
+/* ── 홈 섹션 카드 ──
+   관련 항목(계좌 묶음 / 가입 상품 묶음)을 한 상자에 모으고,
+   맨 아래 '더 보기' 줄로 상세 화면을 연다. */
+/* width 를 주지 않는다 — 블록이라 어차피 꽉 차고, 좌우 margin 을 쓰는 화면에서 폭이 넘친다 */
+.sec-card { background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 16px; box-shadow: 0 1px 2px rgba(25,27,31,.05); }
+.sec-card-head { display: flex; align-items: baseline; gap: 8px; padding: 0 2px 2px; }
+.sec-card-title { font-size: 12.5px; font-weight: 800; color: var(--muted); }
+.sec-row { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; padding: 12px 2px; text-align: left; }
+button.sec-row { cursor: pointer; transition: transform .15s ease; }
+button.sec-row:active { transform: scale(.99); }
+/* 항목 사이 옅은 구분선 — 줄이 3개 이상일 때 훑어보기 쉬우라고 */
+.sec-card--split .sec-row + .sec-row { border-top: 1px solid var(--border); }
+/* 카드 안에 들어온 기존 목록은 자기 테두리를 벗는다(이중 박스 방지) */
+.sec-card .list-box { border: none; border-radius: 0; padding: 0; margin: 0; box-shadow: none; background: none; }
+/* 펼쳐진 근거는 카드 안쪽 블록으로 — 테두리 대신 옅은 배경으로 구분 */
+.sec-card .evidence-box { border: none; border-radius: 12px; background: var(--warm); margin-top: 10px; padding: 14px; }
+.sec-card .list-row { padding-left: 2px; padding-right: 2px; }
+/* 거래내역이 카드 안으로 들어오면 화면 여백(22px) 대신 카드 여백을 쓴다 */
+.sec-card .txn-row { padding-left: 2px; padding-right: 2px; }
+.sec-card .txn-empty { padding-left: 2px; padding-right: 2px; }
+/* 카드 아래 끝에 붙는 '더 보기' 줄 — 구분선이 카드 폭 전체를 지나가도록 여백을 되돌린다 */
+.sec-more { display: flex; align-items: center; justify-content: center; gap: 5px; width: calc(100% + 32px); background: none; border: none; border-top: 1px solid var(--border); margin: 6px -16px -16px; padding: 15px 0; font-size: 12.5px; font-weight: 800; color: var(--ink-soft); cursor: pointer; }
+.sec-more:active { color: var(--muted); }
+.sec-empty { width: 100%; background: var(--warm); border-radius: 14px; padding: 18px 16px; margin: 4px 0 2px; cursor: pointer; text-align: center; }
 
 /* ── 계좌 거래내역 화면 ── */
 .acct { animation: scrIn .4s ease both; padding-bottom: 100px; }

@@ -47,8 +47,8 @@ export default function ProfileScreen({
         </div>
       </div>
 
-      <div>
-        <p className="label-sm" style={{ marginBottom: 8 }}>우리 가게</p>
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">우리 가게</p></div>
         <div className="list-box">
           {storeRows.map((r) => (
             <div key={r.k} className="list-row" style={{ cursor: 'default' }}>
@@ -60,36 +60,36 @@ export default function ProfileScreen({
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div>
-        <p className="label-sm" style={{ marginBottom: 8 }}>연동 관리</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <LinkCard
-            iconLabel="홈택스" iconBg="var(--green)"
-            title="국세청 홈택스 연동"
-            desc="매출·지출·12개월 추이 한 번에"
-            summary={`${HOMETAX_FINANCIALS.maskedBusinessNumber} · ${HOMETAX_FINANCIALS.basisPeriod} 불러옴`}
-            linked={hometaxLinked}
-            buildFinancials={() => HOMETAX_FINANCIALS}
-            onLinked={onLinkHometax}
-            onUnlink={onUnlinkHometax}
-          />
-          <LinkCard
-            iconLabel="KB" iconBg="var(--green-bright)"
-            title="KB 계좌 연동"
-            desc="보유현금 · 기존 대출 · 가입 상품"
-            summary="보유현금 · 기존 대출까지 불러옴"
-            linked={kbLinked}
-            buildFinancials={() => KB_LINK}
-            onLinked={onLinkKb}
-            onUnlink={onUnlinkKb}
-          />
-        </div>
-      </div>
+      <section className="sec-card sec-card--split">
+        <div className="sec-card-head"><p className="sec-card-title">연동 관리</p></div>
+        <LinkCard
+          row
+          iconLabel="홈택스" iconBg="var(--hometax)"
+          title="국세청 홈택스 연동"
+          desc="매출·지출·12개월 추이 한 번에"
+          summary={`${HOMETAX_FINANCIALS.maskedBusinessNumber} · ${HOMETAX_FINANCIALS.basisPeriod} 불러옴`}
+          linked={hometaxLinked}
+          buildFinancials={() => HOMETAX_FINANCIALS}
+          onLinked={onLinkHometax}
+          onUnlink={onUnlinkHometax}
+        />
+        <LinkCard
+          row
+          iconLabel="KB" iconBg="var(--kb)" iconColor="var(--ink)"
+          title="KB 계좌 연동"
+          desc="보유현금 · 기존 대출 · 가입 상품"
+          summary="보유현금 · 기존 대출까지 불러옴"
+          linked={kbLinked}
+          buildFinancials={() => KB_LINK}
+          onLinked={onLinkKb}
+          onUnlink={onUnlinkKb}
+        />
+      </section>
 
-      <div>
-        <p className="label-sm" style={{ marginBottom: 8 }}>설정</p>
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">설정</p></div>
         <div className="list-box">
           <button className="list-row" onClick={onOpenNeeds}>
             <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>관심사</span>
@@ -133,7 +133,7 @@ export default function ProfileScreen({
         {showSource && !meta?.meta && (
           <p style={{ marginTop: 10, fontSize: 12, color: 'var(--muted-mid)' }}>출처 정보를 불러오지 못했어요.</p>
         )}
-      </div>
+      </section>
 
       <button className="ghost-btn" onClick={onReset}>처음부터 다시 하기</button>
     </div>

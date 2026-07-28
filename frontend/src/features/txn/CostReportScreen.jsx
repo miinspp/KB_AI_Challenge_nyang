@@ -154,8 +154,11 @@ export default function CostReportScreen({ report }) {
         </p>
       </div>
 
-      {/* 월 선택 탭 */}
-      <div style={{ display: 'flex', gap: 6 }}>
+      {/* 이 달의 손익 — 월 선택·요약·안내를 한 상자에 */}
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">이 달의 손익</p></div>
+
+        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
         {months.map((mm, i) => {
           const active = i === idx;
           return (
@@ -171,52 +174,54 @@ export default function CostReportScreen({ report }) {
         })}
       </div>
 
-      {/* 손익 요약 */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <StatCard label="수입" value={fmtMan(m.income)} color="var(--green-mid)" />
-        <StatCard label="비용" value={fmtMan(m.expense)} color="var(--danger)" />
-        <StatCard label="손익" value={fmtMan(m.profit)} color={m.profit >= 0 ? 'var(--green-mid)' : 'var(--danger)'} />
-      </div>
-      <p style={{ fontSize: 11.5, color: '#8A7A55', background: 'var(--warm)', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600, display: 'flex', gap: 7 }}>
-        <IconTip size={14} style={{ flex: 'none', marginTop: 2 }} />
-        <span>손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.</span>
-      </p>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <StatCard label="수입" value={fmtMan(m.income)} color="var(--green-mid)" />
+          <StatCard label="비용" value={fmtMan(m.expense)} color="var(--danger)" />
+          <StatCard label="손익" value={fmtMan(m.profit)} color={m.profit >= 0 ? 'var(--green-mid)' : 'var(--danger)'} />
+        </div>
+
+        <p style={{ marginTop: 10, fontSize: 11.5, color: '#8A7A55', background: 'var(--warm)', borderRadius: 10, padding: '9px 12px', lineHeight: 1.5, fontWeight: 600, display: 'flex', gap: 7 }}>
+          <IconTip size={14} style={{ flex: 'none', marginTop: 2 }} />
+          <span>손익은 대출 원금상환을 뺀 실제 손익이에요. 통장 기준 순현금은 <b>{fmtMan(m.netCash)}</b>.</span>
+        </p>
+      </section>
 
       {/* 그룹별 분류 — 접이식 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {groups.map((g) => {
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">그룹별 분류</p></div>
+        {groups.map((g, gi) => {
           const open = openGroup === g.group;
           return (
-            <div key={g.group} className="list-box">
+            <div key={g.group} style={{ borderTop: gi === 0 ? 'none' : '1px solid var(--border)' }}>
               <button onClick={() => setOpenGroup(open ? null : g.group)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '15px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '14px 2px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                 <span className="tag" style={{ marginTop: 0, flex: 'none', color: g.meta.color, background: g.meta.bg, padding: '3px 9px' }}>{g.group}</span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#9FA6B0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
                 <span style={{ flex: 'none', fontSize: 13.5, fontWeight: 900, color: g.meta.color }}>{fmtMan(g.subtotal)}</span>
                 <span style={{ flex: 'none', fontSize: 12, color: 'var(--muted-faint)' }}>{open ? '▲' : '▼'}</span>
               </button>
               {open && (
-                <div className="pop" style={{ padding: '2px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <div className="pop" style={{ background: 'var(--warm)', borderRadius: 12, padding: 14, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {g.cats.map((c) => <CategoryBar key={c.code} cat={c} max={maxAmount} />)}
                 </div>
               )}
             </div>
           );
         })}
-      </div>
+      </section>
 
       {/* 개선 제안 — 펼치면 계산 근거 */}
       {report.suggestions?.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>이렇게 개선해 보세요</p>
-          {report.suggestions.map((s) => {
+        <section className="sec-card">
+          <div className="sec-card-head"><p className="sec-card-title">이렇게 개선해 보세요</p></div>
+          {report.suggestions.map((s, si) => {
             const warn = s.status === 'warn';
             const steps = buildSuggestionSteps(s, months);
             const open = openTip === s.metric;
             return (
-              <div key={s.metric} className="list-box" style={{ borderRadius: 20 }}>
+              <div key={s.metric} style={{ borderTop: si === 0 ? 'none' : '1px solid var(--border)' }}>
                 <button onClick={() => steps && setOpenTip(open ? null : s.metric)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', background: 'none', border: 'none', cursor: steps ? 'pointer' : 'default', textAlign: 'left' }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 2px', background: 'none', border: 'none', cursor: steps ? 'pointer' : 'default', textAlign: 'left' }}>
                   <span style={{
                     flex: 'none', width: 22, height: 22, borderRadius: '50%', display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900,
@@ -235,9 +240,9 @@ export default function CostReportScreen({ report }) {
                   )}
                 </button>
                 {open && steps && (
-                  <div className="pop" style={{ padding: '2px 14px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                    {steps.map((st) => (
-                      <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: '1.5px solid #EAECEF', paddingTop: 9 }}>
+                  <div className="pop" style={{ background: 'var(--warm)', borderRadius: 12, padding: 14, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                    {steps.map((st, i) => (
+                      <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: i === 0 ? 'none' : '1px solid var(--border-strong)', paddingTop: i === 0 ? 0 : 9 }}>
                         <span style={{ flex: 'none', width: 58, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{st.k}</span>
                         <span style={{ flex: 1, fontSize: 11.5, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.55 }}>{st.v}</span>
                       </div>
@@ -247,21 +252,26 @@ export default function CostReportScreen({ report }) {
               </div>
             );
           })}
-        </div>
+        </section>
       )}
 
       {/* 확인 필요 거래 (레이어⑥ 교정) */}
       {(queue.length > 0 || resolved > 0) && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)' }}>
-            확인이 필요한 거래 <span style={{ color: '#B08F3C' }}>{queue.length}건</span>
-            {resolved > 0 && <span style={{ fontSize: 11.5, color: 'var(--green-mid)', marginLeft: 6 }}>· {resolved}건 정리됨</span>}
-          </p>
+        <section className="sec-card">
+          <div className="sec-card-head">
+            <p className="sec-card-title">
+              확인이 필요한 거래 <span style={{ color: '#B08F3C' }}>{queue.length}건</span>
+              {resolved > 0 && <span style={{ color: 'var(--green-mid)', marginLeft: 6 }}>· {resolved}건 정리됨</span>}
+            </p>
+          </div>
           {queue.length > 0
-            ? <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: -4 }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
-            : <p style={{ fontSize: 12, color: 'var(--green-mid)', fontWeight: 700, marginTop: -4 }}>모두 확인했어요. 다음부터 자동으로 분류돼요.</p>}
-          {queue.map((r) => (
-            <div key={r.txnId} className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '10px 13px' }}>
+            ? <p style={{ fontSize: 11.5, color: 'var(--muted)', padding: '0 2px 4px' }}>분류가 애매한 거래예요. 맞는 항목을 골라 바로잡아 주세요.</p>
+            : <p style={{ fontSize: 12, color: 'var(--green-mid)', fontWeight: 700, padding: '0 2px 4px' }}>모두 확인했어요. 다음부터 자동으로 분류돼요.</p>}
+          {queue.map((r, qi) => (
+            <div key={r.txnId} style={{
+              display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10,
+              padding: '12px 2px', borderTop: qi === 0 ? 'none' : '1px solid var(--border)',
+            }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.merchant}</p>
                 <p style={{ fontSize: 11, color: 'var(--muted-mid)', marginTop: 2 }}>{r.date} · {fmtMan(r.amount)}</p>
@@ -280,7 +290,7 @@ export default function CostReportScreen({ report }) {
               </select>
             </div>
           ))}
-        </div>
+        </section>
       )}
     </div>
   );

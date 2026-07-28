@@ -67,22 +67,25 @@ export default function AccountScreen({ onBack, onOpenCostReport }) {
         </div>
       </div>
 
-      {/* 입출금 필터 */}
-      <div className="acct-filters">
-        {FILTERS.map(([key, label]) => (
-          <button key={key} className={`acct-filter${filter === key ? ' on' : ''}`} onClick={() => setFilter(key)}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 거래내역 — 필터와 목록을 한 상자에, 같은 날짜는 첫 행에만 날짜를 노출 */}
+      <section className="sec-card" style={{ margin: '0 22px' }}>
+        <div className="sec-card-head"><p className="sec-card-title">거래내역</p></div>
 
-      {/* 거래내역 — 같은 날짜는 첫 행에만 날짜를 노출 */}
-      <div className="txn-list">
-        {rows.map((t, i) => (
-          <TxnRow key={t.id} txn={t} showDate={i === 0 || rows[i - 1].date !== t.date} />
-        ))}
-        {rows.length === 0 && <p className="txn-empty">해당하는 거래가 없어요.</p>}
-      </div>
+        <div className="acct-filters" style={{ padding: '4px 0 2px' }}>
+          {FILTERS.map(([key, label]) => (
+            <button key={key} className={`acct-filter${filter === key ? ' on' : ''}`} onClick={() => setFilter(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="txn-list">
+          {rows.map((t, i) => (
+            <TxnRow key={t.id} txn={t} showDate={i === 0 || rows[i - 1].date !== t.date} />
+          ))}
+          {rows.length === 0 && <p className="txn-empty">해당하는 거래가 없어요.</p>}
+        </div>
+      </section>
 
       {onOpenCostReport && (
         <div style={{ padding: '18px 22px 44px' }}>

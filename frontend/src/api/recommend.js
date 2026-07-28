@@ -54,7 +54,7 @@ export function rankToProfile(rank, {
     cash_flow_gap_prob: cashGap,
     sales_percentile: salesTop,
     need_keywords: needs.join(', '),
-    top_k: 6,
+    top_k: 100, // 하드필터 통과분 전부 (풀 78건) — 화면에서 스크롤 시 점진 노출
   };
 }
 

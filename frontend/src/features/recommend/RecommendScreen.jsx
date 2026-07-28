@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconTip, IconArrowRight } from '../../shared/Icons';
 
 // 상품 → 카테고리 (재현본 규칙 + 실제 추천 API 상품의 isFinance 반영)
@@ -11,10 +11,36 @@ const catOf = (p) => {
   return 'gov';
 };
 
+const PAGE_SIZE = 8; // 처음 노출 개수, 바닥 도달 시 같은 개수만큼 추가
+
 export default function RecommendScreen({ products, percentile }) {
   const [openId, setOpenId] = useState(null);
   const [cat, setCat] = useState('all');
-  const visible = products.filter((p) => cat === 'all' || catOf(p) === cat);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const sentinelRef = useRef(null);
+  const filtered = products.filter((p) => cat === 'all' || catOf(p) === cat);
+  const visible = filtered.slice(0, limit);
+  const hasMore = filtered.length > limit;
+
+  useEffect(() => setLimit(PAGE_SIZE), [cat]); // 카테고리 바꾸면 처음부터
+
+  // 바닥 문구가 화면 근처(120px)에 들어오면 다음 페이지 노출
+  useEffect(() => {
+    if (!hasMore) return;
+    const check = () => {
+      const el = sentinelRef.current;
+      if (el && el.getBoundingClientRect().top < window.innerHeight + 120) {
+        setLimit((l) => l + PAGE_SIZE);
+      }
+    };
+    check(); // 첫 페이지가 화면을 다 못 채우는 경우 즉시 추가
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, [hasMore, cat]);
   return (
     <div className="scr" style={{ gap: 14 }}>
       <div>
@@ -97,6 +123,12 @@ export default function RecommendScreen({ products, percentile }) {
           </div>
         );
       })}
+
+      {hasMore && (
+        <div ref={sentinelRef} style={{ padding: '14px 0', textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--muted-faint)' }}>
+          스크롤하면 더 볼 수 있어요 ({visible.length}/{filtered.length})
+        </div>
+      )}
     </div>
   );
 }

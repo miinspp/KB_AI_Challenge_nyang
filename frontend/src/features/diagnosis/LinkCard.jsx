@@ -8,8 +8,9 @@ import { useEffect, useRef, useState } from 'react';
  * 아래 입력 항목이 자동으로 채워진다. (프로토타입: 시뮬레이션 데이터, 실서비스는 인증·스크래핑으로 교체)
  *
  * linked: 홈 화면 등 이 카드 밖에서 이미 연동된 경우 done 상태로 시작·동기화한다.
+ * row:    섹션 카드(.sec-card) 안에 여러 개를 줄로 넣을 때 — 카드 테두리를 벗는다.
  */
-export default function LinkCard({ iconLabel, iconBg, title, desc, summary, linked = false, buildFinancials, onLinked, onUnlink }) {
+export default function LinkCard({ iconLabel, iconBg, iconColor = '#fff', title, desc, summary, linked = false, row = false, buildFinancials, onLinked, onUnlink }) {
   const [status, setStatus] = useState(linked ? 'done' : 'off'); // off | linking | done
   const timerRef = useRef(null);
 
@@ -35,10 +36,13 @@ export default function LinkCard({ iconLabel, iconBg, title, desc, summary, link
   const descText = (status === 'done' ? summary : desc) || desc || '조회 전용 · 출금 불가';
 
   return (
-    <div className="link-card" style={status === 'done' ? { borderColor: 'var(--green-border)' } : undefined}>
+    <div
+      className={row ? 'sec-row' : 'link-card'}
+      style={!row && status === 'done' ? { borderColor: 'var(--green-border)' } : undefined}
+    >
       <span style={{
         flex: 'none', width: 40, height: 40, borderRadius: 12, background: iconBg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12.5, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12.5, color: iconColor,
       }}>{iconLabel}</span>
 
       <div style={{ flex: 1, minWidth: 0 }}>

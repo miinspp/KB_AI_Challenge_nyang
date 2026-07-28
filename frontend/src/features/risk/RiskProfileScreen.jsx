@@ -22,27 +22,33 @@ export default function RiskProfileScreen({ onComplete }) {
       <p className="h1">사업 성향을 알려주세요</p>
       <p className="sub">5가지 질문으로 사장님께 맞는 조합을 찾아드려요</p>
 
-      {RISK_QUESTIONS.map((q, qi) => (
-        <div key={q.key} className="card">
-          <p className="label-sm">{qi + 1}. {q.label}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-            {q.options.map((opt) => {
-              const on = answers[q.key] === opt.score;
-              return (
-                <button
-                  key={opt.score}
-                  type="button"
-                  className={`risk-opt${on ? ' on' : ''}`}
-                  onClick={() => choose(q.key, opt.score)}
-                >
-                  <span className="risk-opt-dot" aria-hidden="true" />
-                  <span>{opt.label}</span>
-                </button>
-              );
-            })}
+      {/* 5개 질문을 한 상자에 모으고 질문 사이만 옅은 선으로 나눈다 */}
+      <section className="sec-card">
+        {RISK_QUESTIONS.map((q, qi) => (
+          <div key={q.key} style={{
+            padding: qi === 0 ? '2px 2px 16px' : '16px 2px',
+            borderTop: qi === 0 ? 'none' : '1px solid var(--border)',
+          }}>
+            <p className="label-sm">{qi + 1}. {q.label}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+              {q.options.map((opt) => {
+                const on = answers[q.key] === opt.score;
+                return (
+                  <button
+                    key={opt.score}
+                    type="button"
+                    className={`risk-opt${on ? ' on' : ''}`}
+                    onClick={() => choose(q.key, opt.score)}
+                  >
+                    <span className="risk-opt-dot" aria-hidden="true" />
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </section>
 
       {allAnswered && (
         <div className="card pop" style={{ textAlign: 'center' }}>

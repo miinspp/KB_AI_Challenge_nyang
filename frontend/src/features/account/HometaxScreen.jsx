@@ -40,8 +40,8 @@ export default function HometaxScreen({ onBack, onGoDiagnose, onUnlink }) {
       </div>
 
       <div style={{ padding: '0 22px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div>
-          <p className="label-sm" style={{ marginBottom: 8 }}>불러온 손익</p>
+        <section className="sec-card">
+          <div className="sec-card-head"><p className="sec-card-title">불러온 손익</p></div>
           <div className="list-box">
             {rows.map((r) => (
               <div key={r.k} className="list-row" style={{ cursor: 'default' }}>
@@ -50,11 +50,11 @@ export default function HometaxScreen({ onBack, onGoDiagnose, onUnlink }) {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div>
-          <p className="label-sm" style={{ marginBottom: 8 }}>최근 12개월 매출·지출 추이</p>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <section className="sec-card">
+          <div className="sec-card-head"><p className="sec-card-title">최근 12개월 매출·지출 추이</p></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
             {monthlyHistory.map((row) => (
               <div key={row.month} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span style={{ flex: 'none', width: 42, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-soft)' }}>{row.month.slice(5)}월</span>
@@ -66,17 +66,17 @@ export default function HometaxScreen({ onBack, onGoDiagnose, onUnlink }) {
                     <div style={{ height: '100%', borderRadius: 4, background: '#E0A93C', width: `${Math.round((row.totalExpense / maxMonthlyAmount) * 100)}%` }} />
                   </div>
                 </div>
-                <span style={{ flex: 'none', width: 92, textAlign: 'right', fontSize: 10.5, fontWeight: 800, color: '#191B1F' }}>{fmtMan(row.sales)} / {fmtMan(row.totalExpense)}</span>
+                <span style={{ flex: 'none', width: 116, textAlign: 'right', fontSize: 10.5, fontWeight: 800, color: '#191B1F', whiteSpace: 'nowrap' }}>{fmtMan(row.sales)} / {fmtMan(row.totalExpense)}</span>
               </div>
             ))}
             <p className="evidence-src" style={{ marginTop: 2 }}>
               초록은 매출, 노랑은 지출이에요. 이 12개월 이력이 매출 추세와 비용 변동성 계산에 쓰여요.
             </p>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <p className="label-sm" style={{ marginBottom: 8 }}>확인된 세금 일정</p>
+        <section className="sec-card">
+          <div className="sec-card-head"><p className="sec-card-title">확인된 세금 일정</p></div>
           <div className="list-box">
             {HT.scheduledTaxPayments.map((payment) => (
               <div key={`${payment.type}-${payment.dueDate}`} className="list-row" style={{ cursor: 'default' }}>
@@ -85,7 +85,7 @@ export default function HometaxScreen({ onBack, onGoDiagnose, onUnlink }) {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
         <button className="acct-link" onClick={onGoDiagnose}>
           <div style={{ flex: 1, textAlign: 'left' }}>

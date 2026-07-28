@@ -48,9 +48,12 @@ export default function SimulatorScreen({
         />
       )}
 
-      <section style={{ margin: '12px 22px 0' }}>
-        <p style={{ fontSize: 12.5, fontWeight: 800, color: '#8B95A1', margin: '0 0 9px 2px' }}>추천 상품 {options.length}개 · 하나씩 골라볼 수도 있어요</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+      <section className="sec-card" style={{ margin: '12px 22px 0' }}>
+        <div className="sec-card-head">
+          <p className="sec-card-title">추천 상품</p>
+          <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted-faint)' }}>{options.length}개 · 하나씩 골라볼 수도 있어요</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 6 }}>
           {options.map((item) => {
             const selected = equipped.some((equippedItem) => equippedItem.key === item.key);
             const conflicts = !selected && item.duplicateGroup

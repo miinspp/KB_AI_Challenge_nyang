@@ -138,12 +138,16 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         <p style={{ marginTop: 8, fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>종합 {rank.compositeScore}점 / 100</p>
       </div>
 
-      {/* 지표별 근거 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {metrics.map((m) => {
+      {/* 지표별 근거 — 지표들을 한 상자에 모으고 줄 사이는 옅은 선으로 나눈다 */}
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">지표별 진단</p></div>
+        {metrics.map((m, i) => {
           const open = openMetric === m.key;
           return (
-            <div key={m.key}>
+            <div key={m.key} style={{
+              padding: '14px 2px',
+              borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+            }}>
               <button onClick={() => setOpenMetric(open ? null : m.key)}
                 style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
@@ -171,28 +175,32 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
             </div>
           );
         })}
-      </div>
+      </section>
 
-      {/* 산출 기준 요약 */}
-      <div style={{ background: 'var(--green-bg)', borderRadius: 14, padding: '14px 16px' }}>
-        <p style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 700, lineHeight: 1.6 }}>
+      {/* 산출 기준 · 방법론 — 성격이 같은 각주라 한 상자로 묶는다 */}
+      <section className="sec-card">
+        <div className="sec-card-head"><p className="sec-card-title">산출 기준 · 방법론</p></div>
+
+        <p style={{
+          background: 'var(--green-bg)', borderRadius: 12, padding: '12px 14px', marginTop: 4,
+          fontSize: 12.5, color: 'var(--green)', fontWeight: 700, lineHeight: 1.6,
+        }}>
           서울시 상권분석서비스 실측 데이터 기준으로 산출했어요{areaRank ? ` · ${areaRank.areaType} 비교 포함` : ''}
         </p>
-      </div>
 
-      {/* 방법론 노트 */}
-      <div style={{ background: 'var(--warm)', borderRadius: 14, padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {[
-          ...(rank.notes || []),
-          ...(areaRank ? [`${areaRank.areaType}만 비교하면 상위 ${areaRank.topPercent}% (매출 상위 ${areaRank.salesTopPercent}%) 예요.`] : []),
-          `비교 모집단: 서울시 ${rank.industryName} 점포 ${peer.nStores.toLocaleString()}개 (상권 ${peer.nAreas.toLocaleString()}곳, 점포수 가중)`,
-          ...(meta?.meta ? [`출처: ${meta.meta.sourceDataset} (기준 분기 ${Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})`] : []),
-        ].map((t, i) => (
-          <p key={i} style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 11, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 0, color: '#C7CDD3' }}>·</span>{t}
-          </p>
-        ))}
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 12, padding: '0 2px' }}>
+          {[
+            ...(rank.notes || []),
+            ...(areaRank ? [`${areaRank.areaType}만 비교하면 상위 ${areaRank.topPercent}% (매출 상위 ${areaRank.salesTopPercent}%) 예요.`] : []),
+            `비교 모집단: 서울시 ${rank.industryName} 점포 ${peer.nStores.toLocaleString()}개 (상권 ${peer.nAreas.toLocaleString()}곳, 점포수 가중)`,
+            ...(meta?.meta ? [`출처: ${meta.meta.sourceDataset} (기준 분기 ${Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})`] : []),
+          ].map((t, i) => (
+            <p key={i} style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 11, position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 0, color: '#C7CDD3' }}>·</span>{t}
+            </p>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

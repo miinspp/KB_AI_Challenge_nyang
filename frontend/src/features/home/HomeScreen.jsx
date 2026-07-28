@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { fmtWon, fmtMan } from '../../shared/format';
+import { fmtWon } from '../../shared/format';
 import { KB_ACCOUNT, HOMETAX_FINANCIALS, JOINED_PRODUCTS } from '../account/accountMock';
 import bearOwner from '../../assets/simulator/bear-owner-cutout.png';
-import { IconDiagnose } from '../../shared/Icons';
 
 /**
- * 연동 카드 — 연동 전에는 '연결' 버튼, 연동 후에는 카드 전체가 상세 화면으로 가는 버튼이 된다.
+ * 연동 한 줄 — 연동 전에는 '연결' 버튼, 연동 후에는 줄 전체가 상세 화면으로 가는 버튼이 된다.
+ * 섹션 카드(.sec-card) 안에 여러 줄이 들어가므로 카드 테두리는 갖지 않는다.
  * 연동 자체는 프로토타입이라 1.2초 지연 후 완료 처리한다(LinkCard 와 동일한 흐름).
  */
-function LinkTile({ linked, badge, badgeBg, title, desc, headline, sub, cta, onLink, onOpen }) {
+function LinkRow({
+  linked, badge, badgeBg, badgeColor = '#fff',
+  title, desc, headline, sub, cta, onLink, onOpen,
+}) {
   const [linking, setLinking] = useState(false);
   const timerRef = useRef(null);
   useEffect(() => () => clearTimeout(timerRef.current), []);
@@ -18,11 +21,15 @@ function LinkTile({ linked, badge, badgeBg, title, desc, headline, sub, cta, onL
     timerRef.current = setTimeout(() => { setLinking(false); onLink(); }, 1200);
   };
 
+  const badgeEl = (
+    <span className="kb-badge" style={{ background: badgeBg, color: badgeColor }}>{badge}</span>
+  );
+
   if (linked) {
     return (
-      <button className="acct-card is-linked" onClick={onOpen}>
-        <span className="kb-badge" style={{ background: badgeBg }}>{badge}</span>
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+      <button className="sec-row" onClick={onOpen}>
+        {badgeEl}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <p className="acct-card-balance">{headline}</p>
           <p style={{ fontSize: 12, color: 'var(--muted-mid)', marginTop: 3 }}>{sub}</p>
         </div>
@@ -32,8 +39,8 @@ function LinkTile({ linked, badge, badgeBg, title, desc, headline, sub, cta, onL
   }
 
   return (
-    <div className="acct-card">
-      <span className="kb-badge" style={{ background: badgeBg }}>{badge}</span>
+    <div className="sec-row">
+      {badgeEl}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>{title}</p>
         <p style={{ fontSize: 11.5, color: 'var(--muted-mid)', marginTop: 3 }}>{desc}</p>
@@ -47,6 +54,7 @@ function LinkTile({ linked, badge, badgeBg, title, desc, headline, sub, cta, onL
 
 /**
  * 탭1 홈 — 진단 유도 · 연동 상태 · 이미 가입한 상품 · 진단 요약.
+ * 연동(계좌·매출)과 가입 상품을 각각 하나의 섹션 카드로 묶어 보여준다.
  * 가입 상품은 KB 계좌를 연결해야 불러온다는 설정이라 연동 전에는 안내만 보여준다.
  * (시뮬레이터의 '장착'은 가상 실험이라 여기와 별개다 — accountMock.JOINED_PRODUCTS 참고)
  */
@@ -55,6 +63,9 @@ export default function HomeScreen({
   hometaxLinked, onLinkHometax, onOpenHometax,
   rank, onGoDiagnose, onGoReport, onGoRecommend,
 }) {
+  // 연동 묶음의 '더 보기' — 연동된 쪽 상세로, 아무것도 없으면 진단 입력으로 보낸다.
+  const openLinked = kbLinked ? onOpenAccount : (hometaxLinked ? onOpenHometax : onGoDiagnose);
+
   return (
     <div className="home">
       <p className="home-logo">든든이</p>
@@ -70,38 +81,44 @@ export default function HomeScreen({
 
       <div style={{ padding: '2px 4px 0' }}>
         <p style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
-        <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginTop: 5 }}>1분이면 상권 속 내 위치를 알 수 있어요 · 아래 진단하기 버튼을 눌러보세요</p>
+        <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginTop: 5 }}>1분이면 상권 속 내 위치를 알 수 있어요 · 아래 진단 카드를 눌러보세요</p>
       </div>
 
-      <button className="home-fab" onClick={onGoDiagnose} aria-label="우리 가게 진단하기">
-        <span className="home-fab-label">진단하기</span>
-        <span className="home-fab-circle"><IconDiagnose size={27} /></span>
-      </button>
+      {/* 연동 묶음 — 계좌·매출을 한 상자에 */}
+      <section className="sec-card">
+        <div className="sec-card-head">
+          <p className="sec-card-title">연동한 계좌 · 매출</p>
+        </div>
 
-      <LinkTile
-        linked={kbLinked} badge="KB" badgeBg="var(--green-bright)"
-        title="KB 계좌 연결하기" desc="조회 전용 · 출금 불가"
-        headline={fmtWon(KB_ACCOUNT.balance)} sub={KB_ACCOUNT.name} cta="내역"
-        onLink={onLinkKb} onOpen={onOpenAccount}
-      />
+        <LinkRow
+          linked={kbLinked} badge="KB" badgeBg="var(--kb)" badgeColor="var(--ink)"
+          title="KB 계좌 연결하기" desc="조회 전용 · 출금 불가"
+          headline={fmtWon(KB_ACCOUNT.balance)} sub={KB_ACCOUNT.name} cta="내역"
+          onLink={onLinkKb} onOpen={onOpenAccount}
+        />
 
-      <LinkTile
-        linked={hometaxLinked} badge="홈택스" badgeBg="var(--green)"
-        title="국세청 홈택스 연동하기" desc="매출·지출·12개월 추이 한 번에"
-        headline={fmtWon(HOMETAX_FINANCIALS.monthlySalesAvg)}
-        sub={`${HOMETAX_FINANCIALS.basisPeriod} 월평균 매출 · 홈택스`} cta="상세"
-        onLink={onLinkHometax} onOpen={onOpenHometax}
-      />
+        <LinkRow
+          linked={hometaxLinked} badge="홈택스" badgeBg="var(--hometax)"
+          title="국세청 홈택스 연동하기" desc="매출·지출·12개월 추이 한 번에"
+          headline={fmtWon(HOMETAX_FINANCIALS.monthlySalesAvg)}
+          sub={`${HOMETAX_FINANCIALS.basisPeriod} 월평균 매출 · 홈택스`} cta="상세"
+          onLink={onLinkHometax} onOpen={onOpenHometax}
+        />
 
-      {/* 현재 가입한 상품 — 마이데이터로 불러온 것(mock) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <p className="label-sm">현재 가입한 상품</p>
+        <button className="sec-more" onClick={openLinked}>
+          내 계좌 · 매출 · 지출 보기 <span aria-hidden="true">›</span>
+        </button>
+      </section>
+
+      {/* 가입 상품 묶음 — 마이데이터로 불러온 것(mock) */}
+      <section className="sec-card">
+        <div className="sec-card-head">
+          <p className="sec-card-title">현재 가입한 상품</p>
           {kbLinked && <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted-faint)' }}>{JOINED_PRODUCTS.length}개</p>}
         </div>
 
         {kbLinked ? JOINED_PRODUCTS.map((p) => (
-          <div key={p.id} className="joined-card">
+          <div key={p.id} className="sec-row">
             <span className="icon-badge" style={{ width: 40, height: 40, fontSize: 18, background: p.iconBg, color: p.iconColor }}>{p.icon}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', letterSpacing: -.3 }}>{p.name}</p>
@@ -110,12 +127,16 @@ export default function HomeScreen({
             <span className="src-badge" style={{ flex: 'none' }}>{p.status}</span>
           </div>
         )) : (
-          <button className="joined-empty" onClick={onGoRecommend}>
+          <div className="sec-empty">
             <p style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--muted)' }}>KB 계좌를 연결하면 보여드려요</p>
-            <p style={{ fontSize: 12, color: 'var(--muted-faint)', marginTop: 5 }}>이용 중인 대출·공제·카드를 한눈에 · 새 상품은 맞춤 추천에서 ›</p>
-          </button>
+            <p style={{ fontSize: 12, color: 'var(--muted-faint)', marginTop: 5 }}>이용 중인 대출·공제·카드를 한눈에</p>
+          </div>
         )}
-      </div>
+
+        <button className="sec-more" onClick={onGoRecommend}>
+          맞춤 상품 추천 보기 <span aria-hidden="true">›</span>
+        </button>
+      </section>
 
       {/* 내 가게 진단 요약 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
