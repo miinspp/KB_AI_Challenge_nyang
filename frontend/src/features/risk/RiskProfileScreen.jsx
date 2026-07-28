@@ -63,7 +63,7 @@ export default function RiskProfileScreen({ onComplete }) {
             answers, totalScore, profile: profile.type, profileLabel: profile.label,
           })}
         >
-          시뮬레이터로 계속하기
+          시뮬레이터로 분석하기
         </button>
       </div>
     </div>

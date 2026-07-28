@@ -21,7 +21,11 @@ import { fetchRecommendations, rankToProfile } from './api/recommend';
 import { streamAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
-import { buildSimRows, buildSimulationOptions, buildSimulationPayload } from './features/simulator/sim';
+import {
+  buildSimRows, buildSimulationOptions, buildSimulationPayload,
+  pickOptionsForProfile, generateCandidateCombos, buildCandidatePayloads, summarizeSimulationForAdvisor,
+} from './features/simulator/sim';
+import { requestPortfolioAdvice } from './api/portfolio';
 import { IconSparkle } from './shared/Icons';
 
 // AI 에이전트 trace 표시용 도구 한글 라벨
@@ -84,6 +88,13 @@ export default function App() {
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState('');
 
+  // 조합 분석 AI — 성향분석 결과로 조합 후보를 계산하고(코드+Java), Top3 선정·설명만 Sonnet에 맡긴다.
+  const [topCombos, setTopCombos] = useState([]);            // [{comboId, rank, headline, reason, caution, items}]
+  const [comboSimulations, setComboSimulations] = useState({}); // comboId → /api/simulation 결과 (실제 엔진)
+  const [comboAnalysisLoading, setComboAnalysisLoading] = useState(false);
+  const [comboAnalysisError, setComboAnalysisError] = useState('');
+  const [comboAnalysisDone, setComboAnalysisDone] = useState(false);
+
   // 업종 목록·메타 최초 로드
   const loadIndustries = useCallback(() => {
     setLoadError('');
@@ -127,6 +138,10 @@ export default function App() {
     [rank, diag, hometax, kbLinked, equipped, simulationReady],
   );
   const simRows = useMemo(() => buildSimRows(simulation), [simulation]);
+  // 조합 후보용 공통 재료 — buildSimulationPayload(base, equipped=조합)로 후보마다 재사용한다.
+  const simulationBase = useMemo(() => ({ rank, diag, hometax, kb: kbLinked ? KB_LINK : null }),
+    [rank, diag, hometax, kbLinked]);
+  const equippedComboId = useMemo(() => equipped.map((item) => item.key).sort().join('+'), [equipped]);
 
   // 시뮬레이터 탭에 들어왔을 때만 계산 요청
   useEffect(() => {
@@ -140,6 +155,63 @@ export default function App() {
       .finally(() => { if (alive) setSimulationLoading(false); });
     return () => { alive = false; };
   }, [simulationPayload, tab]);
+
+  // 조합 분석 AI — 성향분석을 마치고 시뮬레이터 탭에 처음 들어왔을 때 한 번 실행한다.
+  // 조합 생성·시뮬레이션은 전부 코드/Java(기존 엔진)가 하고, Sonnet은 Top3 선정+설명만 한다.
+  useEffect(() => {
+    // 추천 목록이 아직 안 왔으면(apiProducts 로딩 중) done 처리하지 않고 대기 — 목록이 채워지면
+    // simulationOptions 의존성이 바뀌어 자동으로 다시 시도한다.
+    if (tab !== 4 || !riskProfile || !simulationReady || simulationOptions.length === 0 || comboAnalysisDone) return undefined;
+    let alive = true;
+    setComboAnalysisLoading(true);
+    setComboAnalysisError('');
+    (async () => {
+      try {
+        const profileOptions = pickOptionsForProfile(simulationOptions, riskProfile.profile, 6);
+        const combos = generateCandidateCombos(profileOptions, diag);
+        if (combos.length === 0) {
+          if (alive) { setTopCombos([]); setComboSimulations({}); }
+          return;
+        }
+        const payloads = buildCandidatePayloads(simulationBase, combos);
+        const settled = await Promise.allSettled(payloads.map((candidate) => postSimulation(candidate.payload)));
+        const simulationsByComboId = {};
+        const candidateSummaries = [];
+        settled.forEach((result, index) => {
+          if (result.status !== 'fulfilled') return;
+          const sim = result.value;
+          // 상환부담 초과·자격/중복/과다조달 등 제약 위반(REVIEW_REQUIRED) 조합은 후보에서 제외한다 —
+          // Java 엔진은 이런 경우도 200으로 응답하므로 여기서 직접 걸러야 한다.
+          const passesConstraints = sim?.constraints?.repaymentBurdenPassed === true
+            && (sim?.constraints?.violations?.length ?? 0) === 0;
+          if (!passesConstraints) return;
+          const { comboId, items } = payloads[index];
+          simulationsByComboId[comboId] = sim;
+          candidateSummaries.push({
+            comboId,
+            products: items.map((item) => ({ id: item.id, name: item.short || item.name, type: item.type })),
+            metrics: summarizeSimulationForAdvisor(sim),
+          });
+        });
+        if (candidateSummaries.length === 0) {
+          // 계산 자체는 됐지만 제약을 통과하는 조합이 없는 경우 — 오류가 아니라 "추천 가능한 조합 없음"으로 처리
+          if (alive) { setTopCombos([]); setComboSimulations({}); }
+          return;
+        }
+        const advice = await requestPortfolioAdvice({ riskProfile, candidates: candidateSummaries });
+        const itemsByComboId = new Map(payloads.map((candidate) => [candidate.comboId, candidate.items]));
+        const combosResolved = (advice?.combos || [])
+          .map((combo) => ({ ...combo, items: itemsByComboId.get(combo.comboId) || [] }))
+          .filter((combo) => combo.items.length > 0);
+        if (alive) { setComboSimulations(simulationsByComboId); setTopCombos(combosResolved); }
+      } catch (e) {
+        if (alive) setComboAnalysisError(e.message);
+      } finally {
+        if (alive) { setComboAnalysisLoading(false); setComboAnalysisDone(true); }
+      }
+    })();
+    return () => { alive = false; };
+  }, [tab, riskProfile, simulationReady, simulationOptions, comboAnalysisDone, diag, simulationBase]);
 
   // v2 필수: 업종 · 매출 · 지출 3개
   const canAnalyze = !!diag.industryCode && Number(diag.salesMan) > 0 && diag.expenseMan !== '';
@@ -170,6 +242,17 @@ export default function App() {
     setTab(nextTab);
     setOverlay(null);
     window.scrollTo(0, 0);
+  };
+
+  // 하단 탭바로 시뮬레이터에 곧장 들어오면 성향분석을 건너뛰게 되므로, 아직 성향분석을
+  // 안 한 최초 진입이면 추천 탭의 성향분석 화면으로 먼저 보낸다(완료하면 기존처럼 go(4)).
+  const goTab = (nextTab) => {
+    if (nextTab === 4 && !riskProfile) {
+      setRecSub('risk');
+      go(3);
+      return;
+    }
+    go(nextTab);
   };
 
   const analyze = async () => {
@@ -316,9 +399,15 @@ export default function App() {
     setDiag(DIAG_INIT); setNeeds([]); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null);
     setSimulation(null); setSimulationError(''); setKbLinked(false);
+    setTopCombos([]); setComboSimulations({}); setComboAnalysisDone(false); setComboAnalysisError('');
     setTab(1); setDiagSub('input'); setRecSub('list'); setRiskProfile(null); setSimSub('sim'); setOverlay(null);
     window.scrollTo(0, 0);
   };
+
+  // 조합 분석 AI의 Top3 카드를 골랐을 때 — 검증이 끝난 조합이라 toggle() 재검증 없이 바로 장착한다.
+  const applyCombo = (items) => { setSimulationError(''); setEquipped(items); };
+  // 성향을 다시 답했거나 분석이 실패했을 때 재시도
+  const retryComboAnalysis = () => { setComboAnalysisDone(false); setComboAnalysisError(''); };
 
   // ── 하단 CTA — 탭·단계마다 다음 행동 하나만 제시 ──
   let cta = null;
@@ -335,7 +424,7 @@ export default function App() {
     } else if (tab === 3 && recSub === 'list') {
       cta = { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } };
     } else if (tab === 4 && simSub === 'sim') {
-      cta = { label: '포트폴리오 확인하기', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
+      cta = { label: 'AI 분석결과 보기', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
   }
   const showAgentCta = !overlay && tab === 2 && diagSub === 'input';
@@ -371,7 +460,7 @@ export default function App() {
   const titleOf = () => {
     if (tab === 2) return diagSub === 'input' ? '우리 가게 진단' : diagSub === 'report' ? '진단 리포트' : '비용 리포트';
     if (tab === 3) return recSub === 'risk' ? '사업 성향분석' : '맞춤 상품 추천';
-    if (tab === 4) return simSub === 'sim' ? '금융 시뮬레이터' : '분석 포트폴리오';
+    if (tab === 4) return simSub === 'sim' ? '금융 시뮬레이터' : 'AI 분석결과';
     return '';
   };
 
@@ -453,6 +542,8 @@ export default function App() {
           <RiskProfileScreen
             onComplete={(profile) => {
               setRiskProfile(profile);
+              // 새 성향 결과이니 이전 조합 분석은 버리고 다시 계산한다.
+              setComboAnalysisDone(false); setTopCombos([]); setComboSimulations({}); setComboAnalysisError('');
               setRecSub('list');
               go(4);
             }}
@@ -462,7 +553,7 @@ export default function App() {
         {!overlay && tab === 4 && (
           <>
             <StepTabs
-              steps={[{ key: 'sim', label: '시뮬레이터' }, { key: 'portfolio', label: '포트폴리오' }]}
+              steps={[{ key: 'sim', label: '시뮬레이터' }, { key: 'portfolio', label: 'AI 분석결과' }]}
               value={simSub}
               onChange={(k) => { setSimSub(k); window.scrollTo(0, 0); }}
             />
@@ -471,11 +562,17 @@ export default function App() {
                 simulation={simulation} loading={simulationLoading}
                 error={simulationError || (!simulationReady
                   ? '진단 입력의 자금 상황에서 보유 현금과 기존 대출 여부를 입력해 주세요.'
-                  : '')} />
+                  : '')}
+                riskProfile={riskProfile} simulationReady={simulationReady}
+                topCombos={topCombos} comboSimulations={comboSimulations}
+                comboAnalysisLoading={comboAnalysisLoading} comboAnalysisDone={comboAnalysisDone} comboAnalysisError={comboAnalysisError}
+                equippedComboId={equippedComboId} onApplyCombo={applyCombo} onRetryComboAnalysis={retryComboAnalysis} />
             )}
             {simSub === 'portfolio' && (
               <PortfolioScreen equipped={equipped} simRows={simRows}
-                percentile={topPercent} simulation={simulation} />
+                percentile={topPercent} simulation={simulation}
+                topCombos={topCombos} equippedComboId={equippedComboId}
+                riskProfile={riskProfile} comboSimulations={comboSimulations} />
             )}
           </>
         )}
@@ -528,7 +625,7 @@ export default function App() {
         </div>
       )}
 
-      <TabBar tab={tab} overlay={!!overlay} onGo={go} />
+      <TabBar tab={tab} overlay={!!overlay} onGo={goTab} />
 
       {(agentRunning || agentFinal || agentSteps.length > 0 || agentError) && (
         <div onClick={() => { if (!agentRunning) { setAgentSteps([]); setAgentFinal(null); setAgentError(''); } }}

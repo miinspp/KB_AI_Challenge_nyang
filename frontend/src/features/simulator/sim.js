@@ -229,6 +229,102 @@ export function buildSimulationPayload({ rank, diag, hometax, kb, equipped }) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// 조합 분석 AI — 성향분석 결과를 받아 조합 후보를 만들고(코드), 후보별 실제
+// 시뮬레이션(Java, 이 파일의 buildSimulationPayload 그대로 재사용)을 돌린 뒤,
+// 그 결과만 Claude Sonnet에 넘겨 Top3 선정+설명을 받는다(백엔드 portfolio_advisor.py).
+// 계산은 전부 기존 로직 그대로이고, 여기 추가되는 건 "조합을 어떻게 고를지"뿐이다.
+// ─────────────────────────────────────────────────────────────
+
+// 성향별 상품 유형 가중치 — 조합을 만들기 전에 추천 상품을 성향에 맞게 1차로 추린다.
+const PROFILE_TYPE_WEIGHT = {
+  AGGRESSIVE: { LOAN: 1, GRANT: 1.2, SAVINGS: 0.3, MUTUAL_AID: 0.4, INSURANCE: 0.2 },
+  BALANCED: { LOAN: 0.85, GRANT: 0.9, SAVINGS: 0.75, MUTUAL_AID: 0.75, INSURANCE: 0.6 },
+  CONSERVATIVE: { LOAN: 0.5, GRANT: 0.6, SAVINGS: 1.1, MUTUAL_AID: 1, INSURANCE: 0.9 },
+};
+
+function scoreOptionForProfile(option, profileType) {
+  const weights = PROFILE_TYPE_WEIGHT[profileType] || PROFILE_TYPE_WEIGHT.BALANCED;
+  const typeWeight = weights[option.type] ?? 0.65;
+  return typeWeight * (Number(option.fit) || 50);
+}
+
+// 추천 상품 중 성향에 맞는 상위 `limit`개만 남긴다 — 이후 조합은 이 안에서만 만든다.
+export function pickOptionsForProfile(options, profileType, limit = 6) {
+  return [...options]
+    .sort((a, b) => scoreOptionForProfile(b, profileType) - scoreOptionForProfile(a, profileType))
+    .slice(0, limit);
+}
+
+// 대출 2개 이상 조합은 제외한다 — selectedItem()이 대출마다 동일한 desiredFundingMan(희망 대출액)을
+// 그대로 넣어서 Java가 이를 합산하므로, 조합 생성 단계에서 배분하지 않는 한 대출 2개 조합은
+// 희망액이 상품 수만큼 중복 적용된다(예: 희망 1,000만원 + 대출 2개 = 조달 2,000만원).
+const comboConflicts = (a, b) => (Boolean(a.duplicateGroup) && a.duplicateGroup === b.duplicateGroup)
+  || (a.type === 'LOAN' && b.type === 'LOAN');
+
+// 유효한 1~3개 조합 후보를 전부 만들고(중복그룹 충돌·자격FAIL·대환조건 미충족 제외),
+// 성향 적합도 평균이 높은 순으로 최대 maxCandidates개만 남긴다.
+export function generateCandidateCombos(options, diag, { maxSize = 3, maxCandidates = 10 } = {}) {
+  const hasExistingDebt = Number(diag?.existingDebtMan || 0) > 0;
+  const eligible = options.filter((option) => option.eligibilityStatus !== 'FAIL'
+    && (!option.requiresExistingDebt || hasExistingDebt));
+  const n = eligible.length;
+  if (n === 0) return [];
+
+  const combos = [];
+  for (let size = 1; size <= Math.min(maxSize, n); size += 1) {
+    const indices = Array.from({ length: size }, (_, i) => i);
+    for (;;) {
+      const combo = indices.map((i) => eligible[i]);
+      const hasConflict = combo.some((a, i) => combo.slice(i + 1).some((b) => comboConflicts(a, b)));
+      if (!hasConflict) combos.push(combo);
+
+      let cursor = size - 1;
+      while (cursor >= 0 && indices[cursor] === n - size + cursor) cursor -= 1;
+      if (cursor < 0) break;
+      indices[cursor] += 1;
+      for (let after = cursor + 1; after < size; after += 1) indices[after] = indices[after - 1] + 1;
+    }
+  }
+
+  return combos
+    .map((items) => ({
+      comboId: items.map((item) => item.key).sort().join('+'),
+      items,
+      score: items.reduce((sumScore, item) => sumScore + (Number(item.fit) || 50), 0) / items.length,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxCandidates);
+}
+
+// 조합 후보마다 실제 /api/simulation 페이로드를 만든다 — buildSimulationPayload 그대로 재사용,
+// equipped만 조합별로 바꿔 끼운다.
+export function buildCandidatePayloads(base, combos) {
+  return combos.map((combo) => ({
+    comboId: combo.comboId,
+    items: combo.items,
+    payload: buildSimulationPayload({ ...base, equipped: combo.items }),
+  }));
+}
+
+// Claude에 넘길 조합별 핵심 지표 — 존재하는 숫자만 추려 보낸다(신규 계산 없음, 인용만 가능하게).
+export function summarizeSimulationForAdvisor(simulation) {
+  if (!simulation) return null;
+  const metrics = simulation.selectedScenario.metrics;
+  const stochastic = simulation.selectedScenario.stochastic;
+  const financing = simulation.financingResult;
+  return {
+    monthlyNetCashManwon: man(metrics.averageMonthlyNetCashFlow),
+    endingCashManwon: man(simulation.selectedScenario.deterministic.endingCash),
+    endingCashP5Manwon: man(stochastic.endingCashP5),
+    cashShortageRisk: Math.round(stochastic.bufferBreachProbability * 1000) / 1000,
+    maxRepaymentBurdenRatio: Math.round(financing.maxRepaymentBurdenRatio * 1000) / 1000,
+    repaymentBurdenPassed: simulation.constraints.repaymentBurdenPassed,
+    totalFundingManwon: man(financing.totalFundingAmount),
+    confidence: simulation.confidence?.level,
+  };
+}
+
 function tone(delta, goodUp) {
   if (Math.abs(delta) < 0.0001) return { color: '#B0B8C1', dark: '#8B95A1', bg: '#EEF0F3' };
   const good = goodUp ? delta > 0 : delta < 0;
@@ -471,6 +567,15 @@ export function buildSimulationDetail(simulation) {
       if (warning.includes('Policy financing uses')) return '정책자금 금리와 상환조건은 연결된 공식 공고에서 최종 확인해야 해요.';
       if (warning.includes('Policy benefits without structured')) return '지급 시기와 자기부담 조건이 없는 정책은 금액 효과를 임의 계산하지 않았어요.';
       if (warning.includes('Sales forecast provider')) return '미래 매출은 학습형 신용모델이 아닌 최근 매출 추세 기반 참고값이에요.';
+      if (warning.includes('Linked monthly expense history')) return '연동된 월별 지출 내역으로 평균 비용과 변동성을 계산했어요.';
+      if (warning.includes('Legacy fixedCost/variableCostRatio')) return '세부 지출 내역이 없어 고정비·변동비 비율로 단순 계산했어요.';
+      if (warning.includes('Unclassified total expense')) return '분류되지 않은 지출은 기타 고정비로 반영했어요.';
+      if (warning.includes('totalExpense was split')) return '세부 항목이 없어 전체 지출을 변동비율 기준으로 나눠 계산했어요.';
+      if (warning.includes('Linked loan-level repayment')) return '연동된 대출별 실제 상환 스케줄을 반영했어요.';
+      if (warning.includes('Linked scheduled tax payments')) return '연동된 세금 납부 예정일과 금액을 반영했어요.';
+      if (warning.includes('Linked monthly account cash flows')) return '연동된 월별 계좌 입출금으로 분류되지 않은 현금흐름 변동성을 보정했어요.';
+      if (warning.includes('Insurance premiums affect')) return '보험료는 현금흐름에 반영했지만, 보장 혜택 금액은 별도로 계산하지 않았어요.';
+      if (warning.includes('One or more KB product terms')) return '일부 KB상품은 공식 금리·조건이 확정되기 전까지 참고용 기본값을 사용했어요.';
       return warning;
     }),
     violations: simulation.constraints.violations.map((violation) => {

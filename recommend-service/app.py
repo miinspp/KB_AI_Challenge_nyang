@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 import engine
 import agent  # AI 오케스트레이터 (/api/agent)
+import portfolio_advisor  # 조합 분석 AI (/api/portfolio/analyze) — 시뮬레이터 전용, agent.py와 별개
 
 DATA = Path(__file__).parent / "data" / "reco_pool.json"   # 정책(정제) + KB상품 통합 풀 (build_reco_pool.py 산출)
 CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
@@ -26,6 +27,7 @@ CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
 app = FastAPI(title="소상공인 추천 서비스")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(agent.router)  # POST /api/agent
+app.include_router(portfolio_advisor.router)  # POST /api/portfolio/analyze
 
 # ── 카테고리별 카드 스타일 (products.js 톤과 일치) ──
 STYLE = {
