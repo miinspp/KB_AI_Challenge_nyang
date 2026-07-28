@@ -5,10 +5,13 @@ FastAPI 추천 서비스 — POST /api/recommend
 실행:
   pip install -r requirements.txt
   uvicorn app:app --port 8000 --reload
-근거 문장 LLM(Haiku)을 켜려면 환경변수 ANTHROPIC_API_KEY 설정.
+
+이 엔드포인트는 LLM을 호출하지 않는다 — 랭킹은 로컬 임베딩 모델 + 규칙,
+3줄 요약은 배치에서 미리 구운 값이다(docs/MODELS.md).
+같은 서비스의 /api/agent, /api/portfolio 는 별개로 ANTHROPIC_API_KEY 를 쓴다.
 """
 from __future__ import annotations
-import json, os
+import json
 from datetime import date
 from pathlib import Path
 
@@ -66,10 +69,13 @@ def load():
     POLICIES = json.loads(DATA.read_text(encoding="utf-8"))
     EMBEDDER = engine.Embedder()
     texts = [engine.policy_text(p) for p in POLICIES]
-    # bge-m3 캐시 재사용 (TF-IDF는 매번 fit — 어휘가 코퍼스 의존적이라 캐시 안 함)
-    if EMBEDDER.mode == "bge-m3" and CACHE.exists():
-        DOC_VECS = np.load(CACHE)
-        if len(DOC_VECS) != len(texts):
+    # 신경망 임베딩만 캐시한다(TF-IDF는 어휘가 코퍼스 의존적이라 매번 fit).
+    # 캐시는 모델별로 파일을 나눠 둔다 — 모델을 바꾸면 임베딩 공간이 달라져
+    # 예전 벡터를 그대로 쓰면 유사도가 조용히 망가진다.
+    cache = _cache_path(EMBEDDER.mode)
+    if cache and cache.exists():
+        DOC_VECS = np.load(cache)
+        if len(DOC_VECS) != len(texts):  # 풀이 바뀌었으면 재계산
             DOC_VECS = _build(texts)
     else:
         DOC_VECS = _build(texts)
@@ -77,10 +83,16 @@ def load():
     print(f"[startup] 정책 {len(POLICIES)}건, 임베딩 {EMBEDDER.mode}, shape={DOC_VECS.shape}")
 
 
+def _cache_path(mode: str):
+    """모델별 벡터 캐시 경로. TF-IDF 는 캐시하지 않으므로 None."""
+    return None if mode == "tfidf" else CACHE.with_name(f"reco_vectors.{mode}.npy")
+
+
 def _build(texts):
     vecs = EMBEDDER.fit_docs(texts)
-    if EMBEDDER.mode == "bge-m3":
-        np.save(CACHE, vecs)
+    cache = _cache_path(EMBEDDER.mode)
+    if cache:
+        np.save(cache, vecs)
     return vecs
 
 
@@ -93,7 +105,7 @@ def days_left(deadline: str | None):
         return None
 
 
-def to_product(item: dict, reason: str) -> dict:
+def to_product(item: dict) -> dict:
     """엔진 결과 1건 → RecommendScreen/시뮬레이터 공용 product 스키마"""
     p = item["policy"]
     st = STYLE.get(p.get("category"), DEFAULT_STYLE)
@@ -107,6 +119,9 @@ def to_product(item: dict, reason: str) -> dict:
         {"k": "신청기간", "v": p.get("apply_period") or "상세 참조"},
         {"k": "신청방법", "v": (p.get("apply_method") or "공고문 참조")[:60]},
     ]
+    # 파인튜닝 KoBART 3줄 요약(summarize_pool.py 산출). "지원:/대상:/신청:" 형식 검증을
+    # 통과한 정책만 값이 있고, 실패분은 빈 문자열이라 프론트가 알아서 감춘다.
+    summary_short = p.get("summary_short") or ""
     title = p["title"]
     is_finance = p.get("is_finance", False)
     source = p.get("source", "GOV")   # "KB"(자체상품) | "GOV"(정책·지원제도)
@@ -118,7 +133,10 @@ def to_product(item: dict, reason: str) -> dict:
         "tag": p.get("category") or "지원제도",
         **st,
         "fit": int(round(item["final_score"] * 100)),
-        "reason": reason,
+        # reason(상품별 한 줄 근거)은 내보내지 않는다 — 규칙 evidence 는 사장님 재무상황
+        # 설명이라 상품마다 같아서, 목록 헤더의 signals 로 한 번만 보여준다.
+        # 규칙기반 폴백(products.js)에는 상품별 reason 이 있어 프론트가 있을 때만 렌더한다.
+        "summaryShort": summary_short,
         "spec1": spec1,
         "spec2": spec2,
         "deadline": p.get("deadline"),
@@ -138,46 +156,30 @@ def to_product(item: dict, reason: str) -> dict:
     }
 
 
-def llm_reasons(items, profile: Profile):
-    """상위 후보에 대해 Haiku가 추천 근거 문장 생성. 키 없거나 실패 시 규칙 evidence 사용."""
-    fallback = {it["policy"]["id"]: (" ".join(it["evidence"]) or "진단 결과와 잘 맞는 지원이에요.")
-                for it in items}
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        return fallback
-    try:
-        import anthropic
-        client = anthropic.Anthropic()
-        brief = "\n".join(
-            f'- id={it["policy"]["id"]} | {it["policy"]["title"]} | 근거:{"; ".join(it["evidence"]) or "의미유사"}'
-            for it in items)
-        prompt = (
-            f"사용자: {engine.profile_text(profile.dict())}\n\n"
-            f"추천 후보:\n{brief}\n\n"
-            "각 후보마다 이 사장님에게 왜 맞는지 한 문장(존댓말, 40자 내외)으로 근거를 써주세요. "
-            "마감일·금액은 새로 지어내지 마세요. "
-            'JSON만 출력: {"id문자열": "근거 문장", ...}')
-        resp = client.messages.create(
-            model="claude-haiku-4-5-20251001", max_tokens=800,
-            messages=[{"role": "user", "content": prompt}])
-        text = resp.content[0].text.strip()
-        text = text[text.find("{"): text.rfind("}") + 1]
-        parsed = json.loads(text)
-        return {k: parsed.get(k, fallback[k]) for k in fallback}
-    except Exception as e:
-        print(f"[llm] Haiku 실패 → 규칙 근거 사용 ({e})")
-        return fallback
+def profile_signals(items) -> list[str]:
+    """규칙 엔진이 쌓은 근거를 목록 단위로 합친다.
+
+    evidence 는 '이 상품이 왜 좋은지'가 아니라 '사장님 재무상황이 어떤지'라서
+    상품마다 같은 문장이 반복된다(78건 중 31건이 동일). 카드마다 되풀이하는 대신
+    목록 상단에 한 번만 노출하려고 순서를 지켜 중복만 제거한다.
+    """
+    seen, signals = set(), []
+    for it in items:
+        for e in it["evidence"]:
+            if e not in seen:
+                seen.add(e)
+                signals.append(e)
+    return signals
 
 
 @app.post("/api/recommend")
 def recommend(profile: Profile):
     items = engine.recommend(POLICIES, profile.dict(), EMBEDDER, DOC_VECS, top_k=profile.top_k)
-    reasons = llm_reasons(items, profile)
-    products = [to_product(it, reasons[it["policy"]["id"]]) for it in items]
     return {
-        "count": len(products),
-        "embedding": EMBEDDER.mode,
-        "llm": bool(os.getenv("ANTHROPIC_API_KEY")),
-        "products": products,
+        "count": len(items),
+        "embedding": EMBEDDER.mode,          # 랭킹에 쓰인 임베딩(파인튜닝 모델명 또는 폴백)
+        "signals": profile_signals(items),   # 목록 헤더용 — 진단 신호 요약
+        "products": [to_product(it) for it in items],
     }
 
 

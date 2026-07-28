@@ -58,7 +58,8 @@ export function rankToProfile(rank, {
   };
 }
 
+// products: 카드 목록 그대로 / signals: 목록 헤더에 한 번만 노출할 진단 신호 문장
 export async function fetchRecommendations(profile) {
   const data = await postJson('/api/recommend', profile);
-  return data.products; // RecommendScreen이 그대로 렌더
+  return { products: data.products, signals: data.signals || [] };
 }

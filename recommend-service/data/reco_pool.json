@@ -22,7 +22,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1100,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 영업환경 개선을 위한 시설 개보수, 집기 구입 등(업체당 최대 100만원 이내) 지원\n대상: 장애인기업확인서 발급 기업 중 소상공인 해당하는 기업\n신청: 2026-07-15~2026-07-31 이메일, 우편, 방문 접수"
   },
   {
     "id": "PBLN_000000000124326",
@@ -51,7 +52,8 @@
     "max_biz_age": 7,
     "max_amount_manwon": 1000,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 쇼케이스데이(피칭경진대회, 제품전시), 성장·후속 연계 지원\n대상: 라이프스타일형 창의적 아이템 보유 창업 7년 이내 소상공인\n신청: 2026-07-13 ~ 2026년-08-10 중소상공인희망재단 홈페이지 온라인 접수"
   },
   {
     "id": "PBLN_000000000124217",
@@ -78,7 +80,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 라이브커머스 방송 제작부터 송출, 판매 전 과정 지원\n대상: 소상공인\n신청: 상시 접수, 판판대로 온라인 접수, 상시 접수"
   },
   {
     "id": "PBLN_000000000124157",
@@ -107,7 +110,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 375,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 인턴 인건비 375만원 전액, 참여기업 지원금 총 50만원, 멘토 지원금 37.5만원, 우수 청년 인재 추천 등 다양한 참여 혜택 지원\n대상: 사내 UXUI 개선·디자인 직무 인력 수요, 고용보험 피보험자 10인 이상 기업\n신청: 지원금 온라인 접수, 2026-07-09~2026-07-21"
   },
   {
     "id": "PBLN_000000000124107",
@@ -134,7 +138,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 유통채널 MD 매칭(1:1 또는 그룹상담), 유통·커머스 전문가 교육 지원\n대상: 상시근로자수 10인(5인 미만) 미만 서울시 소재 소상공인(제조업·광업·건설업 10인 미만, 기타 업종 5인 미만)\n신청: 온라인 접수, 상시 접수"
   },
   {
     "id": "PBLN_000000000124104",
@@ -162,7 +167,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 30000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 총 3억원 이내(사업자당 시설자금 2억원, 운전자금 1억원 이내) 지원\n대상: 중소기업(중소기업기본법 제2조) 또는 사회적기업 또는 예비 사회적 기업(서울특별시 사회적기업 육성에 관한 조례 제5조)\n신청: 서울특별시 자원순환과 방문 또는 우편 접수"
   },
   {
     "id": "PBLN_000000000124045",
@@ -192,7 +198,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 전문가 매칭 후 멘토링(기업당 최대 3회)\n대상: 서울시 소재 녹색분야 중소기업 및 예비창업자\n신청: 이메일 접수(greeninfo@nigt.re.kr), 상시 접수"
   },
   {
     "id": "PBLN_000000000124018",
@@ -222,7 +229,8 @@
     "max_biz_age": 7,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 개별·공유·제조주방 무상 사용, 기초역량강화 프로그램 지원, 성장지원 프로그램 지원\n대상: 서울시 내 업력 7년 이내 F&B 스타트업(졸업)\n신청: 스타트업플러스 온라인 접수, 2026-07-06~2026-07-23"
   },
   {
     "id": "PBLN_000000000124017",
@@ -253,7 +261,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 7000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 창업 및 경영 필수 역량 습득, 사업모델 검증·완성 지원\n대상: 서울시 거주 만 19~39세 외식업 창업희망 청년\n신청: 소상공인 종합지원 포털 온라인 접수, 2026-07-06~2026-08-03"
   },
   {
     "id": "PBLN_000000000123983",
@@ -281,7 +290,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 디자인 자문·CMF 컨설팅, 미팅룸·컨퍼런스룸·촬영스튜디오 무료대관시설 지원\n대상: 서울·인천·강원 소재 중소·중견기업\n신청: 2026-07-03 ~ 2026-12-31 이메일(dkseoul@kidp.or.kr) 접수"
   },
   {
     "id": "PBLN_000000000123915",
@@ -308,7 +318,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 2년 연장 인증서 발급, 인센티브(현금지원 포함) 지속 이용 가능\n대상: 워라밸 포인트제 인증 후 1년 이상 경과 기업\n신청: 서울시여성가족재단 온라인 접수, 상시 접수"
   },
   {
     "id": "PBLN_000000000123844",
@@ -338,7 +349,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 디지털 전환 교육·컨설팅·비용·사후관리 지원\n대상: 만 40세 이상 서울시 소재 기업(개업일 2025년 7월 1일 이전)\n신청: 서울시 소상공인 종합지원 포털 온라인 접수, 예산 소진시까지"
   },
   {
     "id": "PBLN_000000000123842",
@@ -369,7 +381,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 300,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 현장방문 예비진단, 경영진단 및 맞춤형 컨설팅(필수 2회), 솔루션 이행 비용(부가가치세 제외 최대 3백만원)\n대상: 서울시 내 사업장 운영 점포형 소상공인 중 조건 하나에 해당하는 소상공인\n신청: 소상공인 종합지원 포털 온라인 접수, 예산 소진시까지"
   },
   {
     "id": "PBLN_000000000123742",
@@ -396,7 +409,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 투자유치·LIPS 프로그램 추천 상담, 행정·계약·인허가 체크리스트 점검, 세무 전략, 매장 브랜딩 컨설팅\n대상: 예비·초기 소상공인 및 소상공인 스타트업\n신청: 2026-06-26 ~ 2026-07-22 서초창업스테이션 온라인 접수"
   },
   {
     "id": "PBLN_000000000123596",
@@ -425,7 +439,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 783,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 컨설팅 비용 100%, 기업당 최대 783만원, 실무 중심 AI 교육 지원\n대상: AI 활용·도입 수요가 있는 중소기업\n신청: 예산 소진시까지 중소기업 AI 훈련 참여기업 모집"
   },
   {
     "id": "PBLN_000000000123336",
@@ -455,7 +470,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 매장별 1,2000원 지원·보조금 사용 교육·브랜드 홍보 지원\n대상: 서울 소재 다회용기·무포장·리필 등 운영 매장· 사업자등록증 소지자\n신청: 모집 완료시까지 이메일 접수(sup_zero@seouldesign.or.kr)"
   },
   {
     "id": "PBLN_000000000123334",
@@ -480,7 +496,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 법률·세무·노무 간편상담 지원(전화·서면 상담)\n대상: 소상공인이라면 누구나 법률, 세무, 노무 전문가 무료 상담(전화 및 서면 상담)\n신청: 2026-06-16 ~ 2026-11-30 네이버폼 온라인 접수"
   },
   {
     "id": "PBLN_000000000123108",
@@ -508,7 +525,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: AI 맞춤 컨설팅 비용 100% 전액 지원\n대상: 상시 근로자 20인 이상, AI기반 스타트업 20인 미만 중소기업(서울·인천·경기·강동 소재)\n신청: 예산 소진시까지 캐럿글로벌 온라인 접수"
   },
   {
     "id": "PBLN_000000000122875",
@@ -535,7 +553,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: MD 상담회, 전문가 강연, 제품 홍보 지원\n대상: 소상공인기본법 제2조에 따른 소상공인(지원: 플랫폼 입점 및 프로모션 등 1:1 상담)\n신청: 판판대로 온라인 접수, 2026-06-01~2026-09-30"
   },
   {
     "id": "PBLN_000000000122297",
@@ -565,7 +584,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 일·생활균형 제도·조직문화 컨설팅·교육\n대상: 서울시 소재 중소기업(강소기업 등)\n신청: 2026-05-13 ~ 2026-12-31 이메일·구글폼 접수"
   },
   {
     "id": "PBLN_000000000122273",
@@ -593,7 +613,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 1:1 디지털 교육 지원\n대상: 디지털 취약계층 소상공인(신청일 현재 정상 영업 중인 점포)\n신청: 2026-05-20 ~ 2026-11-30 소상공인24 온라인 접수"
   },
   {
     "id": "PBLN_000000000122153",
@@ -620,7 +641,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 60,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 희망분야 1:1 맞춤형 컨설팅, 인센티브 등 지원\n대상: 서울시 내 일반·휴게음식점 배달 가능 업체(포스기·모바일 기반 업무 가능자)\n신청: 구글 폼 온라인 접수, 선착순 접수"
   },
   {
     "id": "PBLN_000000000121480",
@@ -648,7 +670,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: TV홈쇼핑·데이터홈쇼핑 입점상담회 지원\n대상: 「소상공인기본법」 제2조에 따른 소상공인\n신청: 상시 접수, 판판대로 온라인 접수"
   },
   {
     "id": "PBLN_000000000121478",
@@ -677,7 +700,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: AI 마케팅 콘텐츠 제작 교육, 숏폼 제작 실습, 라이브커머스 운영 교육, 1:1 컨설팅\n대상: 디지털전환이 필요한 소상공인\n신청: 2026-04-29 ~ 2026-12-31 판판대로 온라인 접수"
   },
   {
     "id": "PBLN_000000000121182",
@@ -705,7 +729,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 경영진단·멘토링 등 지원\n대상: 위기 소상공인(공단·지역신보·민간은행 선별)\n신청: 희망리턴패키지 온라인 접수, 예산 소진시까지"
   },
   {
     "id": "PBLN_000000000120821",
@@ -734,7 +759,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 맞춤형 1:1 컨설팅, 디지털전환 교육, 라이브커머스 운영 등\n대상: 소상공인\n신청: 2026-04-13 ~ 2026-11-30 판판대로 온라인 접수"
   },
   {
     "id": "PBLN_000000000120639",
@@ -759,7 +785,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 분쟁조정 또는 소송 대리인 선임 지원\n대상: 소상공인기본법 제2조에 따른 불공정거래 피해 소상공인\n신청: 예산 소진시까지 불공정거래 피해상담센터 온라인 접수"
   },
   {
     "id": "PBLN_000000000120174",
@@ -786,7 +813,8 @@
     "max_biz_age": 7,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 대출형, 증권형, 리워드형, 상권 크라우드펀딩 지원\n대상: 「소상공인기본법」 제2조에 따른 소상공인(증권형 업력 7년 이내 법인·주식회사)\n신청: 예산 소진시까지 온라인 또는 이메일 접수 대출형"
   },
   {
     "id": "PBLN_000000000120117",
@@ -813,7 +841,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 50000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 민간투자 연계형 매칭융자·혁신소상공인 투자연계지원(LIPSI) 지원\n대상: 중기부 지정한 운영사로부터 선투자받은 유망 소상공인(업력 1년 이상)\n신청: 예산 소진시까지 온라인 접수, 소상공인 정책자금 누리집 접수"
   },
   {
     "id": "PBLN_000000000120006",
@@ -841,7 +870,8 @@
     "max_biz_age": 7,
     "max_amount_manwon": 100000,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 노무사 현장 방문·점검, 서류 확인, 사업주·노동자 개별 면담\n대상: 서울시 발주 10억원 미만 건설, 상시근로자 수 30인 미만 일반용역 사업장, 창업허브 입주기업(창업 7년 미만), 서울형 강소기업\n신청: 선착순 마감 이메일·구글폼 접수"
   },
   {
     "id": "PBLN_000000000119850",
@@ -867,7 +897,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 720,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 청년 1인당 월 60만원, 연간 720만원 지원\n대상: 서울시 종로구, 중구, 동대문구 소재 5인 이상 우선지원대상 기업\n신청: 고용24 온라인 접수, 상시 접수"
   },
   {
     "id": "PBLN_000000000119802",
@@ -894,7 +925,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 카드한도 소상공인당 최대 1,000만원 지원(최대 5년 이내 4년 연장 가능)\n대상: NCB 595점 ~ 964점, 업력 6개월 이상, 매출액 기준을 충족하는 법인사업자(소상공인)\n신청: 예산 소진시까지 IBK기업은행 온라인 접수"
   },
   {
     "id": "PBLN_000000000119801",
@@ -921,7 +953,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 카드한도 소상공인당 최대 1,000만원 지원\n대상: NCB 595점 ~ 964점, 업력 6개월 이상, 매출액 기준을 충족하는 개인사업자(소상공인)\n신청: 예산 소진시까지 IBK기업은행 카드 발급 후 온라인 신청 두 번 진행(총 2단계)"
   },
   {
     "id": "PBLN_000000000119795",
@@ -951,7 +984,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 정규직 채용 후 6개월 이상 고용유지 시 최대 12개월 지원금 지원\n대상: 서울시 종로구, 중구, 동대문구 소재 기업\n신청: 고용24 온라인 접수, 상시 접수"
   },
   {
     "id": "PBLN_000000000119739",
@@ -978,7 +1012,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 상품개선, 상세페이지 제작, 콘텐츠 제작, 온라인 쇼핑몰 판매 지원 및 유통 플랫폼 MD 상담회 등 지원\n대상: 소상공인기본법 제2조에 따른 소상공인\n신청: 세부사업별 상이, 판판대로 온라인 접수"
   },
   {
     "id": "PBLN_000000000119698",
@@ -1007,7 +1042,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 550,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 인건비·경상비 지원형 인턴 1인당 최대 550만원\n대상: 서울 소재 상시근로자 5인 이상, 중소·중견기업 4대보험 가입 60세 이상 시니어 인력 채용기업\n신청: 예산 소진시까지 서울시50플러스 일자리 몽땅 이메일·온라인 접수"
   },
   {
     "id": "PBLN_000000000119364",
@@ -1035,7 +1071,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 양육친화·일생활 균형 실적에 따른 인센티브 지원\n대상: 중소기업기본법 제2조에 따른 중소기업 중 본사·주사무소·사업장 중 하나가 서울 소재 기업\n신청: 이메일 접수"
   },
   {
     "id": "PBLN_000000000119356",
@@ -1064,7 +1101,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 30,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 육아휴직·출산휴가 기업지원금 및 출산휴가급여 근로자지원금 지원\n대상: 중소기업 본사, 주사무소 또는 사업장 중 하나 이상 서울 소재 중소기업\n신청: 서울시 중소기업 워라밸 포인트제 누리집 및 탄생육아 몽땅정보통 온라인 접수"
   },
   {
     "id": "PBLN_000000000119017",
@@ -1094,7 +1132,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 300,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 사업정리 컨설팅·역량 강화 교육, 비용지원, 유관기관 프로그램 연계 안내·관리\n대상: 폐업 예정 사업자 중 사업자등록증상 사업장 소재지 서울 점포형 소상공인\n신청: 예산 소진시까지 소상공인 종합지원 포털 온라인 접수"
   },
   {
     "id": "PBLN_000000000118398",
@@ -1121,7 +1160,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 안전전문가 현장 방문 위험성평가 무료 컨설팅(기본 1회, 최대 3회)\n대상: 서울 소재 상시근로자 50인 미만 사업장\n신청: 선착순 접수 이메일 또는 구글 폼 온라인 접수"
   },
   {
     "id": "PBLN_000000000118386",
@@ -1146,7 +1186,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 활동비 월 690,890원(월 57시간, 3개월), 단체상해보험 가입, 교육 지원\n대상: 수도권(서울시, 인천시, 경기도) 소재 상시근로자 수 1인 이상, 4대보험 사업장 성립 신고 기업 및 기관\n신청: 예산 소진시까지 서울시50플러스 일자리몽땅 온라인 접수"
   },
   {
     "id": "PBLN_000000000118237",
@@ -1171,7 +1212,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 300,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 신규 채용1인당 최대 300만원 지원(월 최대 100만원, 3개월)\n대상: 서울시 소재 상시근로자 5인 이상, 40~64세 서울시민 신규 채용 기업\n신청: 예산 소진시까지 서울시50플러스 일자리몽땅 온라인 접수"
   },
   {
     "id": "PBLN_000000000118108",
@@ -1196,7 +1238,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 영업장 면적 99m2(30평) 미만 신규 및 기존 자영업자에게 에너지 절약형 LED벽면이용간판 1개 지원\n대상: 은평구 관내에 사업장이 등록된 소규모 자영업자\n신청: 예산 소진시까지 은평구청 공간계획과 방문 접수"
   },
   {
     "id": "PBLN_000000000118099",
@@ -1224,7 +1267,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 취업규칙 검토, 가족친화인증 지표 확인, 건강한 조직문화 만들기 교육, HRD 프로그램 지원\n대상: 서울소재 기업\n신청: 예산 소진시까지 이메일 접수(seoulsaeil@seouilwomanup.or.kr)"
   },
   {
     "id": "PBLN_000000000118098",
@@ -1253,7 +1297,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 5000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 시설자금, 운전자금 업체당 5천만원 이내(융자금리 연 0.8%) 지원\n대상: 서초구에 주사무소(본점)를 둔 중소기업 또는 공장등록 된 제조업체\n신청: 예산 소진시까지 신한은행 서초구청지점 방문 접수"
   },
   {
     "id": "PBLN_000000000118094",
@@ -1281,7 +1326,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 10000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 중소기업 1억원 이내, 소상공인 5천만원 이내 융자 지원\n대상: 관악구 사업자등록 6개월 경과 관내 중소기업자 및 소상공인\n신청: 예산 소진시까지 우리은행 관악구청지점 방문 접수"
   },
   {
     "id": "PBLN_000000000118093",
@@ -1309,7 +1355,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 20000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 대출금리 3% 이내(업체 부담 금리 최소 1.5%) 운전자금 업체당 2억원 이내\n대상: 서초구에 주사무소(본점)를 둔 중소기업 또는 서초구에 공장등록 된 제조업체\n신청: 예산 소진시까지 신한은행·우리은행 접수"
   },
   {
     "id": "PBLN_000000000117908",
@@ -1336,7 +1383,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 400,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 소상공인 1개사당 25만원 한도로 바우처 사용 지원\n대상: '25년 연 매출액 0원 초과 1억 400만원 미만이며, 영업중인 소상공인\n신청: 예산 소진시까지 소상공인 24 또는 소상공인경영안정바우처.kr 온라인 접수"
   },
   {
     "id": "PBLN_000000000117774",
@@ -1363,7 +1411,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 가죽제품 제조장비 무상 임대, 사용법·관리법 교육, 제품 제작·컨설팅 지원\n대상: 서울시 소재 가죽·패션 제품 제조 및 생산 업체\n신청: 2026-01-20 ~ 2026-11-30 이메일·방문 접수"
   },
   {
     "id": "PBLN_000000000117676",
@@ -1391,7 +1440,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 사업 정리 컨설팅, 점포 철거비·법률자문·채무조정 지원\n대상: 폐업(예정) 소상공인\n신청: 희망리턴패키지 홈페이지 온라인 접수, 세부사업별 상이"
   },
   {
     "id": "PBLN_000000000117673",
@@ -1419,7 +1469,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 100,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 취업 교육(기초+심화) 및 심리회복 프로그램, 전직장려수당(최대 100만원), 국민취업지원제도 참여 연계\n대상: 취업 의사가 있는 폐업(예정) 소상공인(만 15세 이상~만 69세 이하)\n신청: 예산 소진시까지 소상공인24 온라인 접수"
   },
   {
     "id": "PBLN_000000000117528",
@@ -1448,7 +1499,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 40000,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 업체당 최대 4억원 융자, 대출금리 연 1.75%, 상환조건 1년 거치 4년 원금균등 분할상환\n대상: 서울 소재 사회적경제기업, 소셜벤처, 예비사회적기업 지정서 발급업체\n신청: 예산 소진시까지 서울신용보증재단 모바일앱, 누리집 온라인 접수, 지원: 40000만원 지원"
   },
   {
     "id": "PBLN_000000000117111",
@@ -1477,7 +1529,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 직접융자금, 시중은행협력자금, 안심통장 등 지원\n대상: 서울 소재 중소기업 및 소상공인\n신청: 서울신용보증재단 모바일앱 온라인 및 방문 접수, 예산 소진시까지"
   },
   {
     "id": "PBLN_000000000117022",
@@ -1502,7 +1555,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "GOV"
+    "source": "GOV",
+    "summary_short": "지원: 자영업자 고용보험료 50~80% 최대 5년(60개월) 환급 지원\n대상: '자영업자 고용보험' 가입 소상공인(사업주)\n신청: 신규 근로복지공단 토탈서비스·기존 소상공인24 접수, 예산 소진시까지"
   },
   {
     "id": "L001",
@@ -1529,7 +1583,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 10000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "카드가맹대금 실적을 기반으로 한 한도성 대출. 필요한 금액만 사용하고 입금 시 잔액을 줄이는 단기 유동성 수단. 최대 1억원; 중도상환수수료 0원; 한도약정수수료 0원; 2026-07-08 공개 예시금리 최저 3.63%~최대 6.05%"
   },
   {
     "id": "L002",
@@ -1556,7 +1611,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 20000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "비대면 개인사업자 신용대출. 일반 운전자금을 중·장기로 조달하고 상환구조를 비교하는 기준 상품. 최대 2억원; 중도상환수수료 면제; 2026-07-09 최저금리 연 3.64%; 1억원 초과 시 심사 1~2영업일 가능"
   },
   {
     "id": "L003",
@@ -1584,7 +1640,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 10000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "지역신용보증재단 보증과 지자체 이차지원을 활용하는 보증서 운전자금 대출. 최대 1억원; 최대 5년; 만기일시 또는 원금균등; 지역·보증서·이차지원에 따라 금리 상이"
   },
   {
     "id": "L004",
@@ -1612,7 +1669,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 3000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "보증신청부터 대출실행까지 모바일로 진행하는 표준형 소액 보증서 대출. 최소 500만원~최대 3천만원; 5년; 1년 거치·4년 원금균등; 중도상환수수료 없음"
   },
   {
     "id": "L005",
@@ -1640,7 +1698,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 5000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "지역·협약 조건이 붙는 비대면 전용 보증서대출. 공개 목록 기준 최대 5천만원; 지역 조건부; 개인별·보증심사별 금리·한도 확정"
   },
   {
     "id": "L006",
@@ -1667,7 +1726,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 7000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "정책자금 확인서·지역재단 보증·KB 실행을 연결하는 저금리·거치형 정책자금. 최대 7천만원; 5년; 2년 거치 후 3년 분할상환; 보증료 0.5%~2.0%; 중도상환수수료 면제"
   },
   {
     "id": "L007",
@@ -1694,7 +1754,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "신청대상 간소화, 대출기간·상환방식 다각화, 거래실적 우대를 표방하는 일반 기업대출. 대표상품 배너 및 ONE KB 사업자통장 우대 연계 확인; 개인별 한도·금리는 심사 후 확정"
   },
   {
     "id": "D001",
@@ -1721,7 +1782,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 30000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "서민금융진흥원 협약보증을 통해 기존 119 이용 영세사업자에게 추가 사업자금을 지원. 연매출 3억원 이하; 1회 100만원~1천만원; 최대 2회 지원 가능; 교육·컨설팅 조건 존재"
   },
   {
     "id": "D002",
@@ -1748,7 +1810,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "기존 KB 기업대출을 장기 원금균등분할상환으로 재대출·대환해 월 상환부담을 낮추는 채무조정 상품. 기존 잔액 이내; 담보대출 최대 10년·신용대출 최대 5년; 거치 최대 3년; 중도상환수수료 면제"
   },
   {
     "id": "D003",
@@ -1775,7 +1838,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "기존 일시상환 기업대출을 1년 일시상환으로 재대출·대환해 만기를 연장하는 채무조정 상품. 기존 대출잔액 이내; 1년; 일시상환; 한도대출·정책자금·일부 보증부대출 등 제외"
   },
   {
     "id": "S001",
@@ -1802,7 +1866,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 50000,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "배송완료 후 미정산 판매대금을 KB가 먼저 지급하고 실제 정산금으로 자동 상환하는 선정산 대출. 개인사업자 최대약정한도 5억원; 건별 정산예정금의 70%~95%; 제휴마켓·PG별 운영조건 상이"
   },
   {
     "id": "S002",
@@ -1829,7 +1894,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "한 번의 신청으로 여러 마켓의 정산금을 통합 선정산하고 정산일에 자동 상환. 최대 2개월 상당 정산금 한도; 사용기간만큼 이자; 중도상환수수료 없음"
   },
   {
     "id": "S003",
@@ -1856,7 +1922,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "최근 월평균 정산금 수준의 한도를 먼저 제공해 자유롭게 사용하고 이후 정산금으로 상환. 12개월 이상 판매; KB 신용등급 BB+ 이상 등; 정산금수령계좌 KB 전용계좌 필요"
   },
   {
     "id": "S005",
@@ -1883,7 +1950,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "온라인 셀러에게 판매·거래 조건에 따른 금리우대를 제공하는 신용대출. 공식 기업뱅킹 대표배너 기준 최대 3% 우대금리 제공; 상세 한도·기간은 별도 심사"
   },
   {
     "id": "SC001",
@@ -1910,7 +1978,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "판매기업의 지급승인서를 기반으로 구매기업의 창업·리모델링 자금을 지원하고 카드매출 등으로 상환. 판매기업 지급승인서 금액 범위 내; 판매기업 신용도 기반 금리; 상환원리금 적립계좌 사용"
   },
   {
     "id": "SC004",
@@ -1937,7 +2006,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "구매기업의 발주서를 기반으로 판매기업이 생산자금을 대출받고 납품대금으로 상환. 구매기업 신용등급을 활용; 발주서 기반 생산자금; 납품 후 결제대금 자동상환"
   },
   {
     "id": "SC006",
@@ -1964,7 +2034,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": true,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "판매기업이 매출채권을 상환청구권 없이 KB에 매각해 만기 전 현금화. 구매기업 발행 채권 기반; 판매기업 결제계좌 필요; 채권 양도 후 구매기업이 만기 결제"
   },
   {
     "id": "A001",
@@ -1991,7 +2062,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1000,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "즉시 인출 가능한 단기 여유자금·비상예비금 전용 기업자유예금. 1인 1계좌; 입금한도 1천만원; 3·6·9·12월 분기 이자결산"
   },
   {
     "id": "A006",
@@ -2018,7 +2090,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "부가가치세 납부·환급 자금을 분리 관리하는 전용계좌. 법인용 입출금 공시·상품목록 기반; 구체 출금제한은 특약 검수 필요"
   },
   {
     "id": "A007",
@@ -2045,7 +2118,8 @@
     "max_biz_age": null,
     "max_amount_manwon": null,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "공사대금·노무비 등 하도급 자금을 용도별로 제한 집행하는 전용통장. 출금·사용처 제한이 있는 목적성 계좌"
   },
   {
     "id": "SV001",
@@ -2072,7 +2146,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 50,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "매출정산 실적 우대가 있는 6개월 단기 자유적립식 사업자 적금. 월 1천원~50만원; 6개월; 출시 기준 기본 연 2.0%, 매출정산 등 우대"
   },
   {
     "id": "SV002",
@@ -2099,7 +2174,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1000,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "만기일·자동이체 주기를 설계하고 KB 가맹점 결제계좌 이용 시 우대를 받는 자유적립식 적금. 6~36개월; 월 최대 1천만원; 2026-07 공개금리 연 1.70~3.25%"
   },
   {
     "id": "SV003",
@@ -2126,7 +2202,8 @@
     "max_biz_age": null,
     "max_amount_manwon": 1000,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "기업 거래실적 우대와 사업장 구입·임차·대출상환 시 특별중도해지 조건을 제공하는 정액적립식 예금. 1~3년; 월 1만원~1천만원; 예금담보대출 잔액의 95%까지; 중도해지 최저 연 0.1%"
   },
   {
     "id": "TD001",
@@ -2153,6 +2230,7 @@
     "max_biz_age": null,
     "max_amount_manwon": 100,
     "is_finance": false,
-    "source": "KB"
+    "source": "KB",
+    "summary_short": "온라인 전용 대표 정기예금으로 자동만기관리와 제한적 분할인출을 지원. 1~36개월; 100만원 이상; 계좌별 3회 이내 분할인출, 잔액 100만원 유지"
   }
 ]

@@ -79,6 +79,7 @@ export default function App() {
 
   const [equipped, setEquipped] = useState([]);
   const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
+  const [recoSignals, setRecoSignals] = useState([]);    // 추천 목록 헤더용 진단 신호 문장
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentSteps, setAgentSteps] = useState([]);      // 실시간으로 쌓이는 도구 호출 진행 상황
   const [agentThinking, setAgentThinking] = useState(''); // 도구 호출 사이 모델의 중간 판단 텍스트
@@ -305,8 +306,11 @@ export default function App() {
         region: '서울', industry: industryName, bizAgeYears, debtRatio, userNeeds: needs,
       });
       fetchRecommendations(profile)
-        .then(setApiProducts)
-        .catch((err) => { console.warn('추천 서비스 폴백:', err.message); setApiProducts(null); });
+        .then(({ products: list, signals }) => { setApiProducts(list); setRecoSignals(signals); })
+        .catch((err) => {
+          console.warn('추천 서비스 폴백:', err.message);
+          setApiProducts(null); setRecoSignals([]);
+        });
     } catch (e) {
       setAnalyzeError(e.message);
     } finally {
@@ -397,7 +401,7 @@ export default function App() {
 
   const reset = () => {
     setDiag(DIAG_INIT); setNeeds([]); setHometax(null); setDetail(null); setRank(null);
-    setEquipped([]); setAnalyzeError(''); setApiProducts(null);
+    setEquipped([]); setAnalyzeError(''); setApiProducts(null); setRecoSignals([]);
     setSimulation(null); setSimulationError(''); setKbLinked(false);
     setTopCombos([]); setComboSimulations({}); setComboAnalysisDone(false); setComboAnalysisError('');
     setTab(1); setDiagSub('input'); setRecSub('list'); setRiskProfile(null); setSimSub('sim'); setOverlay(null);
@@ -535,7 +539,7 @@ export default function App() {
         )}
 
         {!overlay && tab === 3 && recSub === 'list' && (
-          <RecommendScreen products={products} percentile={topPercent} />
+          <RecommendScreen products={products} percentile={topPercent} signals={recoSignals} aiRanked={!!apiProducts} />
         )}
 
         {!overlay && tab === 3 && recSub === 'risk' && (

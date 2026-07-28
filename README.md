@@ -131,7 +131,8 @@ python3 collect_public_benchmarks.py
 ```
 
 업종별 임차료율·인건비율·원가율 실측 평균 + 상권유형별 서울 임대료 보정으로 비용 구조 축을 산출합니다.
-데이터 출처·기간·수집 방식은 [`docs/DATA.md`](docs/DATA.md), 산출식 전체는 [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) 참고.
+데이터 출처·기간·수집 방식은 [`docs/DATA.md`](docs/DATA.md), 산출식 전체는 [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md),
+직접 파인튜닝한 로컬 모델 2종의 역할·원리·성능은 [`docs/MODELS.md`](docs/MODELS.md) 참고.
 
 ## 6. 파일 구조
 

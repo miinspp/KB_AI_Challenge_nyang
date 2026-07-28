@@ -13,7 +13,9 @@ const catOf = (p) => {
 
 const PAGE_SIZE = 8; // 처음 노출 개수, 바닥 도달 시 같은 개수만큼 추가
 
-export default function RecommendScreen({ products, percentile }) {
+// aiRanked: 추천 서비스(임베딩 모델)가 순위를 매긴 결과인지. 규칙기반 폴백이면 false.
+// signals  : 규칙 엔진이 잡은 진단 신호. 조건에 하나도 안 걸리면 비어 있을 수 있다.
+export default function RecommendScreen({ products, percentile, signals = [], aiRanked = false }) {
   const [openId, setOpenId] = useState(null);
   const [cat, setCat] = useState('all');
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -48,6 +50,23 @@ export default function RecommendScreen({ products, percentile }) {
           상위 {percentile}% 사장님께<br />딱 맞는 상품을 골랐어요
         </h2>
         <p style={{ marginTop: 6, fontSize: 13, color: 'var(--muted)' }}>진단 결과를 바탕으로 우선순위 순서예요.</p>
+
+        {/* 배지는 모델이 순위를 매겼는지에만 달려 있다. 그 아래 신호 문장은 규칙이 잡혔을 때만
+            덧붙는다 — 상품별이 아니라 사장님 재무상황 설명이라 목록에 한 번만 노출한다. */}
+        {aiRanked && (
+          <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              flex: 'none', fontSize: 10.5, fontWeight: 900, letterSpacing: -.2, padding: '3px 8px',
+              borderRadius: 8, color: 'var(--green-deep)', background: 'var(--green-bg)',
+              border: '1px solid var(--green-border)',
+            }}>AI 추천 · 규칙 검증</span>
+            {signals.length > 0 && (
+              <p style={{ flex: '1 1 100%', fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
+                {signals.join(' · ')}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -100,7 +119,8 @@ export default function RecommendScreen({ products, percentile }) {
               </div>
               <span style={{ flex: 'none', fontSize: 12, fontWeight: 800, color: 'var(--green-soft)' }}>적합 {p.fit}%</span>
             </div>
-            <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6 }}>{p.reason}</p>
+            {/* 규칙기반 폴백 상품에만 상품별 근거가 있다. 추천 서비스 상품은 헤더 signals 로 대체 */}
+            {p.reason && <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6 }}>{p.reason}</p>}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className="spec">{p.spec1}</span>
               <span className="spec">{p.spec2}</span>
@@ -108,6 +128,20 @@ export default function RecommendScreen({ products, percentile }) {
             </div>
             {open && (
               <div className="pop" style={{ background: 'var(--warm)', borderRadius: 14, padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {/* 파인튜닝 KoBART 3줄 요약 — 형식 검증을 통과한 정책만 값이 온다 */}
+                {p.summaryShort && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingBottom: 9, borderBottom: '1px solid var(--border-strong)' }}>
+                    {p.summaryShort.split('\n').filter(Boolean).map((line) => {
+                      const [head, ...rest] = line.split(':');
+                      return (
+                        <div key={line} style={{ display: 'flex', gap: 10, fontSize: 12 }}>
+                          <span style={{ flex: 'none', width: 64, fontWeight: 800, color: 'var(--green)' }}>{head}</span>
+                          <span style={{ flex: 1, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.55 }}>{rest.join(':').trim()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {p.details.map((d) => (
                   <div key={d.k} style={{ display: 'flex', gap: 10, fontSize: 12 }}>
                     <span style={{ flex: 'none', width: 64, fontWeight: 800, color: 'var(--muted-mid)' }}>{d.k}</span>

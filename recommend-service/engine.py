@@ -2,11 +2,17 @@
 추천 엔진 (기능② 맞춤 정책·금융상품 추천)
   A. 하드필터  : 마감/지역/업력 → 후보 제외
   B. 규칙 점수 : 대출·상권·현금흐름·매출·위험성향 종합 (0~1, 근거 evidence 축적)
-  C. 임베딩    : bge-m3 코사인 유사도 (없으면 TF-IDF 폴백)
+  C. 임베딩    : ko-sroberta-reco(파인튜닝) 코사인 유사도 (없으면 bge-m3 → TF-IDF 순 폴백)
   최종 = W_RULE·규칙 + W_EMB·임베딩
 """
 from __future__ import annotations
+from pathlib import Path
+
 import numpy as np
+
+# 프로필↔정책 매칭에 contrastive 파인튜닝한 로컬 모델 (pipeline/train_matcher.py 산출).
+# 가중치는 git 미추적이라 없을 수 있어 항상 존재 확인 후 사용한다.
+FINETUNED_MODEL = Path(__file__).resolve().parent.parent / "pipeline/models/ko-sroberta-reco"
 
 W_RULE, W_EMB = 0.55, 0.45
 TH_DEBT, TH_CASH_GAP = 0.4, 0.3
@@ -55,30 +61,41 @@ def rule_score(policy: dict, profile: dict):
     return (hits / total if total else 0.0), evidence
 
 
-# ── C. 임베딩 (bge-m3 우선, 실패 시 TF-IDF 폴백) ──────────────
+# ── C. 임베딩 (파인튜닝 ko-sroberta → bge-m3 → TF-IDF 순 폴백) ──
 class Embedder:
+    """세 단계로 폴백한다. 앞의 두 개는 SentenceTransformer 라 인코딩 경로가 같고,
+    TF-IDF 만 코퍼스에 fit 이 필요해 별도 분기를 탄다."""
+
     def __init__(self):
         self.mode = None
         self.model = None
         self.vectorizer = None
-        try:
-            from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer("BAAI/bge-m3")
-            self.mode = "bge-m3"
-        except Exception as e:  # 모델 다운로드 불가/오프라인 → TF-IDF
-            print(f"[embedder] bge-m3 사용 불가 → TF-IDF 폴백 ({e})")
-            from sklearn.feature_extraction.text import TfidfVectorizer
-            self.vectorizer = TfidfVectorizer(max_features=4096)
-            self.mode = "tfidf"
+        for label, source in (("ko-sroberta-reco", FINETUNED_MODEL), ("bge-m3", "BAAI/bge-m3")):
+            if source is FINETUNED_MODEL and not FINETUNED_MODEL.exists():
+                print("[embedder] 파인튜닝 모델 없음 → 다음 후보로")
+                continue
+            try:
+                from sentence_transformers import SentenceTransformer
+                self.model = SentenceTransformer(str(source))
+                self.mode = label
+                print(f"[embedder] {label} 사용")
+                return
+            except Exception as e:
+                print(f"[embedder] {label} 사용 불가 ({e})")
+        # 둘 다 실패(오프라인·미설치) → 어휘 빈도 기반 폴백
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        self.vectorizer = TfidfVectorizer(max_features=4096)
+        self.mode = "tfidf"
+        print("[embedder] TF-IDF 폴백")
 
     def fit_docs(self, texts):
-        if self.mode == "bge-m3":
+        if self.model is not None:
             return self.model.encode(texts, normalize_embeddings=True)
         mat = self.vectorizer.fit_transform(texts).toarray()
         return _l2(mat)
 
     def encode_query(self, text):
-        if self.mode == "bge-m3":
+        if self.model is not None:
             return self.model.encode([text], normalize_embeddings=True)[0]
         vec = self.vectorizer.transform([text]).toarray()[0]
         return _l2(vec[None, :])[0]

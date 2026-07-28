@@ -54,7 +54,7 @@ cd recommend-service
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=...          # (선택) Haiku 근거 문장. 없으면 규칙 근거 사용
+export ANTHROPIC_API_KEY=...          # (선택) /api/agent, /api/portfolio 용. 추천엔 불필요
 uvicorn app:app --port 8000
 ```
 
@@ -108,8 +108,14 @@ npm run dev
 ---
 
 ## 동작 모드 (graceful degradation)
-- **임베딩**: `sentence-transformers` + bge-m3. 미설치/오프라인이면 자동 TF-IDF 폴백(무설치 실행 가능, 품질만 소폭 하락).
-- **근거 문장**: `ANTHROPIC_API_KEY` 있으면 Haiku, 없으면 규칙이 만든 evidence를 그대로 사용.
+- **임베딩**: 로컬 파인튜닝 `ko-sroberta-reco` → 없으면 bge-m3 → 그것도 안 되면 TF-IDF 3단 폴백.
+  현재 어느 단계인지는 `GET /health` 의 `embedding` 필드로 확인한다([docs/MODELS.md](../docs/MODELS.md)).
+- **진단 신호(`signals`)**: 규칙 엔진이 잡은 문장을 중복 제거해 목록 헤더용으로 내보낸다.
+  상품별 근거가 아니라 사장님 재무상황 설명이라 상품마다 반복되기 때문. 조건에 하나도
+  안 걸리면 빈 배열이고, 프론트는 그 줄만 감춘다.
+- **이 엔드포인트는 LLM을 호출하지 않는다.** 랭킹·요약 모두 로컬 모델 담당이라
+  `ANTHROPIC_API_KEY` 없이도 완전히 동작한다. 키는 같은 서비스의 `/api/agent`,
+  `/api/portfolio` 에만 필요하다.
 - **프론트 폴백**: 이 서비스가 꺼져 있으면 프론트가 기존 규칙기반 추천(고정 KB 상품 6개)으로 자동 폴백 → 데모 중 죽어도 화면은 산다.
   - 반대로 말하면, **추천이 매번 똑같은 KB 상품 6개면 이 서비스가 안 켜진 것**이다. 실제 추천은 공고명("2026년…", "[서울]…")으로 뜬다.
 
