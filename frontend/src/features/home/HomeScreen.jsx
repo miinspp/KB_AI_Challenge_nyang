@@ -67,48 +67,49 @@ export default function HomeScreen({
   const openLinked = kbLinked ? onOpenAccount : (hometaxLinked ? onOpenHometax : onGoDiagnose);
 
   return (
-    <div className="home">
-      <p className="home-logo">든든이</p>
-
-      <div className="home-hero">
-        <p className="home-hero-bubble">사장님, 오늘도 든든하게 챙길게요!</p>
-        <svg className="home-hero-wave" viewBox="0 0 400 168" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0,96 C56,74 92,116 150,100 C214,82 250,118 322,96 C356,86 380,92 400,84 L400,168 L0,168 Z" fill="#FFEFC4" />
-          <path d="M0,118 C64,100 108,134 172,116 C230,100 268,128 336,110 C364,102 384,106 400,100 L400,168 L0,168 Z" fill="#FFE39C" />
-        </svg>
-        <img src={bearOwner} className="home-hero-char" alt="" aria-hidden="true" />
-      </div>
-
-      <div style={{ padding: '2px 4px 0' }}>
-        <p style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)', letterSpacing: -.4 }}>우리 가게부터 진단해요</p>
-        <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', marginTop: 5 }}>1분이면 상권 속 내 위치를 알 수 있어요 · 아래 진단 카드를 눌러보세요</p>
-      </div>
-
-      {/* 연동 묶음 — 계좌·매출을 한 상자에 */}
-      <section className="sec-card">
-        <div className="sec-card-head">
-          <p className="sec-card-title">연동한 계좌 · 매출</p>
+    <div className="home home--hero">
+      {/* 히어로 — 로고·말풍선은 왼쪽, 곰돌이는 오른쪽에 크게 */}
+      <header className="hero">
+        <div className="hero-copy">
+          <p className="home-logo">든든이</p>
+          <p className="hero-bubble">사장님, 1분이면 끝나요</p>
         </div>
+        <img src={bearOwner} className="hero-char bear-sway" alt="" aria-hidden="true" />
+      </header>
 
-        <LinkRow
-          linked={kbLinked} badge="KB" badgeBg="var(--kb)" badgeColor="var(--ink)"
-          title="KB 계좌 연결하기" desc="조회 전용 · 출금 불가"
-          headline={fmtWon(KB_ACCOUNT.balance)} sub={KB_ACCOUNT.name} cta="내역"
-          onLink={onLinkKb} onOpen={onOpenAccount}
-        />
+      <div className="home-body">
+        {/* 진단 유도 — 다크 카드 */}
+        <section className="cta-card">
+          <p className="cta-card-eyebrow">{rank ? '진단 완료' : '진단 전'}</p>
+          <p className="cta-card-title">
+            {rank
+              ? <>지금 <b>상위 {rank.topPercent}%</b><br />리포트를 다시 볼까요</>
+              : <>업종 · 월매출 · 월지출<br />3개만 알려주세요</>}
+          </p>
+          <button className="cta-card-btn" onClick={rank ? onGoReport : onGoDiagnose}>
+            {rank ? '진단 리포트 보기' : '진단 시작'}
+          </button>
+        </section>
 
-        <LinkRow
-          linked={hometaxLinked} badge="홈택스" badgeBg="var(--hometax)"
-          title="국세청 홈택스 연동하기" desc="매출·지출·12개월 추이 한 번에"
-          headline={fmtWon(HOMETAX_FINANCIALS.monthlySalesAvg)}
-          sub={`${HOMETAX_FINANCIALS.basisPeriod} 월평균 매출 · 홈택스`} cta="상세"
-          onLink={onLinkHometax} onOpen={onOpenHometax}
-        />
-
-        <button className="sec-more" onClick={openLinked}>
-          내 계좌 · 매출 · 지출 보기 <span aria-hidden="true">›</span>
-        </button>
-      </section>
+        {/* 연동 — 계좌·매출 */}
+        <section className="sec-card">
+          <LinkRow
+            linked={kbLinked} badge="KB" badgeBg="var(--kb)" badgeColor="var(--ink)"
+            title="KB 계좌 연결" desc="보유현금 · 기존 대출 자동 입력"
+            headline={fmtWon(KB_ACCOUNT.balance)} sub={KB_ACCOUNT.name} cta="내역"
+            onLink={onLinkKb} onOpen={onOpenAccount}
+          />
+          <LinkRow
+            linked={hometaxLinked} badge="홈택스" badgeBg="var(--hometax)"
+            title="홈택스 연결" desc="매출 · 지출 · 12개월 추이"
+            headline={fmtWon(HOMETAX_FINANCIALS.monthlySalesAvg)}
+            sub={`${HOMETAX_FINANCIALS.basisPeriod} 월평균 매출 · 홈택스`} cta="상세"
+            onLink={onLinkHometax} onOpen={onOpenHometax}
+          />
+          <button className="sec-more" onClick={openLinked}>
+            내 계좌 · 매출 · 지출 보기 <span aria-hidden="true">›</span>
+          </button>
+        </section>
 
       {/* 가입 상품 묶음 — 마이데이터로 불러온 것(mock) */}
       <section className="sec-card">
@@ -138,25 +139,19 @@ export default function HomeScreen({
         </button>
       </section>
 
-      {/* 내 가게 진단 요약 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <p className="label-sm">내 가게 진단</p>
-        {rank ? (
-          <button className="rank-card" onClick={onGoReport}>
-            <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>{rank.industryName} 업종에서</p>
-            <p style={{ marginTop: 6, fontSize: 38, fontWeight: 900, color: 'var(--blue)', letterSpacing: -1.4, lineHeight: 1.1 }}>
-              상위 {rank.topPercent}%
-            </p>
-            <p style={{ marginTop: 8, fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>종합 {rank.compositeScore}점 / 100</p>
-            <p style={{ marginTop: 14, fontSize: 12, fontWeight: 800, color: 'var(--gold-link)' }}>진단 리포트 자세히 보기 ›</p>
-          </button>
-        ) : (
-          <button className="rank-card" onClick={onGoDiagnose}>
-            <p style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>아직 진단 전이에요</p>
-            <p style={{ marginTop: 5, fontSize: 12.5, color: 'var(--muted-mid)', lineHeight: 1.6 }}>
-              업종·월매출·월지출 3가지만 알려주시면<br />서울시 실측 분포에서 내 위치를 알려드려요
-            </p>
-          </button>
+        {/* 내 가게 진단 요약 — 진단을 마쳤을 때만 */}
+        {rank && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p className="label-sm">내 가게 진단</p>
+            <button className="rank-card" onClick={onGoReport}>
+              <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>{rank.industryName} 업종에서</p>
+              <p style={{ marginTop: 6, fontSize: 38, fontWeight: 900, color: 'var(--blue)', letterSpacing: -1.4, lineHeight: 1.1 }}>
+                상위 {rank.topPercent}%
+              </p>
+              <p style={{ marginTop: 8, fontSize: 13.5, fontWeight: 700, color: 'var(--muted)' }}>종합 {rank.compositeScore}점 / 100</p>
+              <p style={{ marginTop: 14, fontSize: 12, fontWeight: 800, color: 'var(--gold-link)' }}>진단 리포트 자세히 보기 ›</p>
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -107,6 +107,26 @@ export function IconSparkle(props) {
   );
 }
 
+// 탭바 — 홈(집)
+export function IconHome(props) {
+  return (
+    <Svg {...props}>
+      <path d="M4 10.5L12 4l8 6.5" />
+      <path d="M6 9.8V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.8" />
+    </Svg>
+  );
+}
+
+// 탭바 — 내 정보(사람)
+export function IconPerson(props) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20c0-3.6 3.1-5.8 7-5.8s7 2.2 7 5.8" />
+    </Svg>
+  );
+}
+
 // 다음 화면 안내 — 화살표
 export function IconArrowRight(props) {
   return (

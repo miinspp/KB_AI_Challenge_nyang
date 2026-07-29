@@ -100,6 +100,14 @@ button { font-family: inherit; }
   35% { opacity: 1; }
   100% { opacity: 0; transform: translateY(-10px) scale(1.12) rotate(12deg); }
 }
+/* 곰돌이 공통 흔들림 — 표지·진단 로딩·홈 히어로가 함께 쓴다 */
+@keyframes bearSway {
+  0%, 100% { transform: translateY(0) rotate(-1.6deg); }
+  50% { transform: translateY(-4px) rotate(1.6deg); }
+}
+.bear-sway { transform-origin: 50% 92%; animation: bearSway 3.2s ease-in-out infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .bear-sway { animation: none; } }
+
 @keyframes scrIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes popIn { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -306,9 +314,12 @@ button { font-family: inherit; }
 
 /* ── 하단 5탭 내비게이션 ── */
 .tabbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 480px; height: 78px; padding: 8px 8px 14px; background: #FFFFFF; border-top: 1.5px solid var(--border); display: grid; grid-template-columns: repeat(5,1fr); z-index: 25; }
-.tabbar-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: none; background: none; cursor: pointer; padding: 0; }
-.tabbar-badge { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 900; transition: background .18s ease; }
-.tabbar-label { font-size: 10.5px; font-weight: 800; letter-spacing: -.2px; }
+.tabbar-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: none; background: none; cursor: pointer; padding: 0; color: #C3B79B; }
+.tabbar-item.on { color: var(--ink); }
+/* 활성 탭만 아이콘 뒤에 크림 알약 배경 */
+.tabbar-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 28px; border-radius: 14px; transition: background .18s ease; }
+.tabbar-item.on .tabbar-icon { background: #FDF3D8; }
+.tabbar-label { font-size: 10.5px; font-weight: 800; letter-spacing: -.2px; color: currentColor; }
 
 /* ── 탭 안 단계 전환 세그먼트 ── */
 .steptabs { display: grid; gap: 5px; margin: 4px 22px 0; background: var(--chip); padding: 4px; border-radius: 13px; }
@@ -354,11 +365,49 @@ button { font-family: inherit; }
 .splash-title { font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -1px; line-height: 1.1; }
 .splash-sub { margin-top: 10px; font-size: 13.5px; font-weight: 700; color: #A79778; letter-spacing: -.2px; }
 /* 곰돌이는 바닥에 붙이고 아래쪽을 배경으로 흐리게 지운다(컷아웃 경계 감추기) */
+.splash-char-wrap { position: relative; margin-top: auto; width: 56%; max-width: 240px; }
 .splash-char {
-  margin-top: auto; width: 56%; max-width: 240px; height: auto; object-fit: contain;
+  display: block; width: 100%; height: auto; object-fit: contain;
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
   mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
 }
+/* '시작'은 곰돌이가 든 하트 위에 — 좌표는 원본 PNG 에서 잰 하트 중심(49.5%, 62.2%) */
+.splash-start {
+  position: absolute; left: 49.5%; top: 62.2%; transform: translate(-50%, -50%);
+  font-size: 17px; font-weight: 900; color: #6B4A12; letter-spacing: -.3px;
+  pointer-events: none; white-space: nowrap;
+}
+
+/* ── 진단 로딩 — 결과가 나올 때까지 덮는 전체화면 ── */
+.diagnosing { position: fixed; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 100%; max-width: 480px; z-index: 40; background: #FCF3DC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px 26px; }
+.diagnosing-char { width: 168px; height: auto; object-fit: contain; margin-bottom: 6px; }
+.diagnosing-title { font-size: 20px; font-weight: 900; color: var(--ink); letter-spacing: -.5px; }
+.diagnosing-sub { margin-top: 8px; font-size: 13px; font-weight: 700; color: #A79778; }
+.diagnosing-track { width: 100%; height: 9px; border-radius: 5px; background: #F0E6CC; overflow: hidden; }
+.diagnosing-fill { height: 100%; border-radius: 5px; background: var(--gold); transition: width .45s cubic-bezier(.3,.9,.4,1); }
+.diagnosing-card { width: 100%; background: #fff; border-radius: 18px; padding: 4px 16px; box-shadow: 0 10px 26px -18px rgba(60,45,10,.3); }
+.diagnosing-row { display: flex; align-items: center; gap: 11px; padding: 14px 0; border-top: 1px solid #F4EEE0; }
+.diagnosing-row:first-child { border-top: none; }
+.diagnosing-check { flex: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; background: #EFE7D6; color: #FFFFFF; transition: background .3s ease; }
+.diagnosing-check.on { background: #4A3B24; }
+.diagnosing-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 800; transition: color .3s ease; }
+.diagnosing-value { flex: none; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.diagnosing-foot { margin-top: 4px; font-size: 12px; font-weight: 600; color: #BCAE92; text-align: center; }
+
+/* ── 홈 히어로(크림 배경 + 곰돌이) + 다크 진단 카드 ── */
+.home--hero { padding: 0 0 110px; gap: 0; }
+.hero { position: relative; display: flex; align-items: flex-start; gap: 8px; background: #FCF3DC; padding: 22px 0 0 22px; min-height: 208px; overflow: hidden; }
+.hero-copy { flex: 1; min-width: 0; padding-top: 4px; }
+.hero-bubble { display: inline-block; margin-top: 16px; padding: 10px 15px; border-radius: 15px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 800; box-shadow: 0 3px 10px rgba(79,61,25,.08); }
+.hero-char { flex: none; width: 152px; height: auto; align-self: flex-end; margin: 0 4px -2px 0; object-fit: contain; }
+.home-body { display: flex; flex-direction: column; gap: 14px; padding: 16px 22px 0; }
+
+.cta-card { background: #2B2520; border-radius: 22px; padding: 22px; }
+.cta-card-eyebrow { font-size: 12px; font-weight: 800; color: #C0A97C; }
+.cta-card-title { margin-top: 8px; font-size: 21px; font-weight: 900; color: #fff; line-height: 1.4; letter-spacing: -.5px; }
+.cta-card-title b { color: var(--gold); }
+.cta-card-btn { width: 100%; height: 54px; margin-top: 20px; border: none; border-radius: 15px; background: var(--gold); color: #2B2520; font-size: 16px; font-weight: 900; letter-spacing: -.3px; cursor: pointer; transition: transform .15s ease; }
+.cta-card-btn:active { transform: scale(.985); }
 
 .home-logo { font-weight: 800; font-size: 21px; color: var(--ink); letter-spacing: -.5px; line-height: 1; }
 

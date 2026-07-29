@@ -11,6 +11,7 @@ import AccountScreen from './features/account/AccountScreen';
 import HometaxScreen from './features/account/HometaxScreen';
 import { KB_LINK, HOMETAX_FINANCIALS } from './features/account/accountMock';
 import InfoScreen from './features/diagnosis/InfoScreen';
+import DiagnosingScreen from './features/diagnosis/DiagnosingScreen';
 import ReportScreen from './features/diagnosis/ReportScreen';
 import CostReportScreen from './features/txn/CostReportScreen';
 import RecommendScreen from './features/recommend/RecommendScreen';
@@ -27,6 +28,9 @@ import {
 } from './features/simulator/sim';
 import { requestPortfolioAdvice } from './api/portfolio';
 import { IconSparkle } from './shared/Icons';
+
+// 진단 로딩 화면 최소 노출 시간 — DiagnosingScreen 의 4단계(620ms×4)가 다 체크될 만큼
+const DIAGNOSING_MIN_MS = 2600;
 
 // AI 에이전트 trace 표시용 도구 한글 라벨
 const TOOL_KO = {
@@ -259,6 +263,7 @@ export default function App() {
   const analyze = async () => {
     setAnalyzeError('');
     setAnalyzing(true);
+    const startedAt = Date.now();
     try {
       // 선택 입력(임대료·인건비·재료비)이 하나라도 있으면 비용 세부를 전달 — rent 가 있으면 비용구조 축 활성화
       const hasCost = diag.rentMan || diag.laborMan || diag.purchaseMan;
@@ -290,6 +295,11 @@ export default function App() {
         }),
         detail?.code === diag.industryCode ? Promise.resolve(detail) : getIndustry(diag.industryCode),
       ]);
+      // /api/rank 는 로컬 계산이라 수백 ms 만에 끝난다. 진단 로딩 화면이 한 프레임만
+      // 번쩍이고 사라지지 않도록, 네 단계가 다 체크될 만큼은 붙잡아 둔다.
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < DIAGNOSING_MIN_MS) await new Promise((res) => setTimeout(res, DIAGNOSING_MIN_MS - elapsed));
+
       setRank(r);
       setDetail(d);
       setDiagSub('report');
@@ -472,6 +482,25 @@ export default function App() {
     return (
       <div className="app">
         <SplashScreen onStart={() => setStarted(true)} />
+      </div>
+    );
+  }
+
+  // 진단 중에는 전체화면으로 덮는다 — 헤더·CTA·탭바까지 가려서 중간에 이탈하지 못하게.
+  if (analyzing) {
+    const axisCount = 3
+      + (diag.rentMan || diag.laborMan || diag.purchaseMan ? 1 : 0)   // 비용구조
+      + ((hometax?.salesHistory?.length ?? 0) >= 3 ? 1 : 0);          // 매출안정성
+    return (
+      <div className="app">
+        <DiagnosingScreen
+          industryName={industries.find((it) => it.code === diag.industryCode)?.name}
+          nStores={detail?.code === diag.industryCode ? detail?.nStores : undefined}
+          nAreas={detail?.code === diag.industryCode ? detail?.nAreas : undefined}
+          marginBenchmark={detail?.code === diag.industryCode ? detail?.marginBenchmark : undefined}
+          salesMan={diag.salesMan}
+          axisCount={axisCount}
+        />
       </div>
     );
   }
