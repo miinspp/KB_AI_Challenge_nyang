@@ -12,7 +12,7 @@ const ROLE_LABELS = {
 function eligibility(product) {
   if (product.eligibilityStatus === 'PASS') return { label: '신청 조건에 맞아요', color: '#5E8A3E', background: '#EDF5E1' };
   if (product.eligibilityStatus === 'FAIL') return { label: '현재 조건과 맞지 않아요', color: '#D0564C', background: '#FDE8E6' };
-  return { label: '신청 전 조건 확인', color: '#8B95A1', background: '#EEF0F3' };
+  return { label: '신청 전 조건 확인', color: '#8F8779', background: '#F2ECE1' };
 }
 
 function preparation(product) {
@@ -37,13 +37,13 @@ export default function PortfolioScreen({ equipped = [], simRows = [], percentil
     <div className="scr" style={{ padding: '14px 22px 112px', gap: 14 }}>
       {urgent.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#191B1F' }}>마감 임박 지원제도</p>
+          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#1E1A14' }}>마감 임박 지원제도</p>
           {urgent.map((product) => (
-            <a key={product.id} className="press-fx-row" href={product.link || undefined} target={product.link ? '_blank' : undefined} rel={product.link ? 'noreferrer' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px', border: '1.5px solid #EAECEF', borderRadius: 17, background: '#fff', textDecoration: 'none' }}>
+            <a key={product.id} className="press-fx-row" href={product.link || undefined} target={product.link ? '_blank' : undefined} rel={product.link ? 'noreferrer' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px', border: '1.5px solid #EFE8DB', borderRadius: 17, background: '#fff', textDecoration: 'none' }}>
               <span className="icon-badge" style={{ flex: 'none', width: 34, height: 34, borderRadius: 11, background: product.iconBg, color: product.iconColor, fontSize: 15 }}>{product.icon}</span>
               <span style={{ minWidth: 0, flex: 1 }}>
-                <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: '#191B1F', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{product.name}</span>
-                <span style={{ display: 'block', marginTop: 2, fontSize: 10.5, fontWeight: 800, color: '#8B95A1' }}>{product.tag}</span>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: '#1E1A14', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{product.name}</span>
+                <span style={{ display: 'block', marginTop: 2, fontSize: 10.5, fontWeight: 800, color: '#8F8779' }}>{product.tag}</span>
               </span>
               <span style={{
                 flex: 'none', fontSize: 10.5, fontWeight: 900, padding: '4px 8px', borderRadius: 8,
@@ -58,7 +58,7 @@ export default function PortfolioScreen({ equipped = [], simRows = [], percentil
 
       {equipped.length > 0 ? (
         <>
-          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#191B1F' }}>선택한 상품 {selectedProducts.length}개</p>
+          <p style={{ padding: '3px 1px 0', fontSize: 13, fontWeight: 900, color: '#1E1A14' }}>선택한 상품 {selectedProducts.length}개</p>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {selectedProducts.map((product) => {
@@ -66,19 +66,19 @@ export default function PortfolioScreen({ equipped = [], simRows = [], percentil
               const role = ROLE_LABELS[product.type] || product.category || '맞춤 상품';
               const docs = preparation(product);
               return (
-                <a key={product.key || product.id} className="press-fx-row" href={product.link || undefined} target={product.link ? '_blank' : undefined} rel={product.link ? 'noreferrer' : undefined} style={{ display: 'block', padding: '12px', border: '1.5px solid #EAECEF', borderRadius: 17, background: '#fff', textDecoration: 'none' }}>
+                <a key={product.key || product.id} className="press-fx-row" href={product.link || undefined} target={product.link ? '_blank' : undefined} rel={product.link ? 'noreferrer' : undefined} style={{ display: 'block', padding: '12px', border: '1.5px solid #EFE8DB', borderRadius: 17, background: '#fff', textDecoration: 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <span className="icon-badge" style={{ flex: 'none', width: 34, height: 34, borderRadius: 11, background: product.iconBg, color: product.iconColor, fontSize: 15 }}>{product.icon}</span>
                     <span style={{ minWidth: 0, flex: 1 }}>
-                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: '#191B1F', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{product.name || product.short}</span>
-                      <span style={{ display: 'block', marginTop: 2, fontSize: 10.5, fontWeight: 800, color: '#8B95A1' }}>{product.reason || role}</span>
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: '#1E1A14', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{product.name || product.short}</span>
+                      <span style={{ display: 'block', marginTop: 2, fontSize: 10.5, fontWeight: 800, color: '#8F8779' }}>{product.reason || role}</span>
                     </span>
                     <span style={{ flex: 'none', color: '#C98A00', fontSize: 11, fontWeight: 900 }}>{product.link ? '신청하기 ↗' : '확인하기 ›'}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginTop: 10 }}>
                     <span style={{ padding: '6px 7px', borderRadius: 9, background: status.background, color: status.color, fontSize: 9.5, fontWeight: 900 }}>{status.label}</span>
                     <span style={{ padding: '6px 7px', borderRadius: 9, background: '#FFF6DD', color: '#8A7A55', fontSize: 9.5, fontWeight: 900 }}>{role}</span>
-                    <span style={{ gridColumn: '1 / -1', padding: '6px 7px', borderRadius: 9, background: '#F1F3F5', color: '#8B95A1', fontSize: 9.5, fontWeight: 800 }}>신청 전 준비: {docs}</span>
+                    <span style={{ gridColumn: '1 / -1', padding: '6px 7px', borderRadius: 9, background: '#F3EEE4', color: '#8F8779', fontSize: 9.5, fontWeight: 800 }}>신청 전 준비: {docs}</span>
                   </div>
                 </a>
               );
@@ -87,9 +87,9 @@ export default function PortfolioScreen({ equipped = [], simRows = [], percentil
         </>
       ) : (
         urgent.length === 0 && (
-          <section style={{ padding: 26, border: '1.5px dashed #D3D7DC', borderRadius: 20, background: '#fff', textAlign: 'center' }}>
-            <p style={{ fontSize: 14, fontWeight: 900, color: '#525A64' }}>아직 선택한 상품이 없어요</p>
-            <p style={{ marginTop: 5, fontSize: 11.5, fontWeight: 700, color: '#9FA6B0' }}>시뮬레이터에서 상품을 골라보세요.</p>
+          <section style={{ padding: 26, border: '1.5px dashed #DAD1BF', borderRadius: 20, background: '#fff', textAlign: 'center' }}>
+            <p style={{ fontSize: 14, fontWeight: 900, color: '#5C5449' }}>아직 선택한 상품이 없어요</p>
+            <p style={{ marginTop: 5, fontSize: 11.5, fontWeight: 700, color: '#A39B8C' }}>시뮬레이터에서 상품을 골라보세요.</p>
           </section>
         )
       )}

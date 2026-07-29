@@ -87,10 +87,10 @@ function CategoryBar({ cat, max }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
       <span style={{ flex: 'none', width: 88, fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{cat.label}</span>
-      <div style={{ flex: 1, height: 16, background: '#EDEFF2', borderRadius: 6, overflow: 'hidden' }}>
+      <div style={{ flex: 1, height: 16, background: '#F1EBE0', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: meta.color, borderRadius: 6 }} />
       </div>
-      <span style={{ flex: 'none', width: 76, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#191B1F' }}>
+      <span style={{ flex: 'none', width: 76, textAlign: 'right', fontSize: 11.5, fontWeight: 800, color: '#1E1A14' }}>
         {fmtMan(cat.amount)}
       </span>
     </div>
@@ -166,7 +166,7 @@ export default function CostReportScreen({ report }) {
               style={{
                 flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
                 fontSize: 12.5, fontWeight: 800, letterSpacing: -.2,
-                background: active ? 'var(--gold)' : '#EDEFF2', color: active ? 'var(--ink)' : 'var(--muted-mid)',
+                background: active ? 'var(--gold)' : '#F1EBE0', color: active ? 'var(--ink)' : 'var(--muted-mid)',
               }}>
               {mm.month.slice(5)}월
             </button>
@@ -196,7 +196,7 @@ export default function CostReportScreen({ report }) {
               <button onClick={() => setOpenGroup(open ? null : g.group)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '14px 2px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                 <span className="tag" style={{ marginTop: 0, flex: 'none', color: g.meta.color, background: g.meta.bg, padding: '3px 9px' }}>{g.group}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#9FA6B0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: '#A39B8C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.preview}</span>
                 <span style={{ flex: 'none', fontSize: 13.5, fontWeight: 900, color: g.meta.color }}>{fmtMan(g.subtotal)}</span>
                 <span style={{ flex: 'none', fontSize: 12, color: 'var(--muted-faint)' }}>{open ? '▲' : '▼'}</span>
               </button>

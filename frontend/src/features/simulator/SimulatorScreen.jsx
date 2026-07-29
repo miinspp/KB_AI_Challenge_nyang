@@ -82,7 +82,7 @@ export default function SimulatorScreen({
             <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>내가 원하는 상품으로 직접 조합하기</span>
             <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted-faint)' }}>{options.length}개 중 하나씩 골라볼 수 있어요</span>
           </span>
-          <span aria-hidden="true" style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: '#B0B8C1', transform: customOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}>▾</span>
+          <span aria-hidden="true" style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: '#B6AE9F', transform: customOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}>▾</span>
         </button>
 
         {customOpen && (
@@ -113,16 +113,16 @@ export default function SimulatorScreen({
                 const terms = productTerms(item);
                 return (
                   <button key={item.key} className="press-fx-row" onClick={() => toggleCustom(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
-                    border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #EAECEF',
+                    border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #EFE8DB',
                     background: selected ? '#FFF6DD' : conflicts ? '#FBF3F1' : '#fff', borderRadius: 14, padding: '11px 12px', cursor: 'pointer',
                     display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', minHeight: 60,
                   }}>
                     <span className="icon-badge" style={{ flex: 'none', width: 30, height: 30, borderRadius: 10, fontSize: 14, background: item.iconBg, color: item.iconColor, marginTop: 1 }}>{item.icon}</span>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#191B1F', lineHeight: 1.42, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
-                      {item.reason && <span style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 10.5, lineHeight: 1.35, fontWeight: 700, color: '#8B95A1' }}>{item.reason}</span>}
+                      <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#1E1A14', lineHeight: 1.42, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
+                      {item.reason && <span style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 10.5, lineHeight: 1.35, fontWeight: 700, color: '#8F8779' }}>{item.reason}</span>}
                       <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5 }}>
-                        <span style={{ padding: '3px 6px', borderRadius: 7, background: '#F1F3F5', color: '#8B95A1', fontSize: 9.5, fontWeight: 800 }}>{terms}</span>
+                        <span style={{ padding: '3px 6px', borderRadius: 7, background: '#F3EEE4', color: '#8F8779', fontSize: 9.5, fontWeight: 800 }}>{terms}</span>
                         <span style={{ padding: '3px 6px', borderRadius: 7, background: eligibility.background, color: eligibility.color, fontSize: 9.5, fontWeight: 800 }}>{eligibility.label}</span>
                       </span>
                       {(conflicts || item.duplicateNotice) && (
@@ -131,7 +131,7 @@ export default function SimulatorScreen({
                         </span>
                       )}
                     </span>
-                    <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: selected ? '#C98A00' : '#C7CDD3' }}>{selected ? '✓' : '+'}</span>
+                    <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: selected ? '#C98A00' : '#CBC3B3' }}>{selected ? '✓' : '+'}</span>
                   </button>
                 );
               })}
@@ -162,7 +162,7 @@ function RankIcon({ rank, size = 20 }) {
   if (medal) return <span aria-hidden="true" style={{ fontSize: size, lineHeight: 1 }}>{medal}</span>;
   return (
     <span style={{
-      width: size, height: size, borderRadius: '50%', background: '#EEF0F3', display: 'grid', placeItems: 'center',
+      width: size, height: size, borderRadius: '50%', background: '#F2ECE1', display: 'grid', placeItems: 'center',
       fontSize: size * 0.55, fontWeight: 900, color: 'var(--ink)',
     }}>{rank}</span>
   );
@@ -173,7 +173,7 @@ function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading
   return (
     <section style={{ margin: '14px 22px 0' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 9 }}>
-        <p style={{ fontSize: 13.5, fontWeight: 900, color: '#191B1F' }}>AI 추천 조합 Top3</p>
+        <p style={{ fontSize: 13.5, fontWeight: 900, color: '#1E1A14' }}>AI 추천 조합 Top3</p>
         <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--gold-link)', background: '#FFF6DD', padding: '2px 8px', borderRadius: 8 }}>
           {riskProfile.profileLabel || '내'} 성향 기준
         </span>
@@ -188,8 +188,8 @@ function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading
 
       {showEmpty && (
         <div style={{ padding: '18px 16px', border: '1.5px dashed var(--border-deep)', borderRadius: 16, textAlign: 'center', background: '#fff' }}>
-          <p style={{ fontSize: 12.5, fontWeight: 800, color: '#525A64' }}>지금 조건으로는 만들 수 있는 조합이 없어요</p>
-          <p style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: '#9FA6B0' }}>아래에서 직접 골라볼 수 있어요.</p>
+          <p style={{ fontSize: 12.5, fontWeight: 800, color: '#5C5449' }}>지금 조건으로는 만들 수 있는 조합이 없어요</p>
+          <p style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: '#A39B8C' }}>아래에서 직접 골라볼 수 있어요.</p>
         </div>
       )}
 
@@ -330,7 +330,7 @@ function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
         </div>
       </div>
 
-      <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#C7CDD3' }}>›</span>
+      <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#CBC3B3' }}>›</span>
     </button>
   );
 }
@@ -501,12 +501,12 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
     <Wrapper style={wrapperStyle}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 15, fontWeight: 900, color: '#191B1F' }}>시뮬레이션 요약</p>
+          <p style={{ fontSize: 15, fontWeight: 900, color: '#1E1A14' }}>시뮬레이션 요약</p>
         </div>
         <span style={{
           flex: 'none', fontSize: 10.5, fontWeight: 900, padding: '5px 8px', borderRadius: 10,
-          color: riskTone === 'base' ? '#8B95A1' : riskTone === 'good' ? '#5E8A3E' : '#D0564C',
-          background: riskTone === 'base' ? '#EEF0F3' : riskTone === 'good' ? '#EDF5E1' : '#FDE8E6',
+          color: riskTone === 'base' ? '#8F8779' : riskTone === 'good' ? '#5E8A3E' : '#D0564C',
+          background: riskTone === 'base' ? '#F2ECE1' : riskTone === 'good' ? '#EDF5E1' : '#FDE8E6',
         }}>{riskTone === 'base' ? '기준 시나리오' : riskTone === 'good' ? '부담 완화' : '대출 부담 주의'}</span>
       </div>
 
@@ -523,7 +523,7 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
         </div>
       )}
 
-      {loading && <p style={{ fontSize: 12, fontWeight: 800, color: '#8B95A1' }}>월별 시나리오를 계산하고 있어요.</p>}
+      {loading && <p style={{ fontSize: 12, fontWeight: 800, color: '#8F8779' }}>월별 시나리오를 계산하고 있어요.</p>}
       {error && <p style={{ fontSize: 12, fontWeight: 800, color: '#D0564C' }}>계산 확인 필요: {friendlyError(error)}</p>}
 
       {!loading && !error && !hasSimulationData && <SimulationAwaiting />}
@@ -532,21 +532,21 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {simRows.slice(0, 4).map((metric) => (
-              <div key={metric.name} style={{ background: '#F7F8FA', border: '1px solid #EAECEF', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
-                <p style={{ fontSize: 10.5, fontWeight: 800, color: '#9FA6B0' }}>{metric.name}</p>
-                <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#191B1F', whiteSpace: 'nowrap' }}>{metric.after}</p>
-                <p style={{ marginTop: 3, fontSize: 10.5, fontWeight: 800, color: metric.deltaColor }}>{metric.delta} <span style={{ color: '#B0B8C1', fontWeight: 600 }}>기준 {metric.before}</span></p>
+              <div key={metric.name} style={{ background: '#F8F4EB', border: '1px solid #EFE8DB', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
+                <p style={{ fontSize: 10.5, fontWeight: 800, color: '#A39B8C' }}>{metric.name}</p>
+                <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#1E1A14', whiteSpace: 'nowrap' }}>{metric.after}</p>
+                <p style={{ marginTop: 3, fontSize: 10.5, fontWeight: 800, color: metric.deltaColor }}>{metric.delta} <span style={{ color: '#B6AE9F', fontWeight: 600 }}>기준 {metric.before}</span></p>
               </div>
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: '#F1F3F5', padding: 4, borderRadius: 13 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: '#F3EEE4', padding: 4, borderRadius: 13 }}>
             {SIM_VIEWS.map((item) => {
               const selected = view === item.key;
               return (
                 <button key={item.key} type="button" className="press-fx" onClick={() => { setView(item.key); setActiveMonth(null); }} style={{
                   height: 32, border: 'none', borderRadius: 10, cursor: 'pointer', background: selected ? '#fff' : 'transparent',
-                  color: selected ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
+                  color: selected ? '#1E1A14' : '#8F8779', fontSize: 10.5, fontWeight: 900,
                   boxShadow: selected ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
                 }}>{item.label}</button>
               );
@@ -555,7 +555,7 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
 
           <div>
             {view === 'sales' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 10, padding: 4, background: '#F1F3F5', borderRadius: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 10, padding: 4, background: '#F3EEE4', borderRadius: 12 }}>
                 {[
                   ['conservative', '낮은 전망'],
                   ['average', '기준 전망'],
@@ -564,25 +564,25 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
                   <button key={key} type="button" className="press-fx" onClick={() => { setSalesCase(key); setActiveMonth(null); }} style={{
                     height: 30, border: 'none', borderRadius: 9, cursor: 'pointer',
                     background: salesCase === key ? '#fff' : 'transparent',
-                    color: salesCase === key ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
+                    color: salesCase === key ? '#1E1A14' : '#8F8779', fontSize: 10.5, fontWeight: 900,
                     boxShadow: salesCase === key ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
                   }}>{label}</button>
                 ))}
-                <p style={{ gridColumn: '1 / -1', padding: '2px 6px 3px', fontSize: 9.5, lineHeight: 1.4, fontWeight: 700, color: '#9FA6B0' }}>
+                <p style={{ gridColumn: '1 / -1', padding: '2px 6px 3px', fontSize: 9.5, lineHeight: 1.4, fontWeight: 700, color: '#A39B8C' }}>
                   앞으로의 매출은 최근 연동 이력을 바탕으로 계산한 추정치예요.
                 </p>
               </div>
             )}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-              <p style={{ fontSize: 14, fontWeight: 900, color: '#191B1F' }}>{current.title}</p>
-              <p style={{ fontSize: 11.5, fontWeight: 900, color: current.unavailable ? '#9FA6B0' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
+              <p style={{ fontSize: 14, fontWeight: 900, color: '#1E1A14' }}>{current.title}</p>
+              <p style={{ fontSize: 11.5, fontWeight: 900, color: current.unavailable ? '#A39B8C' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
                 {current.unavailable ? '최근 6개월 매출 필요' : `${current.displayBefore ?? current.before} → ${current.displayAfter ?? `${current.after}${current.unit}`}`}
               </p>
             </div>
           </div>
 
           {current.unavailable ? (
-            <div style={{ minHeight: 120, display: 'grid', placeItems: 'center', padding: 18, border: '1.5px solid #EAECEF', borderRadius: 14, background: '#FFFFFF', color: '#8B95A1', textAlign: 'center', fontSize: 11.5, fontWeight: 800, lineHeight: 1.55 }}>
+            <div style={{ minHeight: 120, display: 'grid', placeItems: 'center', padding: 18, border: '1.5px solid #EFE8DB', borderRadius: 14, background: '#FFFFFF', color: '#8F8779', textAlign: 'center', fontSize: 11.5, fontWeight: 800, lineHeight: 1.55 }}>
               최근 6개월 이상의 실제 매출 이력이 연결되면<br />월별로 현금이 모자랄 가능성을 보여드려요.
             </div>
           ) : (
@@ -601,16 +601,16 @@ function SimulationSummaryPanel({ simulation, simRows, loading, error, variant =
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
             {current.facts.map((fact) => (
-              <div key={fact.k} style={{ display: 'flex', alignItems: 'baseline', gap: 12, borderTop: '1.5px solid #EAECEF', paddingTop: 9 }}>
-                <p style={{ flex: 'none', width: 152, fontSize: 10.5, fontWeight: 800, color: '#9FA6B0', lineHeight: 1.4 }}>{fact.k}</p>
-                <p style={{ flex: 1, minWidth: 0, textAlign: 'right', fontSize: 13, fontWeight: 900, color: '#191B1F', lineHeight: 1.3 }}>{fact.v}</p>
+              <div key={fact.k} style={{ display: 'flex', alignItems: 'baseline', gap: 12, borderTop: '1.5px solid #EFE8DB', paddingTop: 9 }}>
+                <p style={{ flex: 'none', width: 152, fontSize: 10.5, fontWeight: 800, color: '#A39B8C', lineHeight: 1.4 }}>{fact.k}</p>
+                <p style={{ flex: 1, minWidth: 0, textAlign: 'right', fontSize: 13, fontWeight: 900, color: '#1E1A14', lineHeight: 1.3 }}>{fact.v}</p>
               </div>
             ))}
           </div>
 
           {(detail.violations.length > 0 || detail.warnings.length > 0) && (
-            <div style={{ borderTop: '1.5px solid #EAECEF', paddingTop: 10 }}>
-              <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? '#D0564C' : '#8B95A1' }}>{detail.violations[0] || detail.warnings[0]}</p>
+            <div style={{ borderTop: '1.5px solid #EFE8DB', paddingTop: 10 }}>
+              <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? '#D0564C' : '#8F8779' }}>{detail.violations[0] || detail.warnings[0]}</p>
             </div>
           )}
         </>
@@ -631,7 +631,7 @@ function friendlyError(error) {
 function eligibilityLabel(status) {
   if (status === 'PASS') return { label: '조건 충족', background: '#EDF5E1', color: '#5E8A3E' };
   if (status === 'FAIL') return { label: '조건 확인 필요', background: '#FDE8E6', color: '#D0564C' };
-  return { label: '조건 확인', background: '#EEF0F3', color: '#8B95A1' };
+  return { label: '조건 확인', background: '#F2ECE1', color: '#8F8779' };
 }
 
 function productTerms(item) {
@@ -647,9 +647,9 @@ function productTerms(item) {
 
 function SimulationAwaiting() {
   return (
-    <div style={{ marginTop: 4, padding: '23px 16px', border: '1.5px dashed #D3D7DC', borderRadius: 16, background: '#FFFFFF', textAlign: 'center' }}>
-      <p style={{ fontSize: 13, fontWeight: 900, color: '#525A64' }}>분석을 마치면 월별 변화가 보여요</p>
-      <p style={{ marginTop: 5, fontSize: 11, lineHeight: 1.5, fontWeight: 700, color: '#9FA6B0' }}>우리 가게 진단에서 분석하기를 완료해 주세요.</p>
+    <div style={{ marginTop: 4, padding: '23px 16px', border: '1.5px dashed #DAD1BF', borderRadius: 16, background: '#FFFFFF', textAlign: 'center' }}>
+      <p style={{ fontSize: 13, fontWeight: 900, color: '#5C5449' }}>분석을 마치면 월별 변화가 보여요</p>
+      <p style={{ marginTop: 5, fontSize: 11, lineHeight: 1.5, fontWeight: 700, color: '#A39B8C' }}>우리 가게 진단에서 분석하기를 완료해 주세요.</p>
     </div>
   );
 }
@@ -665,11 +665,11 @@ function MonthlyChangeSheet({ point, unit, view }) {
   }[view] || '';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, padding: '10px 11px', borderRadius: 12, background: '#F1F3F5' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, padding: '10px 11px', borderRadius: 12, background: '#F3EEE4' }}>
       <span style={{ width: 28, height: 28, flex: 'none', display: 'grid', placeItems: 'center', borderRadius: 9, background: '#fff', color: improved ? '#5E8A3E' : '#D0564C', fontSize: 12, fontWeight: 900 }}>{point.label}</span>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontSize: 11, fontWeight: 900, color: '#191B1F' }}>{point.label}개월차 변화 <span style={{ color: improved ? '#5E8A3E' : '#D0564C' }}>{difference > 0 ? '+' : ''}{difference}{unit}</span></p>
-        <p style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: '#8B95A1' }}>{context}</p>
+        <p style={{ fontSize: 11, fontWeight: 900, color: '#1E1A14' }}>{point.label}개월차 변화 <span style={{ color: improved ? '#5E8A3E' : '#D0564C' }}>{difference > 0 ? '+' : ''}{difference}{unit}</span></p>
+        <p style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: '#8F8779' }}>{context}</p>
       </div>
     </div>
   );
@@ -699,14 +699,14 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
   const activePoint = activeIndex == null ? null : points[activeIndex];
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1.5px solid #EAECEF', borderRadius: 14, padding: '13px 11px 10px' }}>
+    <div style={{ background: '#FFFFFF', border: '1.5px solid #EFE8DB', borderRadius: 14, padding: '13px 11px 10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11 }}>
         <div>
-          <p style={{ fontSize: 11.5, fontWeight: 900, color: '#191B1F' }}>월별 변화</p>
-          <p style={{ marginTop: 2, fontSize: 10.5, fontWeight: 700, color: '#9FA6B0' }}>그래프 위에 마우스를 올려 월별 수치를 확인하세요.</p>
+          <p style={{ fontSize: 11.5, fontWeight: 900, color: '#1E1A14' }}>월별 변화</p>
+          <p style={{ marginTop: 2, fontSize: 10.5, fontWeight: 700, color: '#A39B8C' }}>그래프 위에 마우스를 올려 월별 수치를 확인하세요.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, fontSize: 10, fontWeight: 800, color: '#8B95A1' }}>
-          <span><i style={{ display: 'inline-block', width: 12, height: 2, borderRadius: 2, background: '#ABB3BC', marginRight: 4, verticalAlign: 'middle' }} />기준</span>
+        <div style={{ display: 'flex', gap: 8, fontSize: 10, fontWeight: 800, color: '#8F8779' }}>
+          <span><i style={{ display: 'inline-block', width: 12, height: 2, borderRadius: 2, background: '#B2AA9B', marginRight: 4, verticalAlign: 'middle' }} />기준</span>
           <span><i style={{ display: 'inline-block', width: 12, height: 3, borderRadius: 2, background: afterColor, marginRight: 4, verticalAlign: 'middle' }} />장착 후</span>
         </div>
       </div>
@@ -721,9 +721,9 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
         )}
       </div>
       <div style={{ position: 'relative', height: 182, paddingLeft: 34 }}>
-        <span style={{ position: 'absolute', left: 0, top: 2, fontSize: 9, fontWeight: 800, color: '#B0B8C1' }}>{Math.round(max)}{unit}</span>
-        <span style={{ position: 'absolute', left: 0, top: 67, fontSize: 9, fontWeight: 800, color: '#B0B8C1' }}>{Math.round((max + min) / 2)}{unit}</span>
-        <span style={{ position: 'absolute', left: 0, bottom: 22, fontSize: 9, fontWeight: 800, color: '#B0B8C1' }}>{Math.round(min)}{unit}</span>
+        <span style={{ position: 'absolute', left: 0, top: 2, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round(max)}{unit}</span>
+        <span style={{ position: 'absolute', left: 0, top: 67, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round((max + min) / 2)}{unit}</span>
+        <span style={{ position: 'absolute', left: 0, bottom: 22, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round(min)}{unit}</span>
         <svg viewBox="0 0 100 84" preserveAspectRatio="none" role="img" aria-label={`${title} 월별 변화 그래프`} style={{ width: '100%', height: 144, overflow: 'hidden' }}>
           <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
@@ -731,10 +731,10 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
               <stop offset="100%" stopColor={afterColor} stopOpacity="0" />
             </linearGradient>
           </defs>
-          {[10, 43, 76].map((lineY) => <line key={lineY} x1="0" y1={lineY} x2="100" y2={lineY} stroke="#E1E4E8" strokeWidth=".7" vectorEffect="non-scaling-stroke" />)}
-          {zeroLineY != null && <line x1="0" y1={zeroLineY} x2="100" y2={zeroLineY} stroke="#C7CDD3" strokeWidth="1" strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />}
+          {[10, 43, 76].map((lineY) => <line key={lineY} x1="0" y1={lineY} x2="100" y2={lineY} stroke="#E7DFCF" strokeWidth=".7" vectorEffect="non-scaling-stroke" />)}
+          {zeroLineY != null && <line x1="0" y1={zeroLineY} x2="100" y2={zeroLineY} stroke="#CBC3B3" strokeWidth="1" strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />}
           <path d={areaPath} fill={`url(#${gradientId})`} />
-          <path d={path('before')} fill="none" stroke="#ABB3BC" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          <path d={path('before')} fill="none" stroke="#B2AA9B" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           <path d={path('after')} fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           <path d={path('after')} fill="none" stroke={afterColor} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           {activeIndex != null && <>
@@ -759,12 +759,12 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
               tabIndex="0" role="button" aria-label={`${point.label}개월차 상세 보기`} style={{ cursor: 'pointer', outline: 'none' }} />
           ))}
           {activeIndex != null && <>
-            <circle cx={x(activeIndex)} cy={y(points[activeIndex].before)} r="1.7" fill="#FFFFFF" stroke="#ABB3BC" strokeWidth="1" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            <circle cx={x(activeIndex)} cy={y(points[activeIndex].before)} r="1.7" fill="#FFFFFF" stroke="#B2AA9B" strokeWidth="1" vectorEffect="non-scaling-stroke" pointerEvents="none" />
             <circle cx={x(activeIndex)} cy={y(points[activeIndex].after)} r="2.3" fill="#FFFFFF" stroke={afterColor} strokeWidth="1.6" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           </>}
         </svg>
         <div style={{ position: 'absolute', left: 34, right: 0, bottom: 0, display: 'flex', justifyContent: 'space-between' }}>
-          {points.map((point, index) => <span key={point.label} style={{ fontSize: 9, fontWeight: 800, color: index % 2 === 0 || index === points.length - 1 ? '#B0B8C1' : 'transparent' }}>{point.label}월</span>)}
+          {points.map((point, index) => <span key={point.label} style={{ fontSize: 9, fontWeight: 800, color: index % 2 === 0 || index === points.length - 1 ? '#B6AE9F' : 'transparent' }}>{point.label}월</span>)}
         </div>
       </div>
     </div>
@@ -785,16 +785,16 @@ function RiskGauge({ beforeProbability, afterProbability, simulationCount }) {
   const color = afterValue < 20 ? '#5E8A3E' : afterValue < 40 ? '#C98A00' : '#D0564C';
 
   return (
-    <div style={{ background: '#F7F8FA', borderRadius: 12, padding: '11px 12px 10px' }}>
+    <div style={{ background: '#F8F4EB', borderRadius: 12, padding: '11px 12px 10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <p style={{ fontSize: 11, fontWeight: 900, color: '#8B95A1' }}>가게 운영에 필요한 현금이 모자랄 가능성</p>
+        <p style={{ fontSize: 11, fontWeight: 900, color: '#8F8779' }}>가게 운영에 필요한 현금이 모자랄 가능성</p>
         <p style={{ fontSize: 15, fontWeight: 900, color }}>{label(afterProbability)} · {level(afterValue)}</p>
       </div>
       <div style={{ position: 'relative', height: 13, marginTop: 10, borderRadius: 7, background: 'linear-gradient(90deg,#A8D284 0 20%,#FFD66B 20% 40%,#F0968C 40% 100%)' }}>
-        <span title={`기준 ${label(beforeProbability)}`} style={{ position: 'absolute', left: `${beforeValue}%`, top: -4, width: 2, height: 21, background: '#525A64', transform: 'translateX(-1px)' }} />
+        <span title={`기준 ${label(beforeProbability)}`} style={{ position: 'absolute', left: `${beforeValue}%`, top: -4, width: 2, height: 21, background: '#5C5449', transform: 'translateX(-1px)' }} />
         <span title={`장착 후 ${label(afterProbability)}`} style={{ position: 'absolute', left: `${afterValue}%`, top: -5, width: 10, height: 23, border: `3px solid ${color}`, borderRadius: 7, background: '#fff', transform: 'translateX(-5px)' }} />
       </div>
-      <p style={{ marginTop: 8, fontSize: 10.5, color: '#8B95A1', lineHeight: 1.45 }}>임대료·인건비·대출 상환을 반영했을 때, 가게 운영에 필요한 현금이 모자랄 가능성이에요.</p>
+      <p style={{ marginTop: 8, fontSize: 10.5, color: '#8F8779', lineHeight: 1.45 }}>임대료·인건비·대출 상환을 반영했을 때, 가게 운영에 필요한 현금이 모자랄 가능성이에요.</p>
     </div>
   );
 }

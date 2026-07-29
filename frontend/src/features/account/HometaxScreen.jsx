@@ -59,14 +59,14 @@ export default function HometaxScreen({ onBack, onGoDiagnose, onUnlink }) {
               <div key={row.month} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <span style={{ flex: 'none', width: 42, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-soft)' }}>{row.month.slice(5)}월</span>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ height: 6, background: '#EDEFF2', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: 6, background: '#F1EBE0', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 4, background: 'var(--green-soft)', width: `${Math.round((row.sales / maxMonthlyAmount) * 100)}%` }} />
                   </div>
-                  <div style={{ height: 6, background: '#EDEFF2', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: 6, background: '#F1EBE0', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 4, background: '#E0A93C', width: `${Math.round((row.totalExpense / maxMonthlyAmount) * 100)}%` }} />
                   </div>
                 </div>
-                <span style={{ flex: 'none', width: 116, textAlign: 'right', fontSize: 10.5, fontWeight: 800, color: '#191B1F', whiteSpace: 'nowrap' }}>{fmtMan(row.sales)} / {fmtMan(row.totalExpense)}</span>
+                <span style={{ flex: 'none', width: 116, textAlign: 'right', fontSize: 10.5, fontWeight: 800, color: '#1E1A14', whiteSpace: 'nowrap' }}>{fmtMan(row.sales)} / {fmtMan(row.totalExpense)}</span>
               </div>
             ))}
             <p className="evidence-src" style={{ marginTop: 2 }}>

@@ -155,10 +155,10 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
                   <span style={{ flex: 'none', fontSize: 11.5, fontWeight: 800, color: 'var(--muted-faint)' }}>{open ? '근거 접기 ▲' : '근거 보기 ▼'}</span>
                   <span style={{ marginLeft: 'auto', flex: 'none', fontSize: 14.5, fontWeight: 900, color: 'var(--blue)' }}>{m.valueText}</span>
                 </div>
-                <div style={{ marginTop: 8, height: 9, background: '#EAECEF', borderRadius: 5, overflow: 'hidden' }}>
+                <div style={{ marginTop: 8, height: 9, background: '#EFE8DB', borderRadius: 5, overflow: 'hidden' }}>
                   <div style={{ height: '100%', borderRadius: 5, transition: 'width .6s', background: '#5B8AC4', width: `${Math.max(2, Math.min(100, m.pct))}%` }} />
                 </div>
-                <p style={{ marginTop: 6, fontSize: 11.5, color: '#9FA6B0' }}>{m.sub}</p>
+                <p style={{ marginTop: 6, fontSize: 11.5, color: '#A39B8C' }}>{m.sub}</p>
               </button>
               {open && (
                 <div className="evidence-box">
@@ -196,7 +196,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
             ...(meta?.meta ? [`출처: ${meta.meta.sourceDataset} (기준 분기 ${Array.isArray(meta.meta.quartersCovered) ? meta.meta.quartersCovered.join(', ') : ''})`] : []),
           ].map((t, i) => (
             <p key={i} style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6, paddingLeft: 11, position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 0, color: '#C7CDD3' }}>·</span>{t}
+              <span style={{ position: 'absolute', left: 0, color: '#CBC3B3' }}>·</span>{t}
             </p>
           ))}
         </div>
