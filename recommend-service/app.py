@@ -16,18 +16,15 @@ from datetime import date
 from pathlib import Path
 
 import numpy as np
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# 프로젝트 루트 .env 자동 로드 (python-dotenv 설치 시). 미설치면 export/source 로 넣은 실제 환경변수를 사용.
-# ⚠ 아래 agent / portfolio_advisor 는 모듈 최상단에서 os.getenv 로 모델명을 굳히므로,
-#   반드시 그 import 보다 먼저 로드해야 .env 의 AGENT_MODEL 이 반영된다.
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-except ImportError:
-    pass
+# agent / portfolio_advisor imports happen after dotenv loading because they read model settings at import time.
+# Prefer project-root settings while retaining the service-local file for local development.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+load_dotenv(Path(__file__).parent / ".env")
 
 import engine
 import agent  # AI 오케스트레이터 (/api/agent)

@@ -428,7 +428,7 @@ export default function App() {
     } else if (tab === 3 && recSub === 'list') {
       cta = { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } };
     } else if (tab === 4 && simSub === 'sim') {
-      cta = { label: 'AI 분석결과 보기', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
+      cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
   }
   const showAgentCta = !overlay && tab === 2 && diagSub === 'input';
@@ -464,7 +464,7 @@ export default function App() {
   const titleOf = () => {
     if (tab === 2) return diagSub === 'input' ? '우리 가게 진단' : diagSub === 'report' ? '진단 리포트' : '비용 리포트';
     if (tab === 3) return recSub === 'risk' ? '사업 성향분석' : '맞춤 상품 추천';
-    if (tab === 4) return simSub === 'sim' ? '금융 시뮬레이터' : 'AI 분석결과';
+    if (tab === 4) return simSub === 'sim' ? '금융 시뮬레이터' : '신청하기';
     return '';
   };
 
@@ -557,7 +557,7 @@ export default function App() {
         {!overlay && tab === 4 && (
           <>
             <StepTabs
-              steps={[{ key: 'sim', label: '시뮬레이터' }, { key: 'portfolio', label: 'AI 분석결과' }]}
+              steps={[{ key: 'sim', label: '시뮬레이터' }, { key: 'portfolio', label: '신청하기' }]}
               value={simSub}
               onChange={(k) => { setSimSub(k); window.scrollTo(0, 0); }}
             />
@@ -574,9 +574,7 @@ export default function App() {
             )}
             {simSub === 'portfolio' && (
               <PortfolioScreen equipped={equipped} simRows={simRows}
-                percentile={topPercent} simulation={simulation}
-                topCombos={topCombos} equippedComboId={equippedComboId}
-                riskProfile={riskProfile} comboSimulations={comboSimulations} />
+                percentile={topPercent} simulation={simulation} products={products} />
             )}
           </>
         )}

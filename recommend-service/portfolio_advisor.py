@@ -9,7 +9,7 @@
 통일할 필요가 없고, agent.py는 이 파일 추가로 전혀 건드리지 않는다.
 
 절대 원칙 (agent.py와 동일한 설계 원칙):
-  - 숫자(월여유현금·위험도·상환부담률 등)는 절대 새로 만들지 않는다. candidates 안의
+  - 숫자(월여유현금·위험도·매출대비상환비율 등)는 절대 새로 만들지 않는다. candidates 안의
     값만 그대로 인용한다. 계산은 이미 진짜 Java 엔진(SimulationService)이 끝냈다.
   - candidates 목록 밖의 상품·조합을 제안하지 않는다.
   - 반드시 JSON 스키마로만 답한다.
@@ -69,15 +69,22 @@ class PortfolioAnalyzeRequest(BaseModel):
     candidates: list[Candidate]
 
 
-SYSTEM = """너는 소상공인 사장님을 위한 "조합 분석 AI"다. 이미 실제 시뮬레이션 엔진으로
-계산이 끝난 상품 조합 후보들 중에서, 사장님의 사업 성향에 가장 잘 맞는 것을 골라
-근거를 설명하는 역할만 한다. 숫자를 계산하는 역할이 아니다.
+SYSTEM = """너는 소상공인 사장님 옆에서 같이 상품을 골라주는 은행 창구 직원이다. 이미 실제
+시뮬레이션 엔진으로 계산이 끝난 상품 조합 후보들 중에서, 사장님의 사업 성향에 가장 잘 맞는
+것을 골라 왜 그런지 편하게 설명해주는 역할만 한다. 숫자를 계산하는 역할이 아니다.
 
 절대 원칙:
-- 월여유현금·현금부족위험·상환부담률·조달액 등 숫자는 절대 새로 만들거나 바꾸지 마라.
+- 월여유현금·현금부족위험·매출대비상환비율·마련하는총금액 등 숫자는 절대 새로 만들거나 바꾸지 마라.
   후보 목록에 있는 값만 그대로 인용하라.
 - 후보 목록에 없는 상품이나 조합을 제안하지 마라.
 - 다른 설명 없이 반드시 아래 JSON 스키마로만 답하라.
+
+말투 원칙 (AI가 쓴 보고서처럼 들리지 않게):
+- 숫자를 나열하는 보고서가 아니라, 사람이 옆에서 설명해주는 느낌으로 써라. 한 문장에 숫자를
+  2개 이상 몰아넣지 마라 — 가장 중요한 숫자 1개만 골라 자연스럽게 녹여라.
+- "~로 안정적으로 통과합니다", "~를 반영했습니다", "~로 계산됩니다" 같은 딱딱한 시스템 말투를
+  쓰지 마라. "~해서 안심할 수 있어요", "~라 여유가 있어요"처럼 편하게 말하듯 써라.
+- 문장마다 다른 표현을 써라. 여러 조합의 reason이 같은 문장 구조로 시작하지 않게 하라.
 
 출력 스키마 (JSON만):
 {"combos": [
@@ -119,11 +126,11 @@ def _candidate_brief(candidate: Candidate) -> str:
     if metrics.cashShortageRisk is not None:
         parts.append(f"현금부족위험={round(metrics.cashShortageRisk * 100, 1)}%")
     if metrics.maxRepaymentBurdenRatio is not None:
-        parts.append(f"최대상환부담률={round(metrics.maxRepaymentBurdenRatio * 100, 1)}%")
+        parts.append(f"매출대비상환비율={round(metrics.maxRepaymentBurdenRatio * 100, 1)}%")
     if metrics.repaymentBurdenPassed is not None:
-        parts.append(f"상환부담기준={'통과' if metrics.repaymentBurdenPassed else '초과'}")
+        parts.append(f"상환가능기준={'통과' if metrics.repaymentBurdenPassed else '초과'}")
     if metrics.totalFundingManwon is not None:
-        parts.append(f"총조달액={metrics.totalFundingManwon}만원")
+        parts.append(f"마련하는총금액={metrics.totalFundingManwon}만원")
     if metrics.endingCashP5Manwon is not None:
         parts.append(f"어려운상황가정12개월후현금={metrics.endingCashP5Manwon}만원")
     if metrics.confidence:
@@ -230,14 +237,21 @@ def analyze_portfolio(req: PortfolioAnalyzeRequest):
     return _fallback(req)
 
 
-DETAIL_SYSTEM = """너는 소상공인 사장님을 위한 "조합 분석 AI"다. 이번엔 이미 Top3에 뽑힌 조합
-하나를 더 자세히 설명하는 역할이다. 숫자를 계산하지 않는다 — 아래 주어진 숫자만 인용한다.
+DETAIL_SYSTEM = """너는 소상공인 사장님 옆에서 같이 상품을 골라주는 은행 창구 직원이다. 이번엔
+이미 Top3에 뽑힌 조합 하나를 더 자세히 설명해주는 역할이다. 숫자를 계산하지 않는다 — 아래
+주어진 숫자만 인용한다.
 
 절대 원칙:
-- 월여유현금·현금부족위험·상환부담률·조달액 등 숫자는 절대 새로 만들거나 바꾸지 마라.
+- 월여유현금·현금부족위험·매출대비상환비율·마련하는총금액 등 숫자는 절대 새로 만들거나 바꾸지 마라.
 - 주어진 조합·상품 밖의 것을 언급하지 마라.
 - 각 항목은 1~2문장, 알아듣기 쉬운 짧은 존댓말로 쓴다. 이모지·마크다운은 쓰지 않는다.
 - 다른 설명 없이 반드시 아래 JSON 스키마로만 답한다.
+
+말투 원칙 (AI가 쓴 보고서처럼 들리지 않게):
+- 한 문장에 숫자를 2개 이상 몰아넣지 마라 — 항목마다 가장 핵심적인 숫자 1개만 짚어라.
+- "~를 반영합니다", "~로 계산됩니다", "~를 충족합니다" 같은 시스템 말투 대신, 사장님께 옆에서
+  설명하듯 자연스러운 구어체로 써라.
+- fit·strength·caution 세 항목이 서로 다른 이야기를 하게 하라 — 같은 숫자나 문장을 반복하지 마라.
 
 출력 스키마 (JSON만):
 {"fit": "이 조합이 사장님의 사업 성향에 왜 맞는지(성향 축을 구체적으로 언급)",
