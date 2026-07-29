@@ -436,7 +436,11 @@ export default function App() {
     } else if (tab === 2 && diagSub === 'cost') {
       cta = { label: '맞춤 상품 추천 받기', onClick: () => go(3) };
     } else if (tab === 3 && recSub === 'list') {
-      cta = { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } };
+      // 성향분석 → 시뮬레이터는 진단 결과가 있어야 계산된다. 진단 전에는 그쪽으로 보내면
+      // 막다른 길이라, 진단 입력으로 되돌린다.
+      cta = rank
+        ? { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } }
+        : { label: '진단 먼저 하기', green: true, onClick: () => { setDiagSub('input'); go(2); } };
     } else if (tab === 4 && simSub === 'sim') {
       cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
@@ -568,7 +572,8 @@ export default function App() {
         )}
 
         {!overlay && tab === 3 && recSub === 'list' && (
-          <RecommendScreen products={products} percentile={topPercent} signals={recoSignals} aiRanked={!!apiProducts} />
+          <RecommendScreen products={products} percentile={topPercent} signals={recoSignals} aiRanked={!!apiProducts}
+            onGoDiagnose={() => { setDiagSub('input'); go(2); }} />
         )}
 
         {!overlay && tab === 3 && recSub === 'risk' && (
