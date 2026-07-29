@@ -1,26 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Couple from './Couple';
-import { buildSimulationDetail, SIM_VIEWS, summarizeSimulationForAdvisor } from './sim';
+import { IconSparkle } from '../../shared/Icons';
+import { buildComboDetailCandidate, buildSimRows, buildSimulationDetail, SIM_VIEWS, summarizeSimulationForAdvisor } from './sim';
+import { requestPortfolioDetail } from '../../api/portfolio';
+
+// 직접 조합하기 드롭다운의 카테고리 — 맞춤 추천 화면(RecommendScreen)과 같은 방식으로 묶는다.
+const PRODUCT_CATS = [
+  ['all', '전체'],
+  ['LOAN', '대출'],
+  ['GRANT', '지원금'],
+  ['SAVINGS', '적금'],
+  ['MUTUAL_AID', '공제'],
+  ['INSURANCE', '보험'],
+];
 
 export default function SimulatorScreen({
   equipped, options, toggle, simRows, simulation, loading, error,
   riskProfile, simulationReady, topCombos = [], comboSimulations = {},
   comboAnalysisLoading, comboAnalysisDone, comboAnalysisError, equippedComboId, onApplyCombo, onRetryComboAnalysis,
 }) {
-  const [view, setView] = useState('cash');
-  const [salesCase, setSalesCase] = useState('average');
-  const [activeMonth, setActiveMonth] = useState(null);
-  const detail = useMemo(() => buildSimulationDetail(simulation), [simulation]);
-  const baseView = detail.views[view] || detail.views.cash;
-  const current = view === 'sales' && baseView.scenarios?.[salesCase]
-    ? { ...baseView, ...baseView.scenarios[salesCase] }
-    : baseView;
-  const hasConstraintIssue = Boolean(simulation && !simulation.constraints?.repaymentBurdenPassed);
-  const riskTone = equipped.length === 0 || simulation?.confidence?.level === 'LOW'
-    ? 'base'
-    : hasConstraintIssue || detail.riskAfter > detail.riskBefore ? 'bad'
-    : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
-  const hasSimulationData = Boolean(simulation?.baseline?.monthlyCashFlows?.length);
+  // 직접 고른 상품의 "시뮬레이션 요약"은 눌러야만 보여준다(항상 떠 있던 고정 블록 제거).
+  // undefined = "아직 아무것도 안 눌렀다" — 이 경우엔 아래 default 값을 매 렌더 다시 계산해서 쓴다.
+  // (Top3 계산이 비동기로 끝나기 전엔 topCombos가 비어 있으므로, useState 초기값에 그대로 고정해두면
+  //  로딩이 끝난 뒤에도 낡은 값이 남는다 — 그래서 override가 없는 한 매 렌더 새로 계산한다.)
+  const [manualSummaryOverride, setManualSummaryOverride] = useState(undefined);
+  const [customOpenOverride, setCustomOpenOverride] = useState(undefined);
+  const [customCat, setCustomCat] = useState('all');
+  // Top3 리스트에서 탭한 조합의 상세 시트 — 목록은 항상 최소한만 보여주고, 눌렀을 때만 "들어가서" 본다.
+  const [openComboId, setOpenComboId] = useState(null);
 
   // AI 조합 분석 중엔 전체화면 테이크오버로 전환한다 — 헤더·탭바·CTA까지 전부 가려서
   // 로딩 중에 뒤로가거나 다른 탭으로 못 옮겨가게 막는다(계산이 끝나야만 사라짐).
@@ -38,168 +46,129 @@ export default function SimulatorScreen({
     return <ComboLoadingTakeover active={comboAnalysisLoading} onDone={() => setTakeoverVisible(false)} />;
   }
 
+  // 이미 장착된 조합/상품이 있으면 그 맥락을 그대로 이어서 보여준다 — 없으면 아무 것도 펼치지 않는다.
+  const defaultManualSummaryOpen = equipped.length > 0 && !topCombos.some((combo) => combo.comboId === equippedComboId);
+  const manualSummaryOpen = manualSummaryOverride !== undefined ? manualSummaryOverride : defaultManualSummaryOpen;
+
+  // 직접 상품 고르기 드롭다운 — Top3가 없거나, 이미 Top3에 없는 나만의 조합을 쓰고 있으면 열어둔다.
+  const defaultCustomOpen = topCombos.length === 0
+    || (equipped.length > 0 && !topCombos.some((combo) => combo.comboId === equippedComboId));
+  const customOpen = customOpenOverride !== undefined ? customOpenOverride : defaultCustomOpen;
+
+  const toggleCustom = (item) => {
+    toggle(item);
+    setManualSummaryOverride(true);
+  };
+
+  const openCombo = topCombos.find((combo) => combo.comboId === openComboId) || null;
+  const availableCats = PRODUCT_CATS.filter(([key]) => key === 'all' || options.some((item) => item.type === key));
+  const visibleOptions = options.filter((item) => customCat === 'all' || item.type === customCat);
+
   return (
     <div className="scr" style={{ padding: '18px 0 200px', gap: 0 }}>
       {riskProfile && simulationReady && (
         <ComboAdvisorSection
           riskProfile={riskProfile} topCombos={topCombos} comboSimulations={comboSimulations}
           loading={comboAnalysisLoading} error={comboAnalysisError}
-          equippedComboId={equippedComboId} onApply={onApplyCombo} onRetry={onRetryComboAnalysis}
+          equippedComboId={equippedComboId}
+          onOpenCombo={(combo) => { onApplyCombo?.(combo.items); setOpenComboId(combo.comboId); }}
+          onRetry={onRetryComboAnalysis}
         />
       )}
 
-      <section className="sec-card" style={{ margin: '12px 22px 0' }}>
-        <div className="sec-card-head">
-          <p className="sec-card-title">추천 상품</p>
-          <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted-faint)' }}>{options.length}개 · 하나씩 골라볼 수도 있어요</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginTop: 6 }}>
-          {options.map((item) => {
-            const selected = equipped.some((equippedItem) => equippedItem.key === item.key);
-            const conflicts = !selected && item.duplicateGroup
-              && equipped.some((equippedItem) => equippedItem.duplicateGroup === item.duplicateGroup);
-            const eligibility = eligibilityLabel(item.eligibilityStatus);
-            const terms = productTerms(item);
-            return (
-              <button key={item.key} onClick={() => toggle(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
-                border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #EAECEF',
-                background: selected ? '#FFF6DD' : conflicts ? '#FBF3F1' : '#fff', borderRadius: 14, padding: '11px 12px', cursor: 'pointer',
-                display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', minHeight: 60,
-              }}>
-                <span className="icon-badge" style={{ flex: 'none', width: 30, height: 30, borderRadius: 10, fontSize: 14, background: item.iconBg, color: item.iconColor, marginTop: 1 }}>{item.icon}</span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#191B1F', lineHeight: 1.42, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
-                  {item.reason && <span style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 10.5, lineHeight: 1.35, fontWeight: 700, color: '#8B95A1' }}>{item.reason}</span>}
-                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5 }}>
-                    <span style={{ padding: '3px 6px', borderRadius: 7, background: '#F1F3F5', color: '#8B95A1', fontSize: 9.5, fontWeight: 800 }}>{terms}</span>
-                    <span style={{ padding: '3px 6px', borderRadius: 7, background: eligibility.background, color: eligibility.color, fontSize: 9.5, fontWeight: 800 }}>{eligibility.label}</span>
-                  </span>
-                  {(conflicts || item.duplicateNotice) && (
-                    <span style={{ display: 'block', marginTop: 2, fontSize: 9.5, fontWeight: 800, color: '#B45A51' }}>
-                      중복 가입 불가
-                    </span>
-                  )}
-                </span>
-                <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: selected ? '#C98A00' : '#C7CDD3' }}>{selected ? '✓' : '+'}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      <section style={{ margin: '12px 22px 0' }}>
+        <button type="button" className="detail-toggle combo-toggle-row" onClick={() => setCustomOpenOverride(!customOpen)} style={{ marginTop: 0 }}>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>내가 원하는 상품으로 직접 조합하기</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted-faint)' }}>{options.length}개 중 하나씩 골라볼 수 있어요</span>
+          </span>
+          <span aria-hidden="true" style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: '#B0B8C1', transform: customOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}>▾</span>
+        </button>
 
-      <section className="card" style={{ margin: '14px 22px 0', padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 15, fontWeight: 900, color: '#191B1F' }}>시뮬레이션 요약</p>
-          </div>
-          <span style={{
-            flex: 'none', fontSize: 10.5, fontWeight: 900, padding: '5px 8px', borderRadius: 10,
-            color: riskTone === 'base' ? '#8B95A1' : riskTone === 'good' ? '#5E8A3E' : '#D0564C',
-            background: riskTone === 'base' ? '#EEF0F3' : riskTone === 'good' ? '#EDF5E1' : '#FDE8E6',
-          }}>{riskTone === 'base' ? '기준 시나리오' : riskTone === 'good' ? '부담 완화' : '대출 부담 주의'}</span>
-        </div>
-
-        {loading && <p style={{ fontSize: 12, fontWeight: 800, color: '#8B95A1' }}>월별 시나리오를 계산하고 있어요.</p>}
-        {error && <p style={{ fontSize: 12, fontWeight: 800, color: '#D0564C' }}>계산 확인 필요: {friendlyError(error)}</p>}
-
-        {!loading && !error && !hasSimulationData && <SimulationAwaiting />}
-
-        {!loading && !error && hasSimulationData && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {simRows.slice(0, 4).map((metric) => (
-                <div key={metric.name} style={{ background: '#F7F8FA', border: '1px solid #EAECEF', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
-                  <p style={{ fontSize: 10.5, fontWeight: 800, color: '#9FA6B0' }}>{metric.name}</p>
-                  <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#191B1F', whiteSpace: 'nowrap' }}>{metric.after}</p>
-                  <p style={{ marginTop: 3, fontSize: 10.5, fontWeight: 800, color: metric.deltaColor }}>{metric.delta} <span style={{ color: '#B0B8C1', fontWeight: 600 }}>기준 {metric.before}</span></p>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: '#F1F3F5', padding: 4, borderRadius: 13 }}>
-              {SIM_VIEWS.map((item) => {
-                const selected = view === item.key;
+        {customOpen && (
+          <div style={{ marginTop: 8, background: '#fff', border: '1.5px solid var(--border)', borderRadius: 16, padding: '10px 12px 4px' }}>
+            {/* 맞춤 추천 화면과 같은 카테고리 필터 — 쭉 나열 대신 대출/지원금/적금 등으로 나눠 보여준다 */}
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8 }}>
+              {availableCats.map(([key, label]) => {
+                const on = customCat === key;
+                const count = key === 'all' ? options.length : options.filter((item) => item.type === key).length;
                 return (
-                  <button key={item.key} type="button" onClick={() => { setView(item.key); setActiveMonth(null); }} style={{
-                    height: 32, border: 'none', borderRadius: 10, cursor: 'pointer', background: selected ? '#fff' : 'transparent',
-                    color: selected ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
-                    boxShadow: selected ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
-                  }}>{item.label}</button>
+                  <button key={key} type="button" className="press-fx" onClick={() => setCustomCat(key)} style={{
+                    flex: 'none', borderRadius: 10, padding: '6px 11px', fontSize: 11.5, fontWeight: 800,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                    border: on ? '1.5px solid var(--gold-deep)' : '1.5px solid var(--border)',
+                    background: on ? 'var(--gold)' : '#fff', color: on ? 'var(--ink)' : 'var(--muted)',
+                  }}>
+                    {label} <span style={{ fontWeight: 700, opacity: .65 }}>{count}</span>
+                  </button>
                 );
               })}
             </div>
-
-            <div>
-              {view === 'sales' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 10, padding: 4, background: '#F1F3F5', borderRadius: 12 }}>
-                  {[
-                    ['conservative', '낮은 전망'],
-                    ['average', '기준 전망'],
-                    ['optimistic', '높은 전망'],
-                  ].map(([key, label]) => (
-                    <button key={key} type="button" onClick={() => { setSalesCase(key); setActiveMonth(null); }} style={{
-                      height: 30, border: 'none', borderRadius: 9, cursor: 'pointer',
-                      background: salesCase === key ? '#fff' : 'transparent',
-                      color: salesCase === key ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
-                      boxShadow: salesCase === key ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
-                    }}>{label}</button>
-                  ))}
-                  <p style={{ gridColumn: '1 / -1', padding: '2px 6px 3px', fontSize: 9.5, lineHeight: 1.4, fontWeight: 700, color: '#9FA6B0' }}>
-                    앞으로의 매출은 최근 연동 이력을 바탕으로 계산한 추정치예요.
-                  </p>
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-                <p style={{ fontSize: 14, fontWeight: 900, color: '#191B1F' }}>{current.title}</p>
-                <p style={{ fontSize: 11.5, fontWeight: 900, color: current.unavailable ? '#9FA6B0' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
-                  {current.unavailable ? '최근 6개월 매출 필요' : `${current.displayBefore ?? current.before} → ${current.displayAfter ?? `${current.after}${current.unit}`}`}
-                </p>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, paddingBottom: 10 }}>
+              {visibleOptions.map((item) => {
+                const selected = equipped.some((equippedItem) => equippedItem.key === item.key);
+                const conflicts = !selected && item.duplicateGroup
+                  && equipped.some((equippedItem) => equippedItem.duplicateGroup === item.duplicateGroup);
+                const eligibility = eligibilityLabel(item.eligibilityStatus);
+                const terms = productTerms(item);
+                return (
+                  <button key={item.key} className="press-fx-row" onClick={() => toggleCustom(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
+                    border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #EAECEF',
+                    background: selected ? '#FFF6DD' : conflicts ? '#FBF3F1' : '#fff', borderRadius: 14, padding: '11px 12px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', minHeight: 60,
+                  }}>
+                    <span className="icon-badge" style={{ flex: 'none', width: 30, height: 30, borderRadius: 10, fontSize: 14, background: item.iconBg, color: item.iconColor, marginTop: 1 }}>{item.icon}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800, color: '#191B1F', lineHeight: 1.42, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
+                      {item.reason && <span style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 10.5, lineHeight: 1.35, fontWeight: 700, color: '#8B95A1' }}>{item.reason}</span>}
+                      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5 }}>
+                        <span style={{ padding: '3px 6px', borderRadius: 7, background: '#F1F3F5', color: '#8B95A1', fontSize: 9.5, fontWeight: 800 }}>{terms}</span>
+                        <span style={{ padding: '3px 6px', borderRadius: 7, background: eligibility.background, color: eligibility.color, fontSize: 9.5, fontWeight: 800 }}>{eligibility.label}</span>
+                      </span>
+                      {(conflicts || item.duplicateNotice) && (
+                        <span style={{ display: 'block', marginTop: 2, fontSize: 9.5, fontWeight: 800, color: '#B45A51' }}>
+                          중복 가입 불가
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ flex: 'none', fontSize: 13, fontWeight: 900, color: selected ? '#C98A00' : '#C7CDD3' }}>{selected ? '✓' : '+'}</span>
+                  </button>
+                );
+              })}
             </div>
-
-            {current.unavailable ? (
-              <div style={{ minHeight: 120, display: 'grid', placeItems: 'center', padding: 18, border: '1.5px solid #EAECEF', borderRadius: 14, background: '#FFFFFF', color: '#8B95A1', textAlign: 'center', fontSize: 11.5, fontWeight: 800, lineHeight: 1.55 }}>
-                최근 6개월 이상의 실제 매출 이력이 연결되면<br />월별로 현금이 모자랄 가능성을 보여드려요.
-              </div>
-            ) : (
-              <MiniCompareChart points={current.points} scaleValues={current.scaleValues} scaleFromZero={current.scaleFromZero} inverse={current.inverse} unit={current.unit} title={current.title} onPointChange={setActiveMonth} />
-            )}
-
-            {activeMonth && <MonthlyChangeSheet point={activeMonth} unit={current.unit} view={view} />}
-
-            {view === 'risk' && !current.unavailable && (
-              <RiskGauge
-                beforeProbability={simulation.baseline.stochastic.bufferBreachProbability}
-                afterProbability={simulation.selectedScenario.stochastic.bufferBreachProbability}
-                simulationCount={simulation.selectedScenario.stochastic.simulationCount}
-              />
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7 }}>
-              {current.facts.map((fact) => (
-                <div key={fact.k} style={{ borderTop: '1.5px solid #EAECEF', paddingTop: 8, minWidth: 0 }}>
-                  <p style={{ fontSize: 10.5, fontWeight: 800, color: '#9FA6B0' }}>{fact.k}</p>
-                  <p style={{ marginTop: 3, fontSize: 12, fontWeight: 900, color: '#191B1F', lineHeight: 1.25 }}>{fact.v}</p>
-                </div>
-              ))}
-            </div>
-
-            {(detail.violations.length > 0 || detail.warnings.length > 0) && (
-              <div style={{ borderTop: '1.5px solid #EAECEF', paddingTop: 10 }}>
-                <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? '#D0564C' : '#8B95A1' }}>{detail.violations[0] || detail.warnings[0]}</p>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </section>
+
+      {manualSummaryOpen && (
+        <SimulationSummaryPanel simulation={simulation} simRows={simRows} loading={loading} error={error} variant="standalone" items={equipped} />
+      )}
+
+      {openCombo && (
+        <ComboDetailSheet key={openCombo.comboId} combo={openCombo} riskProfile={riskProfile}
+          simulation={comboSimulations[openCombo.comboId]}
+          isEquipped={equippedComboId === openCombo.comboId}
+          onClose={() => setOpenComboId(null)} />
+      )}
     </div>
   );
 }
 
 // ── 조합 분석 AI — 성향분석 완료 후 Top3 조합 계산 로딩 + 결과 카드 ──
-const RANK_TONE = ['#FFD873', '#D8DEE6', '#E7C7A2'];
+// 1·2·3 순위를 숫자 대신 한눈에 알아볼 수 있는 메달 아이콘으로 보여준다.
+const MEDALS = ['🥇', '🥈', '🥉'];
+function RankIcon({ rank, size = 20 }) {
+  const medal = MEDALS[rank - 1];
+  if (medal) return <span aria-hidden="true" style={{ fontSize: size, lineHeight: 1 }}>{medal}</span>;
+  return (
+    <span style={{
+      width: size, height: size, borderRadius: '50%', background: '#EEF0F3', display: 'grid', placeItems: 'center',
+      fontSize: size * 0.55, fontWeight: 900, color: 'var(--ink)',
+    }}>{rank}</span>
+  );
+}
 
-function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading, error, equippedComboId, onApply, onRetry }) {
+function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading, error, equippedComboId, onOpenCombo, onRetry }) {
   const showEmpty = !loading && !error && topCombos.length === 0;
   return (
     <section style={{ margin: '14px 22px 0' }}>
@@ -213,22 +182,24 @@ function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading
       {!loading && error && (
         <div style={{ padding: '18px 16px', border: '1.5px dashed var(--border-deep)', borderRadius: 16, textAlign: 'center', background: '#fff' }}>
           <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--danger)' }}>{friendlyError(error)}</p>
-          <button type="button" onClick={onRetry} style={{ marginTop: 8, border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>다시 분석하기</button>
+          <button type="button" className="press-fx" onClick={onRetry} style={{ marginTop: 8, border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>다시 분석하기</button>
         </div>
       )}
 
       {showEmpty && (
         <div style={{ padding: '18px 16px', border: '1.5px dashed var(--border-deep)', borderRadius: 16, textAlign: 'center', background: '#fff' }}>
           <p style={{ fontSize: 12.5, fontWeight: 800, color: '#525A64' }}>지금 조건으로는 만들 수 있는 조합이 없어요</p>
-          <p style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: '#9FA6B0' }}>아래 목록에서 직접 골라볼 수 있어요.</p>
+          <p style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: '#9FA6B0' }}>아래에서 직접 골라볼 수 있어요.</p>
         </div>
       )}
 
       {!loading && !error && topCombos.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {topCombos.map((combo) => (
-            <ComboAdviceCard key={combo.comboId} combo={combo} simulation={comboSimulations[combo.comboId]}
-              isEquipped={equippedComboId === combo.comboId} onApply={() => onApply?.(combo.items)} />
+        <div className="combo-list">
+          {topCombos.map((combo, index) => (
+            <ComboAdviceCard key={combo.comboId} combo={combo} index={index}
+              simulation={comboSimulations[combo.comboId]}
+              isEquipped={equippedComboId === combo.comboId}
+              onOpen={() => onOpenCombo(combo)} />
           ))}
         </div>
       )}
@@ -314,60 +285,337 @@ function ComboLoadingTakeover({ active, onDone }) {
   );
 }
 
-function MiniStat({ label, value, warn }) {
+// 토스증권 "실시간 이슈" 리스트 참고 — 순위·제목·한 줄 요약·메타 정보만 보여주고,
+// 나머지(수치·근거·AI 분석)는 전부 탭해서 "들어가야" 보이는 상세 시트로 옮긴다.
+function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
+  const metrics = summarizeSimulationForAdvisor(simulation);
+  const safetyPercent = metrics ? Math.max(4, Math.min(100, Math.round((1 - metrics.cashShortageRisk) * 100))) : null;
+  const isSafe = safetyPercent == null || safetyPercent >= 50;
+  const trendColor = safetyPercent == null ? 'var(--muted-faint)' : isSafe ? 'var(--green-text)' : 'var(--danger)';
+
   return (
-    <div style={{ background: 'var(--warm)', border: '1px solid var(--border)', borderRadius: 10, padding: '7px 9px', minWidth: 0 }}>
-      <p style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{label}</p>
-      <p style={{ marginTop: 2, fontSize: 12.5, fontWeight: 900, color: warn ? 'var(--danger)' : 'var(--ink)' }}>{value}</p>
-    </div>
+    <button type="button" className="combo-row press-fx-row" onClick={onOpen} style={{
+      animationDelay: `${index * 90}ms`,
+      width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left',
+      flexDirection: 'row', alignItems: 'center', gap: 11,
+      margin: isEquipped ? '0 -15px' : '0',
+      padding: isEquipped ? '15px 15px' : '15px 0',
+      background: isEquipped ? '#FFF6DD' : 'transparent',
+      borderRadius: isEquipped ? 14 : 0,
+    }}>
+      <div className={combo.rank === 1 ? 'combo-rank-badge--top' : undefined} style={{ flex: 'none', width: 26, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, borderRadius: '50%' }}>
+        <RankIcon rank={combo.rank} />
+        <span aria-hidden="true" style={{ fontSize: 8.5, fontWeight: 900, color: trendColor, lineHeight: 1 }}>{isSafe ? '▲' : '▼'}</span>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 900, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{combo.headline}</span>
+          {isEquipped
+            ? <span style={{ flex: 'none', fontSize: 9.5, fontWeight: 900, color: 'var(--gold-link)' }}>선택됨</span>
+            : combo.rank === 1 && (
+              <span style={{ flex: 'none', fontSize: 9, fontWeight: 900, color: '#fff', background: 'var(--gold-link)', padding: '2px 6px', borderRadius: 7 }}>가장 잘 맞아요</span>
+            )}
+        </div>
+        <p style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 11, lineHeight: 1.4, fontWeight: 700, color: 'var(--muted)' }}>{combo.reason}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5 }}>
+          {combo.items.slice(0, 3).map((item) => (
+            <span key={item.key} className="icon-badge" style={{ width: 15, height: 15, borderRadius: 5, background: item.iconBg, color: item.iconColor, fontSize: 7.5, flex: 'none' }}>{item.icon}</span>
+          ))}
+          {metrics && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted-faint)' }}>
+              상품 {combo.items.length}개 · 부족위험 {Math.round(metrics.cashShortageRisk * 100)}%
+            </span>
+          )}
+        </div>
+      </div>
+
+      <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#C7CDD3' }}>›</span>
+    </button>
   );
 }
 
-function ComboAdviceCard({ combo, simulation, isEquipped, onApply }) {
+// Top3 로우를 탭하면 "들어가서" 보는 상세 시트 — 수치·근거·AI 분석을 한 곳에 모은다.
+// 목록에서 보여주지 않던 내용은 전부 여기서 comboSimulations(이미 계산된 값)만 그대로 인용한다.
+// 행을 누르는 순간 이 조합이 이미 장착되므로(App.jsx onOpenCombo), 여기엔 별도의 "적용하기" 버튼이 없다 —
+// 시트는 "지금 보고 있는 조합 = 지금 장착된 조합"을 그대로 설명해주는 역할만 한다.
+// .scr에 걸린 scrIn 애니메이션(transform)이 자손의 position:fixed를 가둬버리므로,
+// body에 직접 렌더한다(InfoScreen.jsx의 바텀시트와 동일한 이유).
+function ComboDetailSheet({ combo, simulation, riskProfile, onClose }) {
   const metrics = summarizeSimulationForAdvisor(simulation);
+  const safetyPercent = metrics ? Math.max(4, Math.min(100, Math.round((1 - metrics.cashShortageRisk) * 100))) : null;
+  const safetyColor = safetyPercent == null ? 'var(--border-deep)'
+    : safetyPercent >= 80 ? 'var(--green-text)' : safetyPercent >= 50 ? 'var(--gold-link)' : 'var(--danger)';
+
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiDetail, setAiDetail] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const fetchAiDetail = async () => {
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await requestPortfolioDetail({
+        riskProfile,
+        candidate: buildComboDetailCandidate(combo, simulation),
+        headline: combo.headline,
+        reason: combo.reason,
+        caution: combo.caution || '',
+      });
+      setAiDetail(res && (res.fit || res.strength) ? res : { fit: combo.reason, strength: '', caution: combo.caution || '' });
+    } catch (e) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiClick = () => {
+    const next = !aiOpen;
+    setAiOpen(next);
+    if (next && !aiDetail && !aiLoading) fetchAiDetail();
+  };
+
+  return createPortal(
+    <div className="sheet-dim" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        {/* 스크롤해도 항상 보이는 헤더 — "뒤로가기 안 보인다"는 문제를 막기 위해 닫기 버튼을 고정한다 */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 2, background: '#fff', paddingBottom: 12, marginBottom: 4, borderBottom: '1px solid var(--border)' }}>
+          <div className="sheet-grip"><span /></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button type="button" onClick={onClose} aria-label="닫기" className="press-fx" style={{
+              flex: 'none', width: 32, height: 32, border: 'none', borderRadius: 10, background: 'var(--chip)',
+              color: 'var(--ink-soft)', fontSize: 16, fontWeight: 900, cursor: 'pointer', display: 'grid', placeItems: 'center',
+            }}>‹</button>
+            <span style={{ flex: 'none', display: 'grid', placeItems: 'center' }}><RankIcon rank={combo.rank} size={24} /></span>
+            <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{combo.headline}</p>
+          </div>
+          <p style={{ marginTop: 6, fontSize: 10.5, fontWeight: 800, color: 'var(--gold-link)' }}>지금 이 조합으로 장착해서 보고 있어요</p>
+        </div>
+
+        {/* 상품 이름은 아래 "시뮬레이션 요약 > 이 숫자에 포함된 상품"에 풀네임으로 나오므로
+            여기서 축약된 칩으로 중복 표시하지 않는다.
+            정보가 한 덩어리로 쭉 이어지지 않도록 "안정도"·"AI 설명"을 각자 카드로 나눈다. */}
+        {metrics && (
+          <div style={{ marginTop: 14, padding: '13px 14px', borderRadius: 14, background: 'var(--warm)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>
+              <span>이 조합의 안정도</span>
+              <span style={{ color: safetyColor }}>여유현금 {metrics.monthlyNetCashManwon}만원 · 부족위험 {Math.round(metrics.cashShortageRisk * 100)}%</span>
+            </div>
+            <div className="combo-fitbar">
+              <div className="combo-fitbar__fill" style={{ width: `${safetyPercent}%`, background: safetyColor }} />
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginTop: 12, padding: '13px 14px', borderRadius: 14, border: '1.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>AI 설명</p>
+          <p style={{ fontSize: 12.5, lineHeight: 1.6, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
+          {combo.caution && <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>}
+        </div>
+
+        <SimulationSummaryPanel simulation={simulation} simRows={buildSimRows(simulation)} loading={false} error="" variant="nested" items={combo.items} />
+
+        <button type="button" className="combo-ai-btn press-fx" onClick={handleAiClick} disabled={aiLoading} style={{
+          marginTop: 14, height: 46, border: 'none', borderRadius: 13, fontSize: 13.5, fontWeight: 900,
+          cursor: aiLoading ? 'default' : 'pointer', color: 'var(--ink)',
+        }}>
+          {!aiLoading && <IconSparkle size={16} />}
+          <span>{aiLoading ? 'AI가 분석하고 있어요…' : aiOpen ? '분석 결과 접기' : 'AI 분석하기'}</span>
+        </button>
+        {!aiOpen && !aiLoading && (
+          <p style={{ marginTop: 6, textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: 'var(--muted-faint)' }}>
+            숨은 장점과 확인할 점까지 짚어드려요
+          </p>
+        )}
+
+        {aiOpen && (
+          <div className="evidence-box">
+            {aiLoading && (
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>AI가 더 자세히 분석하고 있어요…</p>
+            )}
+            {!aiLoading && aiError && (
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>
+                불러오지 못했어요: {aiError}{' '}
+                <button type="button" className="press-fx" onClick={fetchAiDetail} style={{ border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, cursor: 'pointer', padding: 0 }}>다시 시도</button>
+              </p>
+            )}
+            {!aiLoading && !aiError && aiDetail && (
+              <>
+                {aiDetail.fit && (
+                  <div className="evidence-row">
+                    <span className="evidence-k">왜 맞나요</span>
+                    <span className="evidence-v">{aiDetail.fit}</span>
+                  </div>
+                )}
+                {aiDetail.strength && (
+                  <div className="evidence-row">
+                    <span className="evidence-k">장점</span>
+                    <span className="evidence-v">{aiDetail.strength}</span>
+                  </div>
+                )}
+                {aiDetail.caution && (
+                  <div className="evidence-row">
+                    <span className="evidence-k">확인할 점</span>
+                    <span className="evidence-v">{aiDetail.caution}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// 조합 카드를 펼쳤을 때(nested) / 직접 고른 상품 조합일 때(standalone) 공용으로 쓰는
+// "시뮬레이션 요약" — 실제 시뮬레이션 엔진(comboSimulations 또는 equipped 기반 simulation) 결과를
+// 그대로 보여줄 뿐, 여기서 새 숫자를 계산하지 않는다.
+function SimulationSummaryPanel({ simulation, simRows, loading, error, variant = 'standalone', items = [] }) {
+  const [view, setView] = useState('cash');
+  const [salesCase, setSalesCase] = useState('average');
+  const [activeMonth, setActiveMonth] = useState(null);
+
+  const detail = useMemo(() => buildSimulationDetail(simulation), [simulation]);
+  const baseView = detail.views[view] || detail.views.cash;
+  const current = view === 'sales' && baseView.scenarios?.[salesCase]
+    ? { ...baseView, ...baseView.scenarios[salesCase] }
+    : baseView;
+  const hasConstraintIssue = Boolean(simulation && !simulation.constraints?.repaymentBurdenPassed);
+  const riskTone = simulation?.confidence?.level === 'LOW'
+    ? 'base'
+    : hasConstraintIssue || detail.riskAfter > detail.riskBefore ? 'bad'
+    : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
+  const hasSimulationData = Boolean(simulation?.baseline?.monthlyCashFlows?.length);
+
+  const isNested = variant === 'nested';
+  const Wrapper = isNested ? 'div' : 'section';
+  const wrapperStyle = isNested
+    ? { marginTop: 12, padding: '13px 14px', background: '#fff', border: '1.5px solid var(--border)', borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 14 }
+    : { margin: '14px 22px 0', padding: '16px', background: '#fff', border: '1.5px solid var(--border)', borderRadius: 20, display: 'flex', flexDirection: 'column', gap: 14 };
+
   return (
-    <div style={{
-      border: isEquipped ? '1.5px solid var(--gold-deep)' : '1.5px solid var(--border)',
-      background: isEquipped ? '#FFF6DD' : '#fff', borderRadius: 18, padding: '14px 15px',
-      display: 'flex', flexDirection: 'column', gap: 10,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <Wrapper style={wrapperStyle}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 15, fontWeight: 900, color: '#191B1F' }}>시뮬레이션 요약</p>
+        </div>
         <span style={{
-          flex: 'none', width: 25, height: 25, borderRadius: 9, display: 'grid', placeItems: 'center',
-          background: RANK_TONE[combo.rank - 1] || '#EEF0F3', fontSize: 12, fontWeight: 900, color: '#191B1F',
-        }}>{combo.rank}</span>
-        <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--ink)', flex: 1, minWidth: 0 }}>{combo.headline}</p>
-        {isEquipped && <span style={{ flex: 'none', fontSize: 10.5, fontWeight: 900, color: 'var(--gold-link)' }}>선택됨</span>}
+          flex: 'none', fontSize: 10.5, fontWeight: 900, padding: '5px 8px', borderRadius: 10,
+          color: riskTone === 'base' ? '#8B95A1' : riskTone === 'good' ? '#5E8A3E' : '#D0564C',
+          background: riskTone === 'base' ? '#EEF0F3' : riskTone === 'good' ? '#EDF5E1' : '#FDE8E6',
+        }}>{riskTone === 'base' ? '기준 시나리오' : riskTone === 'good' ? '부담 완화' : '대출 부담 주의'}</span>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-        {combo.items.map((item) => (
-          <span key={item.key} style={{
-            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px 4px 4px', borderRadius: 9,
-            background: 'var(--chip)', fontSize: 10.5, fontWeight: 800, color: 'var(--ink-soft)',
-          }}>
-            <span className="icon-badge" style={{ width: 17, height: 17, borderRadius: 6, background: item.iconBg, color: item.iconColor, fontSize: 8.5 }}>{item.icon}</span>
-            {item.short || item.name}
-          </span>
-        ))}
-      </div>
-
-      {metrics && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-          <MiniStat label="월 여유현금" value={`${metrics.monthlyNetCashManwon}만원`} />
-          <MiniStat label="현금부족 위험" value={`${Math.round(metrics.cashShortageRisk * 100)}%`} warn={metrics.cashShortageRisk >= .2} />
+      {/* 목록·칩에서는 이름이 잘려 보이니, 이 숫자들이 어떤 상품 조합인지 여기서 풀네임으로 다시 밝힌다 */}
+      {items.length > 0 && (
+        <div style={{ padding: '11px 12px', borderRadius: 12, background: 'var(--warm)', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>이 숫자에 포함된 상품 {items.length}개</p>
+          {items.map((item) => (
+            <div key={item.key || item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="icon-badge" style={{ flex: 'none', width: 22, height: 22, borderRadius: 8, background: item.iconBg, color: item.iconColor, fontSize: 10.5 }}>{item.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      <p style={{ fontSize: 11.5, lineHeight: 1.55, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
-      {combo.caution && <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>}
+      {loading && <p style={{ fontSize: 12, fontWeight: 800, color: '#8B95A1' }}>월별 시나리오를 계산하고 있어요.</p>}
+      {error && <p style={{ fontSize: 12, fontWeight: 800, color: '#D0564C' }}>계산 확인 필요: {friendlyError(error)}</p>}
 
-      <button type="button" onClick={onApply} disabled={isEquipped} style={{
-        height: 40, border: 'none', borderRadius: 12, fontSize: 12.5, fontWeight: 900,
-        cursor: isEquipped ? 'default' : 'pointer',
-        background: isEquipped ? 'var(--chip)' : 'var(--gold)', color: 'var(--ink)',
-      }}>{isEquipped ? '적용 중인 조합이에요' : '이 조합 확인하기'}</button>
-    </div>
+      {!loading && !error && !hasSimulationData && <SimulationAwaiting />}
+
+      {!loading && !error && hasSimulationData && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {simRows.slice(0, 4).map((metric) => (
+              <div key={metric.name} style={{ background: '#F7F8FA', border: '1px solid #EAECEF', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
+                <p style={{ fontSize: 10.5, fontWeight: 800, color: '#9FA6B0' }}>{metric.name}</p>
+                <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#191B1F', whiteSpace: 'nowrap' }}>{metric.after}</p>
+                <p style={{ marginTop: 3, fontSize: 10.5, fontWeight: 800, color: metric.deltaColor }}>{metric.delta} <span style={{ color: '#B0B8C1', fontWeight: 600 }}>기준 {metric.before}</span></p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: '#F1F3F5', padding: 4, borderRadius: 13 }}>
+            {SIM_VIEWS.map((item) => {
+              const selected = view === item.key;
+              return (
+                <button key={item.key} type="button" className="press-fx" onClick={() => { setView(item.key); setActiveMonth(null); }} style={{
+                  height: 32, border: 'none', borderRadius: 10, cursor: 'pointer', background: selected ? '#fff' : 'transparent',
+                  color: selected ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
+                  boxShadow: selected ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
+                }}>{item.label}</button>
+              );
+            })}
+          </div>
+
+          <div>
+            {view === 'sales' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 10, padding: 4, background: '#F1F3F5', borderRadius: 12 }}>
+                {[
+                  ['conservative', '낮은 전망'],
+                  ['average', '기준 전망'],
+                  ['optimistic', '높은 전망'],
+                ].map(([key, label]) => (
+                  <button key={key} type="button" className="press-fx" onClick={() => { setSalesCase(key); setActiveMonth(null); }} style={{
+                    height: 30, border: 'none', borderRadius: 9, cursor: 'pointer',
+                    background: salesCase === key ? '#fff' : 'transparent',
+                    color: salesCase === key ? '#191B1F' : '#8B95A1', fontSize: 10.5, fontWeight: 900,
+                    boxShadow: salesCase === key ? '0 2px 8px rgba(25,27,31,.08)' : 'none',
+                  }}>{label}</button>
+                ))}
+                <p style={{ gridColumn: '1 / -1', padding: '2px 6px 3px', fontSize: 9.5, lineHeight: 1.4, fontWeight: 700, color: '#9FA6B0' }}>
+                  앞으로의 매출은 최근 연동 이력을 바탕으로 계산한 추정치예요.
+                </p>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+              <p style={{ fontSize: 14, fontWeight: 900, color: '#191B1F' }}>{current.title}</p>
+              <p style={{ fontSize: 11.5, fontWeight: 900, color: current.unavailable ? '#9FA6B0' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
+                {current.unavailable ? '최근 6개월 매출 필요' : `${current.displayBefore ?? current.before} → ${current.displayAfter ?? `${current.after}${current.unit}`}`}
+              </p>
+            </div>
+          </div>
+
+          {current.unavailable ? (
+            <div style={{ minHeight: 120, display: 'grid', placeItems: 'center', padding: 18, border: '1.5px solid #EAECEF', borderRadius: 14, background: '#FFFFFF', color: '#8B95A1', textAlign: 'center', fontSize: 11.5, fontWeight: 800, lineHeight: 1.55 }}>
+              최근 6개월 이상의 실제 매출 이력이 연결되면<br />월별로 현금이 모자랄 가능성을 보여드려요.
+            </div>
+          ) : (
+            <MiniCompareChart points={current.points} scaleValues={current.scaleValues} scaleFromZero={current.scaleFromZero} inverse={current.inverse} unit={current.unit} title={current.title} onPointChange={setActiveMonth} />
+          )}
+
+          {activeMonth && <MonthlyChangeSheet point={activeMonth} unit={current.unit} view={view} />}
+
+          {view === 'risk' && !current.unavailable && (
+            <RiskGauge
+              beforeProbability={simulation.baseline.stochastic.bufferBreachProbability}
+              afterProbability={simulation.selectedScenario.stochastic.bufferBreachProbability}
+              simulationCount={simulation.selectedScenario.stochastic.simulationCount}
+            />
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {current.facts.map((fact) => (
+              <div key={fact.k} style={{ display: 'flex', alignItems: 'baseline', gap: 12, borderTop: '1.5px solid #EAECEF', paddingTop: 9 }}>
+                <p style={{ flex: 'none', width: 152, fontSize: 10.5, fontWeight: 800, color: '#9FA6B0', lineHeight: 1.4 }}>{fact.k}</p>
+                <p style={{ flex: 1, minWidth: 0, textAlign: 'right', fontSize: 13, fontWeight: 900, color: '#191B1F', lineHeight: 1.3 }}>{fact.v}</p>
+              </div>
+            ))}
+          </div>
+
+          {(detail.violations.length > 0 || detail.warnings.length > 0) && (
+            <div style={{ borderTop: '1.5px solid #EAECEF', paddingTop: 10 }}>
+              <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? '#D0564C' : '#8B95A1' }}>{detail.violations[0] || detail.warnings[0]}</p>
+            </div>
+          )}
+        </>
+      )}
+    </Wrapper>
   );
 }
 
@@ -424,55 +672,6 @@ function MonthlyChangeSheet({ point, unit, view }) {
         <p style={{ marginTop: 2, fontSize: 10, fontWeight: 700, color: '#8B95A1' }}>{context}</p>
       </div>
     </div>
-  );
-}
-
-function OutcomeStrip({ metric, riskTone }) {
-  if (!metric) return null;
-
-  const tone = riskTone === 'good'
-    ? { background: '#EDF5E1', border: '#CFE2B8', color: '#5E8A3E' }
-    : riskTone === 'bad'
-      ? { background: '#FDECE9', border: '#F3C7C0', color: '#D0564C' }
-      : { background: '#FFFFFF', border: '#EAECEF', color: '#8B95A1' };
-
-  return (
-    <section style={{ margin: '12px 22px 0', padding: '12px 14px', border: `1.5px solid ${tone.border}`, borderRadius: 16, background: tone.background, display: 'flex', alignItems: 'center', gap: 11 }}>
-      <span style={{ width: 30, height: 30, flex: 'none', display: 'grid', placeItems: 'center', borderRadius: 10, background: '#fff', color: tone.color, fontSize: 15 }}>✦</span>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontSize: 10.5, fontWeight: 800, color: '#8B95A1' }}>이번 조합으로</p>
-        <p style={{ marginTop: 2, fontSize: 14, fontWeight: 900, color: '#191B1F' }}>{metric.name} <span style={{ color: tone.color }}>{metric.after}</span></p>
-      </div>
-      <span style={{ flex: 'none', fontSize: 11, fontWeight: 900, color: tone.color }}>{metric.delta}</span>
-    </section>
-  );
-}
-
-function EquippedProducts({ equipped, toggle }) {
-  if (equipped.length === 0) return null;
-
-  return (
-    <aside className="equipped-products" aria-label={`장착 상품 ${equipped.length}개`}>
-      <div className="equipped-products__header">
-        <span>장착 {equipped.length}개</span>
-      </div>
-      <div className="equipped-products__list">
-        {equipped.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className="equipped-product equipped-product--list"
-            onClick={() => toggle(item)}
-            title={`${item.short} 해제`}
-            style={{ '--item-color': item.iconColor, '--item-bg': item.iconBg }}
-          >
-            <span className="icon-badge equipped-product__icon">{item.icon}</span>
-            <span className="equipped-product__name">{item.short}</span>
-            <span className="equipped-product__remove" aria-hidden="true">×</span>
-          </button>
-        ))}
-      </div>
-    </aside>
   );
 }
 

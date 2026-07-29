@@ -196,6 +196,48 @@ button { font-family: inherit; }
   .owner-character__motion, .owner-character__head, .owner-couple__spark, .equipped-product, .equipped-bubble__item { animation: none; transition: none; }
 }
 
+/* ── AI 추천 조합 Top3 — 토스증권 리스트 느낌(하나의 박스 + 구분선 로우) ── */
+@keyframes comboCardIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes comboBadgeGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,188,0,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,188,0,0); } }
+@keyframes comboFitFill { from { width: 0; } }
+.combo-list { background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 4px 15px; box-shadow: 0 1px 2px rgba(25,27,31,.05); }
+.combo-row { padding: 17px 0; display: flex; flex-direction: column; gap: 10px; animation: comboCardIn .38s cubic-bezier(.2,.9,.3,1) both; transition: background .15s ease; }
+.combo-row + .combo-row { border-top: 2px solid var(--border-strong); }
+.combo-card-head { cursor: pointer; transition: transform .12s ease; }
+.combo-card-head:active { transform: scale(.99); }
+.combo-rank-badge--top { animation: comboBadgeGlow 2.4s ease-in-out infinite; }
+.combo-fitbar { position: relative; height: 5px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.combo-fitbar__fill { position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: 5px; animation: comboFitFill .7s cubic-bezier(.2,.9,.3,1) both; transition: width .3s ease; }
+/* AI 분석하기 — 그라데이션 없이 단색 골드 버튼 */
+.combo-ai-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; background: var(--gold);
+  transition: transform .12s ease, filter .12s ease;
+}
+.combo-ai-btn:disabled { opacity: .85; }
+.combo-ai-btn:active:not(:disabled) { transform: scale(.97); }
+.combo-toggle-row { transition: transform .12s ease, filter .12s ease; }
+.combo-toggle-row:active { transform: scale(.99); }
+
+/* ── 클릭 가능함을 보여주는 공용 눌림·호버 효과 ──
+   배경색은 상태별 인라인 스타일이 이미 쓰고 있어 충돌하므로 transform·filter만 쓴다.
+   press-fx: 버튼처럼 작고 독립된 요소 / press-fx-row: 폭이 넓은 리스트 행·카드 */
+.press-fx, .press-fx-row { transition: transform .12s ease, filter .12s ease; }
+.press-fx:active:not(:disabled) { transform: scale(.96); }
+.press-fx-row:active:not(:disabled) { transform: scale(.99); }
+@media (hover: hover) and (pointer: fine) {
+  .press-fx:hover:not(:disabled),
+  .press-fx-row:hover:not(:disabled),
+  .combo-ai-btn:hover:not(:disabled),
+  .combo-toggle-row:hover { filter: brightness(.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combo-row, .combo-rank-badge--top, .combo-fitbar__fill,
+  .press-fx, .press-fx-row, .combo-ai-btn, .combo-toggle-row { animation: none; transition: none; }
+  .press-fx:active, .press-fx-row:active, .combo-ai-btn:active, .combo-toggle-row:active { transform: none; }
+}
+
 .hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
 .hdr-back { width: 38px; height: 38px; border: none; background: #FFF1CC; border-radius: 12px; font-size: 20px; color: var(--ink); cursor: pointer; line-height: 1; }
 .hdr-title { font-size: 16px; font-weight: 800; color: var(--ink); letter-spacing: -.3px; }
@@ -270,9 +312,13 @@ button { font-family: inherit; }
 
 /* ── 탭 안 단계 전환 세그먼트 ── */
 .steptabs { display: grid; gap: 5px; margin: 4px 22px 0; background: var(--chip); padding: 4px; border-radius: 13px; }
-.steptab { height: 34px; border: none; border-radius: 10px; cursor: pointer; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 900; }
+.steptab { height: 34px; border: none; border-radius: 10px; cursor: pointer; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 900; transition: transform .12s ease, filter .12s ease; }
 .steptab.on { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(25,27,31,.08); }
 .steptab:disabled { color: var(--muted-faint); cursor: default; }
+.steptab:active:not(:disabled) { transform: scale(.96); }
+@media (hover: hover) and (pointer: fine) {
+  .steptab:hover:not(:disabled) { filter: brightness(.96); }
+}
 
 /* ── 홈: 진단 요약 ── */
 .rank-card { width: 100%; text-align: left; background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 20px 22px; cursor: pointer; transition: transform .15s ease; }

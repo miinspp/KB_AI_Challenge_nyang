@@ -307,6 +307,16 @@ export function buildCandidatePayloads(base, combos) {
   }));
 }
 
+// "이 조합 분석 결과 자세히 보기"에 필요한 candidate payload — 시뮬레이터 탭과 AI 분석결과 탭이
+// 항상 같은 모양으로 /api/portfolio/detail을 호출하도록 여기서 한 번만 조립한다.
+export function buildComboDetailCandidate(combo, simulation) {
+  return {
+    comboId: combo.comboId,
+    products: combo.items.map((item) => ({ id: item.id, name: item.short || item.name, type: item.type })),
+    metrics: summarizeSimulationForAdvisor(simulation),
+  };
+}
+
 // Claude에 넘길 조합별 핵심 지표 — 존재하는 숫자만 추려 보낸다(신규 계산 없음, 인용만 가능하게).
 export function summarizeSimulationForAdvisor(simulation) {
   if (!simulation) return null;
