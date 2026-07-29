@@ -20,6 +20,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# 프로젝트 루트 .env 자동 로드 (python-dotenv 설치 시). 미설치면 export/source 로 넣은 실제 환경변수를 사용.
+# ⚠ 아래 agent / portfolio_advisor 는 모듈 최상단에서 os.getenv 로 모델명을 굳히므로,
+#   반드시 그 import 보다 먼저 로드해야 .env 의 AGENT_MODEL 이 반영된다.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
+
 import engine
 import agent  # AI 오케스트레이터 (/api/agent)
 import portfolio_advisor  # 조합 분석 AI (/api/portfolio/analyze) — 시뮬레이터 전용, agent.py와 별개

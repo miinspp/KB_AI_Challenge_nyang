@@ -54,7 +54,9 @@ cd recommend-service
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=...          # (선택) /api/agent, /api/portfolio 용. 추천엔 불필요
+                                      # 키는 프로젝트 루트 .env 에서 자동 로드된다(python-dotenv).
+                                      # .env 를 안 쓰면: export ANTHROPIC_API_KEY=...
+                                      # /api/agent, /api/portfolio 전용 — 추천엔 불필요
 uvicorn app:app --port 8000
 ```
 
@@ -116,6 +118,10 @@ npm run dev
 - **이 엔드포인트는 LLM을 호출하지 않는다.** 랭킹·요약 모두 로컬 모델 담당이라
   `ANTHROPIC_API_KEY` 없이도 완전히 동작한다. 키는 같은 서비스의 `/api/agent`,
   `/api/portfolio` 에만 필요하다.
+- **환경변수**: `app.py` 가 기동 시 프로젝트 루트 `.env` 를 자동 로드한다.
+  `python-dotenv` 가 없으면 조용히 건너뛰고 `export` 로 넣은 실제 환경변수를 쓴다.
+  로드가 제대로 됐는지는 `GET /api/portfolio/health` 의 `model` 이 `.env` 의
+  `AGENT_MODEL` 과 일치하는지로 확인한다(코드 기본값은 haiku).
 - **프론트 폴백**: 이 서비스가 꺼져 있으면 프론트가 기존 규칙기반 추천(고정 KB 상품 6개)으로 자동 폴백 → 데모 중 죽어도 화면은 산다.
   - 반대로 말하면, **추천이 매번 똑같은 KB 상품 6개면 이 서비스가 안 켜진 것**이다. 실제 추천은 공고명("2026년…", "[서울]…")으로 뜬다.
 
