@@ -348,6 +348,18 @@ button { font-family: inherit; }
 
 /* ── 홈 화면 ── */
 .home { animation: scrIn .4s ease both; padding: 26px 22px 110px; display: flex; flex-direction: column; gap: 18px; }
+/* ── 표지 — 크림 단색 1장 + 상단 워드마크 + 하단 곰돌이 ── */
+.splash { position: absolute; inset: 0; background: #FCF3DC; display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; overflow: hidden; }
+.splash-mark { margin-top: 15dvh; text-align: center; }
+.splash-title { font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -1px; line-height: 1.1; }
+.splash-sub { margin-top: 10px; font-size: 13.5px; font-weight: 700; color: #A79778; letter-spacing: -.2px; }
+/* 곰돌이는 바닥에 붙이고 아래쪽을 배경으로 흐리게 지운다(컷아웃 경계 감추기) */
+.splash-char {
+  margin-top: auto; width: 56%; max-width: 240px; height: auto; object-fit: contain;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
+}
+
 .home-logo { font-weight: 800; font-size: 21px; color: var(--ink); letter-spacing: -.5px; line-height: 1; }
 
 /* ── 홈 상단 마스코트 인사 — 은은한 물결 그라데이션 배경 위에 곰이 자연스럽게 서 있는 장면 ── */

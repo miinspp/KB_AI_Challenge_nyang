@@ -1,34 +1,19 @@
-import { AppIcon } from '../../shared/Icons';
+import bearOwner from '../../assets/simulator/bear-owner-cutout.png';
 
-// 앱 첫 표지 화면 — 화이트→골드 그라데이션 배경 + 앱 아이콘. 탭하면 시작.
+/**
+ * 앱 첫 표지 — 크림 단색 1장 위에 워드마크(상단)와 곰돌이(하단)만 둔다.
+ * 새싹 아이콘 대신 곰돌이가 로고 역할을 하므로 AppIcon 은 쓰지 않는다.
+ * 화면 아무 곳이나 탭하면 시작.
+ */
 export default function SplashScreen({ onStart }) {
   return (
-    <div
-      onClick={onStart}
-      style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #FFFBF0 45%, #FFF3D2 78%, #FFE9AE 100%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', userSelect: 'none',
-      }}
-    >
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', filter: 'drop-shadow(0 10px 20px rgba(255,188,0,.35))' }}>
-          <AppIcon size={88} />
-        </div>
-        <div style={{ marginTop: 18, fontWeight: 800, fontSize: 20, color: 'var(--ink)', letterSpacing: '-.4px' }}>
-          든든이
-        </div>
-        <div style={{ marginTop: 6, fontWeight: 600, fontSize: 13.5, color: 'var(--muted)', letterSpacing: '-.1px' }}>
-          우리 가게, 든든하게
-        </div>
+    <div className="splash" onClick={onStart} role="button" tabIndex={0} aria-label="든든이 시작하기"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onStart(); }}>
+      <div className="splash-mark">
+        <p className="splash-title">든든이</p>
+        <p className="splash-sub">우리 가게, 든든하게</p>
       </div>
-      <span style={{
-        position: 'absolute', bottom: 40, fontWeight: 700,
-        fontSize: 13.5, color: '#A5811A',
-      }}>
-        시작하기
-      </span>
+      <img className="splash-char" src={bearOwner} alt="" aria-hidden="true" />
     </div>
   );
 }
