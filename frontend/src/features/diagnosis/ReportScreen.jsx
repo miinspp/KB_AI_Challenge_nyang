@@ -11,6 +11,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
  */
 export default function ReportScreen({ rank, meta, salesHistory }) {
   const [openMetric, setOpenMetric] = useState(null);
+  const [showNotes, setShowNotes] = useState(false);   // 산출 기준·방법론 각주 (기본 접힘)
 
   if (!rank) {
     return (
@@ -177,18 +178,27 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
         })}
       </section>
 
-      {/* 산출 기준 · 방법론 — 성격이 같은 각주라 한 상자로 묶는다 */}
+      {/* 산출 기준 · 방법론 — 각주가 길어 기본은 접어두고, 요약 한 줄만 항상 보여준다 */}
       <section className="sec-card">
-        <div className="sec-card-head"><p className="sec-card-title">산출 기준 · 방법론</p></div>
+        <button onClick={() => setShowNotes((v) => !v)}
+          style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+          <div className="sec-card-head" style={{ marginBottom: 0 }}>
+            <p className="sec-card-title">산출 기준 · 방법론</p>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted-faint)' }}>
+              {showNotes ? '접기 ▲' : '자세히 ▼'}
+            </span>
+          </div>
+        </button>
 
         <p style={{
-          background: 'var(--green-bg)', borderRadius: 12, padding: '12px 14px', marginTop: 4,
+          background: 'var(--green-bg)', borderRadius: 12, padding: '12px 14px', marginTop: 10,
           fontSize: 12.5, color: 'var(--green)', fontWeight: 700, lineHeight: 1.6,
         }}>
           서울시 상권분석서비스 실측 데이터 기준으로 산출했어요{areaRank ? ` · ${areaRank.areaType} 비교 포함` : ''}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 12, padding: '0 2px' }}>
+        {showNotes && (
+        <div className="pop" style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 12, padding: '0 2px' }}>
           {[
             ...(rank.notes || []),
             ...(areaRank ? [`${areaRank.areaType}만 비교하면 상위 ${areaRank.topPercent}% (매출 상위 ${areaRank.salesTopPercent}%) 예요.`] : []),
@@ -200,6 +210,7 @@ export default function ReportScreen({ rank, meta, salesHistory }) {
             </p>
           ))}
         </div>
+        )}
       </section>
     </div>
   );
