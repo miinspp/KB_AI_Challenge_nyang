@@ -21,6 +21,7 @@ import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
+import ScenarioLabScreen from './features/simulator/ScenarioLabScreen';
 import {
   buildSimRows, buildSimulationOptions, buildSimulationPayload,
   pickOptionsForProfile, generateCandidateCombos, buildCandidatePayloads, summarizeSimulationForAdvisor,
@@ -54,7 +55,7 @@ export default function App() {
   const [recSub, setRecSub] = useState('list');      // list | risk (추천 목록 → 성향분석 → 시뮬레이터)
   const [riskProfile, setRiskProfile] = useState(null);  // 성향분석 결과 — 시뮬레이터/에이전트 입력값으로 전달
   const [simSub, setSimSub] = useState('sim');       // sim | portfolio
-  const [overlay, setOverlay] = useState(null);      // null | 'account' | 'hometax'
+  const [overlay, setOverlay] = useState(null);      // null | 'account' | 'hometax' | 'scenario'
   const [requestSheet, setRequestSheet] = useState(null);  // 내 정보 → 진단 입력 시트 열기
 
   const [industries, setIndustries] = useState([]);
@@ -469,6 +470,12 @@ export default function App() {
             onUnlink={() => { setHometax(null); setOverlay(null); }}
           />
         )}
+        {overlay === 'scenario' && (
+          <ScenarioLabScreen
+            equipped={equipped} simulationBase={simulationBase}
+            onBack={() => setOverlay(null)}
+          />
+        )}
 
         {!overlay && tab === 1 && (
           <HomeScreen
@@ -539,7 +546,8 @@ export default function App() {
                 riskProfile={riskProfile} simulationReady={simulationReady}
                 topCombos={topCombos} comboSimulations={comboSimulations}
                 comboAnalysisLoading={comboAnalysisLoading} comboAnalysisDone={comboAnalysisDone} comboAnalysisError={comboAnalysisError}
-                equippedComboId={equippedComboId} onApplyCombo={applyCombo} onRetryComboAnalysis={retryComboAnalysis} />
+                equippedComboId={equippedComboId} onApplyCombo={applyCombo} onRetryComboAnalysis={retryComboAnalysis}
+                onOpenScenarioLab={() => { setOverlay('scenario'); window.scrollTo(0, 0); }} />
             )}
             {simSub === 'portfolio' && (
               <PortfolioScreen equipped={equipped} simRows={simRows}
