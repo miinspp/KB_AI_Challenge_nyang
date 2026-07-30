@@ -44,7 +44,7 @@ jobs:
           python-version: '3.11'
       - name: Syntax check
         working-directory: recommend-service
-        run: python -m py_compile app.py engine.py agent.py portfolio_advisor.py
+        run: python -m py_compile app.py engine.py portfolio_advisor.py
 
   deploy:
     needs: [backend, frontend, recommend-service]
