@@ -51,30 +51,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      # 임시 진단 — SSH 타임아웃(dial i/o timeout)의 원인을 러너에서 직접 가른다.
-      #   80 성공 + 22 실패 → 주소는 맞고 보안 그룹이 22번을 막는 것
-      #   둘 다 실패      → EC2_HOST 값이 안 닿는 주소(사설 IP/구 IP)
-      # 시크릿은 길이·사설IP여부·해시 앞 8자리만 찍어 값 자체는 노출하지 않는다.
-      - name: Diagnose SSH reachability
-        continue-on-error: true
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          echo "EC2_HOST 길이: ${#EC2_HOST} (54.116.249.2 라면 12)"
-          echo "EC2_HOST 지문: $(printf %s "$EC2_HOST" | sha256sum | cut -c1-8)"
-          case "$EC2_HOST" in
-            10.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*|192.168.*|ip-*)
-              echo "판정: 사설 IP/사설 DNS — 인터넷에서 도달 불가" ;;
-            *) echo "판정: 사설 IP 아님" ;;
-          esac
-          for port in 22 80; do
-            if nc -vz -w 5 "$EC2_HOST" "$port" 2>&1; then
-              echo "  → $port 연결 성공"
-            else
-              echo "  → $port 연결 실패(타임아웃/차단)"
-            fi
-          done
-
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -86,5 +62,11 @@ jobs:
             cd ${{ secrets.EC2_DEPLOY_PATH }}
             git fetch origin main
             git reset --hard origin/main
+            # 빌드 전에 공간을 확보한다 — 디스크가 차서 레이어 추출이 실패한 전례가 있다.
+            # 빌드 캐시와 dangling 이미지만 지우므로 실행 중인 컨테이너는 건드리지 않는다.
+            # --volumes 는 절대 붙이지 말 것: txn_data(corrections.jsonl)가 날아간다.
+            docker builder prune -af
+            docker image prune -f
+            df -h /
             docker compose up -d --build
             docker image prune -f

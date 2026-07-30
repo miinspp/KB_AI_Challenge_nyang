@@ -11,6 +11,11 @@ RUN curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o 
     && unzip -q awscliv2.zip && ./aws/install && rm -rf awscliv2.zip aws
 
 COPY recommend-service/requirements.txt recommend-service/requirements.txt
+# torch 를 CPU 전용 휠로 먼저 고정한다. 기본 PyPI 휠은 CUDA 빌드라서 nvidia-cublas·cudnn·nccl 등
+# 약 2.2GB(압축 기준)를 함께 끌고 오는데, EC2(t3)에는 GPU가 없어 전부 쓸모없는 용량이고
+# 이것 때문에 이미지 레이어 추출 중 "no space left on device" 로 배포가 깨졌다.
+# 이 줄이 torch 를 선점하므로 아래 requirements 설치는 CUDA 버전을 다시 받지 않는다.
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch
 RUN pip install --no-cache-dir -r recommend-service/requirements.txt
 
 COPY recommend-service recommend-service
