@@ -367,7 +367,7 @@ export default function App() {
     if (tab === 2 && diagSub === 'input') {
       cta = {
         label: analyzing ? '분석 중…' : '우리 가게 분석하기',
-        disabled: !canAnalyze || analyzing, green: true, onClick: analyze,
+        disabled: !canAnalyze || analyzing, primary: true, onClick: analyze,
       };
     } else if (tab === 2 && diagSub === 'report') {
       cta = { label: '비용 리포트 보기', onClick: () => { setDiagSub('cost'); window.scrollTo(0, 0); } };
@@ -378,7 +378,7 @@ export default function App() {
       // 막다른 길이라, 진단 입력으로 되돌린다.
       cta = rank
         ? { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } }
-        : { label: '진단 먼저 하기', green: true, onClick: () => { setDiagSub('input'); go(2); } };
+        : { label: '진단 먼저 하기', primary: true, onClick: () => { setDiagSub('input'); go(2); } };
     } else if (tab === 4 && simSub === 'sim') {
       cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
@@ -583,8 +583,8 @@ export default function App() {
           <button className="cta" onClick={() => { if (!cta.disabled) cta.onClick(); }} disabled={cta.disabled}
             style={cta.disabled
               ? { background: 'var(--border-strong)', color: 'var(--muted-faint)', boxShadow: 'none', cursor: 'default' }
-              : cta.green
-                ? { background: 'var(--green-deep)', color: '#fff', boxShadow: 'none' }
+              : cta.primary
+                ? { background: 'var(--cta-dark)', color: '#fff', boxShadow: 'none' }
                 : undefined}>
             {cta.label}
           </button>

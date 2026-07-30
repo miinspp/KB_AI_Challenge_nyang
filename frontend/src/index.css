@@ -51,6 +51,10 @@
   /* 정책자금 계열 */
   --blue: #4A79B8;
 
+  /* 주 행동 CTA — 홈 진단 카드(.cta-card)와 같은 다크 브라운.
+     칩·진행바에도 쓰이는 --green-deep 과 분리해 CTA 색만 따로 바꿀 수 있게 둔다 */
+  --cta-dark: #2B2520;
+
   /* 연동 기관 배지 — 기관 브랜드색이라 그린/골드 계열과 별도로 둔다 */
   --kb: #FFBC00;            /* KB 노랑 (배지 글씨는 --ink) */
   --hometax: var(--green);  /* 홈택스 — 앱 그린 계열에 맞춘다 (배지 글씨는 흰색) */
@@ -420,7 +424,7 @@ button { font-family: inherit; }
 .hero-char { flex: none; width: 152px; height: auto; align-self: flex-end; margin: 0 4px -2px 0; object-fit: contain; }
 .home-body { display: flex; flex-direction: column; gap: 14px; padding: 16px 22px 0; }
 
-.cta-card { background: #2B2520; border-radius: 22px; padding: 22px; }
+.cta-card { background: var(--cta-dark); border-radius: 22px; padding: 22px; }
 .cta-card-eyebrow { font-size: 12px; font-weight: 800; color: #C0A97C; }
 .cta-card-title { margin-top: 8px; font-size: 21px; font-weight: 900; color: #fff; line-height: 1.4; letter-spacing: -.5px; }
 .cta-card-title b { color: var(--gold); }
