@@ -378,7 +378,7 @@ export default function App() {
       // 막다른 길이라, 진단 입력으로 되돌린다.
       cta = rank
         ? { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } }
-        : { label: '진단 먼저 하기', primary: true, onClick: () => { setDiagSub('input'); go(2); } };
+        : { label: '진단 먼저 하기', onClick: () => { setDiagSub('input'); go(2); } };
     } else if (tab === 4 && simSub === 'sim') {
       cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
