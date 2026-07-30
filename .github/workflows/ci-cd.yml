@@ -1,11 +1,14 @@
 name: CI/CD
 
+# 자동 실행을 껐다 — push·PR 로는 아무 잡도 돌지 않는다.
+# 필요할 때 Actions 탭의 "Run workflow"(수동 실행)로만 돌린다.
+# 되살리려면 아래 push/pull_request 두 블록의 주석을 풀면 된다.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:   # 배포(deploy)는 이 수동 실행에서만 동작한다 — 아래 deploy 잡 참고
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+  workflow_dispatch:   # 배포(deploy)도 이 수동 실행에서만 동작한다 — 아래 deploy 잡 참고
 
 jobs:
   backend:
