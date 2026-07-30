@@ -1,0 +1,19 @@
+# 루트를 빌드 컨텍스트로 쓰는 이미지(recommend-service 등)의 컨텍스트 크기를 줄인다.
+.git/
+.venv/
+recommend-service/.venv/
+recommend-service/venv/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+backend/.gradle/
+backend/build/
+pipeline/raw/
+pipeline/models/
+pipeline/__pycache__/
+**/__pycache__/
+*.pyc
+.DS_Store
+.idea/
+checkpoints/
+*.log

@@ -43,6 +43,7 @@ pipeline/txn/data/
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # === misc ===
 *.log

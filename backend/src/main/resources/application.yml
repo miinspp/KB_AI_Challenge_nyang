@@ -14,3 +14,5 @@ txn:
 # 크론 파이프라인이 갱신하는 외부 데이터 파일을 쓰려면 주석 해제 (기본: 클래스패스 내장 데이터)
 # app:
 #   data-file: /opt/nyang/backend/src/main/resources/data/industry_distributions.json
+#   cors:
+#     allowed-origins: https://nyang.example.com  # 배포 시 APP_CORS_ALLOWED_ORIGINS 환경변수로 주입 권장

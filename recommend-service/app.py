@@ -12,6 +12,7 @@ FastAPI 추천 서비스 — POST /api/recommend
 """
 from __future__ import annotations
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -34,7 +35,10 @@ DATA = Path(__file__).parent / "data" / "reco_pool.json"   # 정책(정제) + KB
 CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
 
 app = FastAPI(title="소상공인 추천 서비스")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# CORS_ALLOWED_ORIGINS(쉼표 구분)로 배포 도메인만 허용. 미설정 시 로컬 개발 기본값(전체 허용).
+_cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
+_cors_origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()] or ["*"]
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
 app.include_router(agent.router)  # POST /api/agent
 app.include_router(portfolio_advisor.router)  # POST /api/portfolio/analyze
 
