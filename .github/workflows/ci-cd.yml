@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:   # 배포(deploy)는 이 수동 실행에서만 동작한다 — 아래 deploy 잡 참고
 
 jobs:
   backend:
@@ -46,9 +47,13 @@ jobs:
         working-directory: recommend-service
         run: python -m py_compile app.py engine.py portfolio_advisor.py
 
+  # EC2 인스턴스를 정리하면서 자동 배포는 껐다(로컬 실행으로 전환). 배포 절차 자체는 언제든
+  # 서버를 다시 세울 수 있도록 그대로 남겨두고, Actions 탭의 "Run workflow"(수동 실행)에서만
+  # 동작하게 한다. 그래서 main 에 push 해도 이 잡은 건너뛰고 CI 는 초록으로 유지된다.
+  # 서버를 되살릴 때는 EC2_HOST 등 시크릿을 새 주소로 갱신한 뒤 수동 실행하면 된다.
   deploy:
     needs: [backend, frontend, recommend-service]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
