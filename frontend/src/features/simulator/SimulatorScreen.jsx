@@ -19,6 +19,7 @@ export default function SimulatorScreen({
   equipped, options, toggle, simRows, simulation, loading, error,
   riskProfile, simulationReady, topCombos = [], comboSimulations = {},
   comboAnalysisLoading, comboAnalysisDone, comboAnalysisError, equippedComboId, onApplyCombo, onRetryComboAnalysis,
+  onOpenScenarioLab,
 }) {
   // 직접 고른 상품의 "시뮬레이션 요약"은 눌러야만 보여준다(항상 떠 있던 고정 블록 제거).
   // undefined = "아직 아무것도 안 눌렀다" — 이 경우엔 아래 default 값을 매 렌더 다시 계산해서 쓴다.
@@ -140,6 +141,25 @@ export default function SimulatorScreen({
         )}
       </section>
 
+      {simulationReady && onOpenScenarioLab && (
+        <section style={{ margin: '10px 22px 0' }}>
+          <button type="button" className="press-fx-row" onClick={onOpenScenarioLab} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer',
+            border: '1.5px solid var(--border)', background: '#fff', borderRadius: 18, padding: '13px 14px',
+            boxShadow: '0 1px 2px rgba(25,27,31,.05)',
+          }}>
+            <ScenarioLabThumb />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 900, color: 'var(--ink)' }}>상황 실험실</span>
+              <span style={{ display: 'block', marginTop: 3, fontSize: 11, lineHeight: 1.4, fontWeight: 700, color: 'var(--muted)' }}>
+                매출·고정비가 달라지면 어떻게 될지 슬라이더로 미리 확인해보세요
+              </span>
+            </span>
+            <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#CBC3B3' }}>›</span>
+          </button>
+        </section>
+      )}
+
       {manualSummaryOpen && (
         <SimulationSummaryPanel simulation={simulation} simRows={simRows} loading={loading} error={error} variant="standalone" items={equipped} />
       )}
@@ -155,16 +175,39 @@ export default function SimulatorScreen({
 }
 
 // ── 조합 분석 AI — 성향분석 완료 후 Top3 조합 계산 로딩 + 결과 카드 ──
-// 1·2·3 순위를 숫자 대신 한눈에 알아볼 수 있는 메달 아이콘으로 보여준다.
-const MEDALS = ['🥇', '🥈', '🥉'];
+// 1·2·3 순위는 메달 이모지 대신, 앱의 골드 팔레트를 그대로 쓴 숫자 배지로 구분한다.
+const RANK_TONES = {
+  1: { grad: 'linear-gradient(140deg,#FFE8AE,#E8B93E)', ink: '#5B4400' },
+  2: { grad: 'linear-gradient(140deg,#ECE7DC,#C7BEA9)', ink: '#4A4438' },
+  3: { grad: 'linear-gradient(140deg,#EAD0AE,#C99A6C)', ink: '#4A2F14' },
+};
 function RankIcon({ rank, size = 20 }) {
-  const medal = MEDALS[rank - 1];
-  if (medal) return <span aria-hidden="true" style={{ fontSize: size, lineHeight: 1 }}>{medal}</span>;
+  const tone = RANK_TONES[rank];
   return (
     <span style={{
-      width: size, height: size, borderRadius: '50%', background: '#F2ECE1', display: 'grid', placeItems: 'center',
-      fontSize: size * 0.55, fontWeight: 900, color: 'var(--ink)',
+      width: size, height: size, borderRadius: size * 0.32, display: 'grid', placeItems: 'center',
+      background: tone ? tone.grad : '#F2ECE1',
+      boxShadow: tone ? 'inset 0 0 0 1px rgba(255,255,255,.55)' : 'none',
+      fontSize: size * 0.52, fontWeight: 900, color: tone ? tone.ink : 'var(--ink)',
     }}>{rank}</span>
+  );
+}
+
+// "상황 실험실" 진입 버튼의 예시 썸네일 — 실제 사진 대신, 안에 들어갈 슬라이더+게이지를
+// 그대로 축소한 미니 미리보기라 화면이 비어 보이지 않으면서도 기능을 정확히 예고한다.
+function ScenarioLabThumb() {
+  return (
+    <span aria-hidden="true" style={{
+      flex: 'none', width: 46, height: 46, borderRadius: 13,
+      background: 'linear-gradient(135deg,#FFF3D0,#FFE1A0)', display: 'grid', placeItems: 'center',
+    }}>
+      <svg width="27" height="27" viewBox="0 0 30 30" fill="none">
+        <line x1="4" y1="9" x2="26" y2="9" stroke="#E8B93E" strokeWidth="2.6" strokeLinecap="round" />
+        <circle cx="18" cy="9" r="3.6" fill="#fff" stroke="#C98A00" strokeWidth="2.1" />
+        <line x1="4" y1="21" x2="26" y2="21" stroke="#E8B93E" strokeWidth="2.6" strokeLinecap="round" />
+        <circle cx="11" cy="21" r="3.6" fill="#fff" stroke="#C98A00" strokeWidth="2.1" />
+      </svg>
+    </span>
   );
 }
 
@@ -289,9 +332,6 @@ function ComboLoadingTakeover({ active, onDone }) {
 // 나머지(수치·근거·AI 분석)는 전부 탭해서 "들어가야" 보이는 상세 시트로 옮긴다.
 function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
   const metrics = summarizeSimulationForAdvisor(simulation);
-  const safetyPercent = metrics ? Math.max(4, Math.min(100, Math.round((1 - metrics.cashShortageRisk) * 100))) : null;
-  const isSafe = safetyPercent == null || safetyPercent >= 50;
-  const trendColor = safetyPercent == null ? 'var(--muted-faint)' : isSafe ? 'var(--green-text)' : 'var(--danger)';
 
   return (
     <button type="button" className="combo-row press-fx-row" onClick={onOpen} style={{
@@ -303,9 +343,8 @@ function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
       background: isEquipped ? '#FFF6DD' : 'transparent',
       borderRadius: isEquipped ? 14 : 0,
     }}>
-      <div className={combo.rank === 1 ? 'combo-rank-badge--top' : undefined} style={{ flex: 'none', width: 26, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, borderRadius: '50%' }}>
+      <div className={combo.rank === 1 ? 'combo-rank-badge--top' : undefined} style={{ flex: 'none', width: 26, display: 'flex', justifyContent: 'center', borderRadius: '50%' }}>
         <RankIcon rank={combo.rank} />
-        <span aria-hidden="true" style={{ fontSize: 8.5, fontWeight: 900, color: trendColor, lineHeight: 1 }}>{isSafe ? '▲' : '▼'}</span>
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -342,11 +381,6 @@ function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
 // .scr에 걸린 scrIn 애니메이션(transform)이 자손의 position:fixed를 가둬버리므로,
 // body에 직접 렌더한다(InfoScreen.jsx의 바텀시트와 동일한 이유).
 function ComboDetailSheet({ combo, simulation, riskProfile, onClose }) {
-  const metrics = summarizeSimulationForAdvisor(simulation);
-  const safetyPercent = metrics ? Math.max(4, Math.min(100, Math.round((1 - metrics.cashShortageRisk) * 100))) : null;
-  const safetyColor = safetyPercent == null ? 'var(--border-deep)'
-    : safetyPercent >= 80 ? 'var(--green-text)' : safetyPercent >= 50 ? 'var(--gold-link)' : 'var(--danger)';
-
   const [aiOpen, setAiOpen] = useState(false);
   const [aiDetail, setAiDetail] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -396,23 +430,23 @@ function ComboDetailSheet({ combo, simulation, riskProfile, onClose }) {
 
         {/* 상품 이름은 아래 "시뮬레이션 요약 > 이 숫자에 포함된 상품"에 풀네임으로 나오므로
             여기서 축약된 칩으로 중복 표시하지 않는다.
-            정보가 한 덩어리로 쭉 이어지지 않도록 "안정도"·"AI 설명"을 각자 카드로 나눈다. */}
-        {metrics && (
-          <div style={{ marginTop: 14, padding: '13px 14px', borderRadius: 14, background: 'var(--warm)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>
-              <span>이 조합의 안정도</span>
-              <span style={{ color: safetyColor }}>여유현금 {metrics.monthlyNetCashManwon}만원 · 부족위험 {Math.round(metrics.cashShortageRisk * 100)}%</span>
-            </div>
-            <div className="combo-fitbar">
-              <div className="combo-fitbar__fill" style={{ width: `${safetyPercent}%`, background: safetyColor }} />
-            </div>
+            "AI가 분석한 내용"임이 한눈에 보이도록 별도 톤(연한 골드)의 콜아웃 박스로 묶고,
+            문단 하나로 흘려쓰지 않고 라벨(핵심 요약/확인할 점)로 나눠 문서처럼 정리한다. */}
+        <div style={{ marginTop: 14, padding: '14px 15px', borderRadius: 14, background: '#FFF9E8', border: '1px solid #F3E4C0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ flex: 'none', color: 'var(--gold-link)', display: 'flex' }}><IconSparkle size={14} /></span>
+            <p style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--gold-link)' }}>AI가 분석했어요</p>
           </div>
-        )}
-
-        <div style={{ marginTop: 12, padding: '13px 14px', borderRadius: 14, border: '1.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>AI 설명</p>
-          <p style={{ fontSize: 12.5, lineHeight: 1.6, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
-          {combo.caution && <p style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ fontSize: 10.5, fontWeight: 800, color: '#8A7A55' }}>핵심 요약</p>
+            <p style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
+          </div>
+          {combo.caution && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 9, borderTop: '1px solid #F3E4C0' }}>
+              <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--danger)' }}>확인할 점</p>
+              <p style={{ fontSize: 12.5, lineHeight: 1.6, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>
+            </div>
+          )}
         </div>
 
         <SimulationSummaryPanel simulation={simulation} simRows={buildSimRows(simulation)} loading={false} error="" variant="nested" items={combo.items} />
@@ -474,7 +508,7 @@ function ComboDetailSheet({ combo, simulation, riskProfile, onClose }) {
 // 조합 카드를 펼쳤을 때(nested) / 직접 고른 상품 조합일 때(standalone) 공용으로 쓰는
 // "시뮬레이션 요약" — 실제 시뮬레이션 엔진(comboSimulations 또는 equipped 기반 simulation) 결과를
 // 그대로 보여줄 뿐, 여기서 새 숫자를 계산하지 않는다.
-function SimulationSummaryPanel({ simulation, simRows, loading, error, variant = 'standalone', items = [] }) {
+export function SimulationSummaryPanel({ simulation, simRows, loading, error, variant = 'standalone', items = [] }) {
   const [view, setView] = useState('cash');
   const [salesCase, setSalesCase] = useState('average');
   const [activeMonth, setActiveMonth] = useState(null);

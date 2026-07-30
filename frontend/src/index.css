@@ -220,24 +220,27 @@ button { font-family: inherit; }
 .combo-ai-btn {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   width: 100%; background: var(--gold);
-  transition: transform .12s ease, filter .12s ease;
+  transition: transform .12s ease, box-shadow .12s ease;
 }
 .combo-ai-btn:disabled { opacity: .85; }
 .combo-ai-btn:active:not(:disabled) { transform: scale(.97); }
-.combo-toggle-row { transition: transform .12s ease, filter .12s ease; }
+.combo-toggle-row { transition: transform .12s ease, box-shadow .12s ease; }
 .combo-toggle-row:active { transform: scale(.99); }
 
 /* ── 클릭 가능함을 보여주는 공용 눌림·호버 효과 ──
-   배경색은 상태별 인라인 스타일이 이미 쓰고 있어 충돌하므로 transform·filter만 쓴다.
+   배경색이 투명(비선택 행)이거나 색이 있는(선택된 행) 경우 모두 눈에 보이도록,
+   background 대신 안쪽 box-shadow(색 얇게 깔기)로 표현한다 — 인라인 background와도 충돌하지 않는다.
    press-fx: 버튼처럼 작고 독립된 요소 / press-fx-row: 폭이 넓은 리스트 행·카드 */
-.press-fx, .press-fx-row { transition: transform .12s ease, filter .12s ease; }
-.press-fx:active:not(:disabled) { transform: scale(.96); }
-.press-fx-row:active:not(:disabled) { transform: scale(.99); }
+.press-fx, .press-fx-row { transition: transform .12s ease, box-shadow .12s ease; }
+.press-fx:active:not(:disabled) { transform: scale(.96); box-shadow: inset 0 0 0 999px rgba(20,21,24,.07); }
+.press-fx-row:active:not(:disabled) { transform: scale(.99); box-shadow: inset 0 0 0 999px rgba(20,21,24,.055); }
+.combo-ai-btn:active:not(:disabled) { box-shadow: inset 0 0 0 999px rgba(20,21,24,.09); }
+.combo-toggle-row:active { box-shadow: inset 0 0 0 999px rgba(20,21,24,.045); }
 @media (hover: hover) and (pointer: fine) {
-  .press-fx:hover:not(:disabled),
-  .press-fx-row:hover:not(:disabled),
-  .combo-ai-btn:hover:not(:disabled),
-  .combo-toggle-row:hover { filter: brightness(.97); }
+  .press-fx:hover:not(:disabled) { box-shadow: inset 0 0 0 999px rgba(20,21,24,.04); }
+  .press-fx-row:hover:not(:disabled) { box-shadow: inset 0 0 0 999px rgba(20,21,24,.032); }
+  .combo-ai-btn:hover:not(:disabled) { box-shadow: inset 0 0 0 999px rgba(20,21,24,.055); }
+  .combo-toggle-row:hover { box-shadow: inset 0 0 0 999px rgba(20,21,24,.028); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -245,6 +248,21 @@ button { font-family: inherit; }
   .press-fx, .press-fx-row, .combo-ai-btn, .combo-toggle-row { animation: none; transition: none; }
   .press-fx:active, .press-fx-row:active, .combo-ai-btn:active, .combo-toggle-row:active { transform: none; }
 }
+
+/* ── 상황 실험실 — 가로 슬라이더 + 게이지 채움(원형 다이얼 아님) ──
+   트랙 채움은 JS에서 계산한 linear-gradient를 인라인 background로 얹는다(값이 바뀔 때마다
+   갱신). 여기서는 트랙 두께와 손잡이(썸) 모양만 잡는다. */
+.scenario-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 6px; outline: none; cursor: pointer; }
+.scenario-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--gold-deep); box-shadow: 0 2px 6px rgba(25,27,31,.2); cursor: pointer;
+}
+.scenario-slider::-moz-range-track { background: transparent; border: none; height: 10px; border-radius: 6px; }
+.scenario-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--gold-deep);
+  box-shadow: 0 2px 6px rgba(25,27,31,.2); cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) { .scenario-slider { transition: none; } }
 
 .hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
 .hdr-back { width: 38px; height: 38px; border: none; background: #FFF1CC; border-radius: 12px; font-size: 20px; color: var(--ink); cursor: pointer; line-height: 1; }

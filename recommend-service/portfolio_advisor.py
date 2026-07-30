@@ -194,6 +194,10 @@ def _validate_and_fill(parsed_combos: list, req: PortfolioAnalyzeRequest) -> lis
 
     target = min(3, len(req.candidates))
     if len(cleaned) < target:
+        # Sonnet이 유효한 조합을 3개 채우지 못한 경우 — 어떤 조합이 규칙 기반 폴백으로
+        # 채워졌는지(headline이 "N순위 조합" 같은 정형 문구로 보이면 AI 설명이 아니라 폴백이다)
+        # 나중에 확인할 수 있도록 남긴다.
+        print(f"[portfolio_advisor] Sonnet이 {len(cleaned)}/{target}개만 유효 반환 → 나머지는 규칙 폴백으로 채움")
         for combo in _fallback(req)["combos"]:
             if combo["comboId"] in seen:
                 continue

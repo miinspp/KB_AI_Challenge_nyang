@@ -230,6 +230,34 @@ export function buildSimulationPayload({ rank, diag, hometax, kb, equipped }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 상황 실험실 — 이미 계산된 buildSimulationPayload 결과에 "가정"(매출·고정비·보유현금 변동)만
+// 얹어 다시 Java로 보낸다. 새 계산 로직은 없다 — 매출 이력에 배율을 곱하고, 고정비/보유현금에
+// 더하는 순수 변환뿐이라 Java 엔진은 그대로 재사용한다.
+// ─────────────────────────────────────────────────────────────
+export function applyScenarioAdjustments(payload, { salesDeltaPct = 0, fixedCostDeltaMan = 0, cashDeltaMan = 0 } = {}) {
+  if (!payload) return payload;
+  const salesMultiplier = 1 + salesDeltaPct / 100;
+  const fixedCostDelta = fixedCostDeltaMan * 10_000;
+  const cashDelta = cashDeltaMan * 10_000;
+  const cs = payload.costStructure;
+  // otherFixedExpense가 0 밑으로 잘리는 경우, totalExpense도 원래 델타 그대로가 아니라
+  // "잘린 뒤의 부품 합"으로 다시 맞춰야 한다 — 그래야 rent+laborCost+materialCost+otherFixedExpense
+  // === totalExpense 라는 buildSimulationPayload의 원래 불변식이 깨지지 않는다.
+  const otherFixedExpense = cs ? Math.max(0, cs.otherFixedExpense + fixedCostDelta) : null;
+  return {
+    ...payload,
+    monthlySales: payload.monthlySales.map((amount) => Math.max(0, amount * salesMultiplier)),
+    fixedCost: Math.max(0, payload.fixedCost + fixedCostDelta),
+    currentCash: Math.max(0, payload.currentCash + cashDelta),
+    costStructure: cs ? {
+      ...cs,
+      otherFixedExpense,
+      totalExpense: cs.rent + cs.laborCost + cs.materialCost + otherFixedExpense,
+    } : null,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
 // 조합 분석 AI — 성향분석 결과를 받아 조합 후보를 만들고(코드), 후보별 실제
 // 시뮬레이션(Java, 이 파일의 buildSimulationPayload 그대로 재사용)을 돌린 뒤,
 // 그 결과만 Claude Sonnet에 넘겨 Top3 선정+설명을 받는다(백엔드 portfolio_advisor.py).
