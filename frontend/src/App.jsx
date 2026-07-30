@@ -19,7 +19,6 @@ import RiskProfileScreen from './features/risk/RiskProfileScreen';
 import ProfileScreen from './features/profile/ProfileScreen';
 import { recommendProducts } from './features/recommend/recommend';
 import { fetchRecommendations, rankToProfile } from './api/recommend';
-import { streamAgent } from './api/agent';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import {
@@ -27,18 +26,9 @@ import {
   pickOptionsForProfile, generateCandidateCombos, buildCandidatePayloads, summarizeSimulationForAdvisor,
 } from './features/simulator/sim';
 import { requestPortfolioAdvice } from './api/portfolio';
-import { IconSparkle } from './shared/Icons';
 
 // 진단 로딩 화면 최소 노출 시간 — DiagnosingScreen 의 4단계(620ms×4)가 다 체크될 만큼
 const DIAGNOSING_MIN_MS = 2600;
-
-// AI 에이전트 trace 표시용 도구 한글 라벨
-const TOOL_KO = {
-  get_diagnosis: '우리 가게 진단',
-  recommend_policies: '맞춤 상품 검토',
-  run_simulation: '현금흐름 시뮬레이션',
-  optimize_portfolio: '최적 조합 탐색',
-};
 
 // 진단 입력 v2 — 필수는 업종·매출·지출 3개, 나머지는 정확도를 높이는 선택 입력.
 //   rentMan/laborMan/purchaseMan(+otherMan): 지출 세부 — 임대료가 있으면 비용구조 축 추가 (백엔드 보정)
@@ -84,11 +74,6 @@ export default function App() {
   const [equipped, setEquipped] = useState([]);
   const [apiProducts, setApiProducts] = useState(null);  // /api/recommend 결과 (실패 시 null → 규칙기반 폴백)
   const [recoSignals, setRecoSignals] = useState([]);    // 추천 목록 헤더용 진단 신호 문장
-  const [agentRunning, setAgentRunning] = useState(false);
-  const [agentSteps, setAgentSteps] = useState([]);      // 실시간으로 쌓이는 도구 호출 진행 상황
-  const [agentThinking, setAgentThinking] = useState(''); // 도구 호출 사이 모델의 중간 판단 텍스트
-  const [agentFinal, setAgentFinal] = useState(null);     // 최종 제안 텍스트
-  const [agentError, setAgentError] = useState('');
   const [simulation, setSimulation] = useState(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationError, setSimulationError] = useState('');
@@ -328,54 +313,6 @@ export default function App() {
     }
   };
 
-  // 실행 중인 도구 단계들 중 이름이 같은 마지막 항목을 찾아 결과를 채워 넣는다.
-  // (한 턴에 도구가 여러 개 호출될 수 있어 tool_start/tool_result 를 이름만으로 단순 매칭하면 안 된다)
-  const patchLastRunningStep = (steps, tool, patch) => {
-    for (let i = steps.length - 1; i >= 0; i -= 1) {
-      if (steps[i].tool === tool && steps[i].running) {
-        const next = steps.slice();
-        next[i] = { ...next[i], ...patch };
-        return next;
-      }
-    }
-    return steps;
-  };
-
-  // AI에게 맡기기 — 진단 입력을 넘기면 에이전트가 진단→추천→시뮬→포트폴리오를 자율 실행.
-  // /api/agent/stream 을 실시간으로 받아서 도구를 호출할 때마다 즉시 화면에 반영한다(SSE).
-  const runAgent = async () => {
-    setAgentError(''); setAgentSteps([]); setAgentThinking(''); setAgentFinal(null); setAgentRunning(true);
-    try {
-      const industryName = industries.find((it) => it.code === diag.industryCode)?.name || '';
-      await streamAgent({
-        industryCode: diag.industryCode,
-        industry: industryName,
-        monthlySales: manToWon(diag.salesMan),
-        monthlyExpense: manToWon(diag.expenseMan || 0),
-        currentCash: manToWon(diag.currentCashMan || 0),
-        existingMonthlyPayment: manToWon(diag.existingMonthlyPaymentMan || 0),
-      }, (ev) => {
-        if (ev.type === 'thinking') {
-          setAgentThinking(ev.text);
-        } else if (ev.type === 'tool_start') {
-          setAgentThinking('');
-          setAgentSteps((prev) => [...prev, { tool: ev.tool, input: ev.input, output: null, running: true }]);
-        } else if (ev.type === 'tool_result') {
-          setAgentSteps((prev) => patchLastRunningStep(prev, ev.tool, { output: ev.output, running: false }));
-        } else if (ev.type === 'final') {
-          setAgentThinking('');
-          setAgentFinal(ev.final);
-        } else if (ev.type === 'error') {
-          setAgentError(ev.message);
-        }
-      });
-    } catch (e) {
-      setAgentError(e.message);
-    } finally {
-      setAgentRunning(false);
-    }
-  };
-
   // 홈택스 연동 완료 → 업종·매출·지출·지출세부를 채우고 12개월 이력을 보관
   const onHometaxLinked = (f = HOMETAX_FINANCIALS) => {
     const linkedAnnualTax = (f.recentTaxPayments || []).reduce(
@@ -445,8 +382,6 @@ export default function App() {
       cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
   }
-  const showAgentCta = !overlay && tab === 2 && diagSub === 'input';
-
   // ── 뒤로가기 — 홈·내 정보에는 두지 않는다.
   // 오버레이(계좌·홈택스)는 화면이 자체 헤더를 그리므로 여기서는 만들지 않는다(‹ 중복 방지).
   const backOf = () => {
@@ -645,105 +580,10 @@ export default function App() {
                 : undefined}>
             {cta.label}
           </button>
-
-          {showAgentCta && (
-            <button className="cta" onClick={runAgent} disabled={!canAnalyze || agentRunning}
-              style={{
-                marginTop: 8,
-                background: (!canAnalyze || agentRunning) ? '#F3E4C0' : '#FFBC00',
-                color: 'var(--ink)', boxShadow: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              }}>
-              {!agentRunning && <IconSparkle size={17} />}
-              {agentRunning ? '든든이 AI가 판단 중…' : '든든이 AI에게 맡기기'}
-            </button>
-          )}
         </div>
       )}
 
       <TabBar tab={tab} overlay={!!overlay} onGo={goTab} />
-
-      {(agentRunning || agentFinal || agentSteps.length > 0 || agentError) && (
-        <div onClick={() => { if (!agentRunning) { setAgentSteps([]); setAgentFinal(null); setAgentError(''); } }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(20,21,24,.5)', display: 'flex',
-            alignItems: 'flex-end', zIndex: 70 }}>
-          <div onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 480, margin: '0 auto', maxHeight: '82%', overflowY: 'auto',
-              background: 'var(--canvas)', borderRadius: '24px 24px 0 0', padding: '22px 20px 28px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <span style={{
-                flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', color: '#fff', background: 'var(--gold-link)',
-              }}><IconSparkle size={15} /></span>
-              <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>든든이 AI</span>
-              {!agentRunning && (
-                <button onClick={() => { setAgentSteps([]); setAgentFinal(null); setAgentError(''); }}
-                  style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: 20, color: 'var(--muted-faint)', cursor: 'pointer' }}>×</button>
-              )}
-            </div>
-
-            {agentError && (
-              <p style={{ fontSize: 13.5, color: 'var(--danger)', fontWeight: 700, lineHeight: 1.6 }}>
-                에이전트 호출 실패: {agentError}<br />
-                <span style={{ color: 'var(--muted)', fontWeight: 500 }}>추천 서비스(8000)가 켜져 있고 ANTHROPIC_API_KEY가 설정됐는지 확인해주세요.</span>
-              </p>
-            )}
-
-            {agentSteps.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                {agentSteps.map((t, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    {t.running
-                      ? <span className="spinner" style={{ flex: 'none', width: 16, height: 16, borderWidth: 2.5, marginTop: 1 }} />
-                      : <span style={{ flex: 'none', fontSize: 11, fontWeight: 800, color: 'var(--green-soft)', width: 16, textAlign: 'center' }}>✓</span>}
-                    <div>
-                      <p style={{ fontSize: 13, fontWeight: 800, color: t.running ? 'var(--muted)' : 'var(--ink)' }}>
-                        {TOOL_KO[t.tool] || t.tool}{t.running && <span style={{ fontWeight: 600 }}> · 진행 중…</span>}
-                      </p>
-                      {t.tool === 'run_simulation' && t.output && (
-                        <p style={{ fontSize: 11.5, color: t.output.repayment_burden_passed ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
-                          상환부담 {(t.output.repayment_burden_ratio * 100).toFixed(0)}% · {t.output.repayment_burden_passed ? '기준 통과' : '기준 초과 → 재검토'}
-                        </p>
-                      )}
-                      {t.tool === 'recommend_policies' && t.output && (
-                        <p style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>후보 {t.output.count}개 검토</p>
-                      )}
-                      {t.tool === 'optimize_portfolio' && t.output && (
-                        <p style={{ fontSize: 11.5, color: t.output.feasible ? 'var(--green-text)' : 'var(--danger)', fontWeight: 600 }}>
-                          {t.output.feasible ? `최적 조합 ${t.output.combo?.length ?? 0}개 상품 확정` : '조건 미충족 → 재시도'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {agentRunning && agentThinking && (
-              <p style={{ fontSize: 12.5, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.6, marginBottom: 14, fontStyle: 'italic' }}>
-                “{agentThinking}”
-              </p>
-            )}
-
-            {agentRunning && agentSteps.length === 0 && !agentThinking && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-                <span className="spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
-                  진단 → 추천 → 시뮬레이션을 스스로 판단하고 있어요…
-                </span>
-              </div>
-            )}
-
-            {agentFinal && (
-              <div className="card">
-                <p style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                  {agentFinal}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

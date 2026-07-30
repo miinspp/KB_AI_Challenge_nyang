@@ -17,7 +17,6 @@ services:
       dockerfile: recommend-service/Dockerfile
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      AGENT_MODEL: ${AGENT_MODEL:-claude-haiku-4-5-20251001}
       PORTFOLIO_ADVISOR_MODEL: ${PORTFOLIO_ADVISOR_MODEL:-claude-sonnet-5}
       SPRING_BASE: http://backend:8080
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}

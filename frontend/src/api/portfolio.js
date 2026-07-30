@@ -1,5 +1,5 @@
 // 조합 분석 AI — 시뮬레이터가 계산한 조합 후보를 성향에 맞게 Top3로 선정+설명한다.
-// (Python 추천 서비스, 포트 8000. 든든이 AI(api/agent.js)와는 별개 엔드포인트)
+// (Python 추천 서비스, 포트 8000)
 import { postJson } from './http';
 
 export const requestPortfolioAdvice = (payload) => postJson('/api/portfolio/analyze', payload);

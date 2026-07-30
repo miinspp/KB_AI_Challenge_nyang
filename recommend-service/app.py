@@ -8,7 +8,7 @@ FastAPI 추천 서비스 — POST /api/recommend
 
 이 엔드포인트는 LLM을 호출하지 않는다 — 랭킹은 로컬 임베딩 모델 + 규칙,
 3줄 요약은 배치에서 미리 구운 값이다(docs/MODELS.md).
-같은 서비스의 /api/agent, /api/portfolio 는 별개로 ANTHROPIC_API_KEY 를 쓴다.
+같은 서비스의 /api/portfolio 는 별개로 ANTHROPIC_API_KEY 를 쓴다.
 """
 from __future__ import annotations
 import json
@@ -22,14 +22,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# agent / portfolio_advisor imports happen after dotenv loading because they read model settings at import time.
+# portfolio_advisor import happens after dotenv loading because it reads model settings at import time.
 # Prefer project-root settings while retaining the service-local file for local development.
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv(Path(__file__).parent / ".env")
 
 import engine
-import agent  # AI 오케스트레이터 (/api/agent)
-import portfolio_advisor  # 조합 분석 AI (/api/portfolio/analyze) — 시뮬레이터 전용, agent.py와 별개
+import portfolio_advisor  # 조합 분석 AI (/api/portfolio/analyze) — 시뮬레이터 전용
 
 DATA = Path(__file__).parent / "data" / "reco_pool.json"   # 정책(정제) + KB상품 통합 풀 (build_reco_pool.py 산출)
 CACHE = Path(__file__).parent / "data" / "reco_vectors.npy"
@@ -39,7 +38,6 @@ app = FastAPI(title="소상공인 추천 서비스")
 _cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
 _cors_origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()] or ["*"]
 app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
-app.include_router(agent.router)  # POST /api/agent
 app.include_router(portfolio_advisor.router)  # POST /api/portfolio/analyze
 
 # ── 카테고리별 카드 스타일 (products.js 톤과 일치) ──
@@ -53,6 +51,16 @@ STYLE = {
     "내수": {"icon": "★", "iconBg": "#EDF5E1", "iconColor": "#7FA95E", "tagBg": "#EDF5E1", "tagColor": "#5E8A3E"},
 }
 DEFAULT_STYLE = {"icon": "◆", "iconBg": "#EFE6D4", "iconColor": "#8A8178", "tagBg": "#F0E7D6", "tagColor": "#8A8178"}
+
+
+# 상품 재원별 금리·기간 가정치 (⚠️ 데모 가정 수치 — 실제 약관으로 교체 필요)
+# 시뮬레이터(Java 엔진)가 쓰는 annualRate/termMonths/graceMonths 는 여기서 나온다.
+def assume_terms(source: str, is_finance: bool) -> dict:
+    if source == "KB":
+        return {"annual_rate": 0.048, "term_months": 60, "grace_months": 0}
+    if is_finance:  # 정책 융자·보증
+        return {"annual_rate": 0.029, "term_months": 60, "grace_months": 12}
+    return {"annual_rate": 0.0, "term_months": 0, "grace_months": 0}  # 무상지원 등
 
 
 class Profile(BaseModel):
@@ -89,7 +97,6 @@ def load():
             DOC_VECS = _build(texts)
     else:
         DOC_VECS = _build(texts)
-    agent.configure(POLICIES, EMBEDDER, DOC_VECS)  # 에이전트에 추천 엔진 컨텍스트 주입
     print(f"[startup] 정책 {len(POLICIES)}건, 임베딩 {EMBEDDER.mode}, shape={DOC_VECS.shape}")
 
 
@@ -135,7 +142,7 @@ def to_product(item: dict) -> dict:
     title = p["title"]
     is_finance = p.get("is_finance", False)
     source = p.get("source", "GOV")   # "KB"(자체상품) | "GOV"(정책·지원제도)
-    terms = agent.assume_terms(source, is_finance)  # 시뮬레이터(Java 엔진) 연동용 가정 금리·기간 — 데모 가정치
+    terms = assume_terms(source, is_finance)  # 시뮬레이터(Java 엔진) 연동용 가정 금리·기간 — 데모 가정치
     return {
         "id": p["id"],
         "name": title,
