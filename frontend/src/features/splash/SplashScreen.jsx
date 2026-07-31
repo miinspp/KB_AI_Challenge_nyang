@@ -15,13 +15,10 @@ export default function SplashScreen({ onStart }) {
         <p className="splash-sub">우리 가게, 든든하게</p>
       </div>
 
-      <div className="splash-stage">
-        {/* 발끝을 같은 바닥선에 맞춰 세운다 — 토끼는 귀 때문에 원본이 더 높다 */}
-        <div className="splash-couple">
-          <img className="splash-char splash-char--rabbit bear-sway" src={rabbitOwner} alt="" aria-hidden="true" />
-          <img className="splash-char splash-char--bear bear-sway" src={bearOwner} alt="" aria-hidden="true" />
-        </div>
-        <span className="splash-caption">우리 동네 사장님 부부</span>
+      {/* 발끝을 같은 바닥선에 맞춰 세운다 — 토끼는 귀 때문에 원본이 더 높다 */}
+      <div className="splash-couple">
+        <img className="splash-char splash-char--rabbit bear-sway" src={rabbitOwner} alt="" aria-hidden="true" />
+        <img className="splash-char splash-char--bear bear-sway" src={bearOwner} alt="" aria-hidden="true" />
       </div>
 
       <button className="splash-btn" onClick={onStart}>시작하기</button>

@@ -392,20 +392,13 @@ button { font-family: inherit; }
 .splash-title { font-size: 40px; font-weight: 900; color: var(--ink); letter-spacing: -1.4px; line-height: 1.1; }
 .splash-sub { margin-top: 12px; font-size: 16.5px; font-weight: 700; color: #A79778; letter-spacing: -.3px; }
 
-.splash-stage { margin-top: auto; display: flex; flex-direction: column; align-items: center; }
 /* 발끝을 한 바닥선에 맞춘다(align-items: flex-end) */
-.splash-couple { display: flex; align-items: flex-end; justify-content: center; gap: 10px; }
+.splash-couple { margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: 10px; }
 .splash-char { display: block; height: auto; object-fit: contain; }
 .splash-char--rabbit { width: 152px; }
 .splash-char--bear { width: 176px; }
-.splash-caption {
-  margin-top: 4px; padding: 6px 14px; border-radius: 12px; background: rgba(255,255,255,.9);
-  color: #5F6B4A; font-size: 12.5px; font-weight: 800; white-space: nowrap;
-  box-shadow: 0 3px 9px rgba(60,70,40,.12);
-}
-
 .splash-btn {
-  width: min(84%, 330px); height: 54px; margin-top: 20px; border: none; border-radius: 15px;
+  width: min(84%, 330px); height: 54px; margin-top: 34px; border: none; border-radius: 15px;
   background: var(--gold); color: var(--ink); font-size: 16px; font-weight: 900; letter-spacing: -.3px;
   cursor: pointer; box-shadow: 0 8px 18px -8px rgba(214,150,0,.7); transition: transform .15s ease;
 }
