@@ -76,8 +76,8 @@ public class SimulationService {
         SimulationResponse.ScenarioResult baseline = scenarioResult(input, baselineCalc, baselineRisk);
         SimulationResponse.ScenarioResult selected = scenarioResult(input, selectedCalc, selectedRisk);
         SimulationResponse.ConstraintResult constraints = evaluateConstraints(input, items, selectedCalc);
-        SimulationResponse.Confidence confidence = confidence(request.monthlySales().size());
-        List<String> warnings = warnings(input, forecast, items, constraints, confidence);
+        SimulationResponse.Confidence confidence = confidence(request, input);
+        List<String> warnings = warnings(input, forecast, items, constraints, confidence, request.monthlySales().size());
 
         return new SimulationResponse(
                 "SIM-" + Long.toUnsignedString(seed, 36).toUpperCase(Locale.ROOT),
@@ -426,7 +426,7 @@ public class SimulationService {
             double selfFunding = value(raw.selfFundingRatio(), number(defaults, "self_funding_ratio", 0));
             String paymentMethod = upper(firstNonBlank(raw.paymentMethod(), text(defaults, "payment_method")), "DIRECT");
             List<SimulationRequest.CashEvent> spending = raw.projectSpendingSchedule() == null
-                    ? defaultSpending(type, amount, selfFunding, paymentMethod, refinance)
+                    ? defaultSpending(type, amount, selfFunding, paymentMethod, refinance, disbursement)
                     : List.copyOf(raw.projectSpendingSchedule());
             validateSpending(spending);
             double annualRate = value(raw.annualRate(), number(defaults, "annual_rate", LOAN.equals(type) ? .045 : 0));
@@ -457,6 +457,13 @@ public class SimulationService {
         MonthlyVectors vectors = buildMonthlyVectors(items, horizon);
         double costReduction = clamp(items.stream().mapToDouble(NormalizedItem::costReductionRatio).sum(), 0, assumptions.maxCostReductionRatio());
         double salesUplift = clamp(items.stream().mapToDouble(NormalizedItem::salesUpliftRatio).sum(), 0, assumptions.maxSalesUpliftRatio());
+        // 대환은 "이 대환 금액만큼 기존 상환액이 줄어든다"는 뜻이지 "기존 대출이 전부 없어진다"는 뜻이 아니다.
+        // existingRepaymentSchedule()은 여러 기존 대출을 합산한 값이라, 대환 금액이 기존 부채 총액의 일부일 때도
+        // 상환액을 통째로 0으로 만들면 과대평가된다. 어느 대출을 얼마나 갚는지까지는 입력을 안 받으니(스키마 확장 필요),
+        // 우선은 "대환 금액/기존 부채 총액" 비율만큼만 비례해서 줄인다.
+        double refinanceFraction = input.existingDebt().signum() > 0
+                ? clamp(vectors.refinanceAmount().divide(input.existingDebt(), 8, RoundingMode.HALF_UP).doubleValue(), 0, 1)
+                : 0;
         Map<String, BigDecimal> assetBalances = new LinkedHashMap<>();
         List<SimulationResponse.MonthlyCashFlow> flows = new ArrayList<>();
         BigDecimal cash = input.currentCash();
@@ -479,7 +486,8 @@ public class SimulationService {
                     : money(input.scheduledTaxPayments().getOrDefault(month, ZERO));
             BigDecimal scheduledExistingPayment = existingRepayments[i];
             BigDecimal existingPayment = vectors.refinanceEffectiveMonth() > 0 && month >= vectors.refinanceEffectiveMonth()
-                    ? ZERO : scheduledExistingPayment;
+                    ? money(scheduledExistingPayment.multiply(BigDecimal.valueOf(1 - refinanceFraction)))
+                    : scheduledExistingPayment;
 
             AssetMonth assetMonth = assetMonth(items, assetBalances, month);
             BigDecimal operating = sales.subtract(variableCost).subtract(fixedCost).subtract(taxReserve).subtract(existingPayment);
@@ -517,6 +525,7 @@ public class SimulationService {
         BigDecimal[] interest = zeros(horizon);
         BigDecimal[] fees = zeros(horizon);
         int refinanceMonth = 0;
+        BigDecimal refinanceAmount = ZERO;
 
         for (NormalizedItem item : items) {
             int index = item.disbursementMonth() - 1;
@@ -528,10 +537,13 @@ public class SimulationService {
                     spending[event.month() - 1] = spending[event.month() - 1].add(event.amount());
                 }
             }
-            if (item.refinance()) refinanceMonth = refinanceMonth == 0 ? item.disbursementMonth() : Math.min(refinanceMonth, item.disbursementMonth());
+            if (item.refinance()) {
+                refinanceMonth = refinanceMonth == 0 ? item.disbursementMonth() : Math.min(refinanceMonth, item.disbursementMonth());
+                refinanceAmount = refinanceAmount.add(item.amount());
+            }
             if (LOAN.equals(item.type())) addRepaymentSchedule(item, repayment, interest, horizon);
         }
-        return new MonthlyVectors(financing, subsidy, spending, repayment, interest, fees, refinanceMonth);
+        return new MonthlyVectors(financing, subsidy, spending, repayment, interest, fees, refinanceMonth, refinanceAmount);
     }
 
     private void addRepaymentSchedule(NormalizedItem item, BigDecimal[] payments, BigDecimal[] interest, int horizon) {
@@ -747,6 +759,10 @@ public class SimulationService {
                 (f.existingRepayment() + f.newRepayment()) / Math.max(1, f.expectedSales())).max().orElse(0);
         boolean burdenPassed = maxBurden <= assumptions.repaymentBurdenLimit();
         if (!burdenPassed) violations.add("Maximum monthly debt payment exceeds the configured sales burden limit.");
+        // eligibility/duplicates 둘 다 계산은 하지만 violations에는 넣지 않는다 — 둘 다
+        // normalizeAndValidateItems()에서 이미 IllegalArgumentException으로 요청 자체를 막아서
+        // (자격 FAIL은 line ~370, 중복 그룹 충돌은 line ~385) 이 지점까지 오는 items는 둘 다 항상
+        // 통과된 상태다. 여기서 또 violations에 넣어봐야 절대 발동하지 않는 죽은 분기라 추가하지 않는다.
         boolean eligibility = items.stream().noneMatch(i -> "FAIL".equals(i.eligibilityStatus()));
         boolean duplicates = items.stream().map(NormalizedItem::duplicateGroup).filter(v -> v != null).distinct().count()
                 == items.stream().map(NormalizedItem::duplicateGroup).filter(v -> v != null).count();
@@ -827,7 +843,8 @@ public class SimulationService {
     }
 
     private List<String> warnings(ResolvedInput input, SalesForecast forecast, List<NormalizedItem> items,
-                                  SimulationResponse.ConstraintResult constraints, SimulationResponse.Confidence confidence) {
+                                  SimulationResponse.ConstraintResult constraints, SimulationResponse.Confidence confidence,
+                                  int salesMonths) {
         List<String> result = new ArrayList<>(inputAssumptions(input).messages());
         result.add("Sales forecast provider is " + forecast.provider() + "; this is not a trained credit decision model.");
         if (items.stream().anyMatch(i -> "UNKNOWN".equals(i.eligibilityStatus()))) {
@@ -846,7 +863,13 @@ public class SimulationService {
             result.add("Policy benefits without structured payment timing, self-funding, and settlement terms were not monetized.");
         }
         result.addAll(constraints.violations());
-        if (!"HIGH".equals(confidence.level())) result.add("Short sales history reduces forecast confidence.");
+        // 두 가지를 구분해서 알려준다 — 매출 이력 자체가 짧은 것과, 이력은 충분한데
+        // 대출·계좌·세금 상세가 전부 없어서 신뢰도가 깎인 것은 원인이 다르다(둘 다 confidence.level()만
+        // 보면 구분이 안 돼서, 12개월 이력이 있는 사용자에게 "매출 이력이 짧다"는 잘못된 메시지가 나갈 수 있다).
+        if (salesMonths < 12) result.add("Short sales history reduces forecast confidence.");
+        if (confidence.reason().contains("were all missing")) {
+            result.add("Missing loan, account cash flow, and tax schedule detail reduces confidence even with a long sales history.");
+        }
         return List.copyOf(new LinkedHashSet<>(result));
     }
 
@@ -883,10 +906,30 @@ public class SimulationService {
         };
     }
 
-    private SimulationResponse.Confidence confidence(int salesMonths) {
-        if (salesMonths >= 12) return new SimulationResponse.Confidence("HIGH", "At least 12 months of sales history is available.");
-        if (salesMonths >= 6) return new SimulationResponse.Confidence("MEDIUM", "Six to eleven months of sales history is available.");
-        return new SimulationResponse.Confidence("LOW", "Fewer than six months of sales history is available.");
+    /**
+     * 매출 이력 개월수만 보던 기존 신뢰도 산정에, "그 밖의 입력이 얼마나 비어 있는지"를 더한다.
+     * 대출별 상환 스케줄·계좌 흐름·세금 일정이 전부(단 하나도) 없으면 신뢰도를 한 단계 낮춘다 —
+     * 매출 이력이 길어도 나머지가 전부 대략적인 값이면 실제 신뢰도는 그보다 낮기 때문이다.
+     * 다만 "기존 대출이 없어서 existingLoans가 비어 있는" 정상적인 경우까지 페널티를 주면 안 되므로,
+     * 대출 스케줄 항목은 existingDebt가 실제로 0보다 클 때만 "비어 있다"고 취급한다.
+     */
+    private SimulationResponse.Confidence confidence(SimulationRequest request, ResolvedInput input) {
+        int salesMonths = request.monthlySales().size();
+        String tier = salesMonths >= 12 ? "HIGH" : salesMonths >= 6 ? "MEDIUM" : "LOW";
+        String reason = salesMonths >= 12 ? "At least 12 months of sales history is available."
+                : salesMonths >= 6 ? "Six to eleven months of sales history is available."
+                : "Fewer than six months of sales history is available.";
+
+        boolean missingLoanDetail = input.existingDebt().signum() > 0 && input.existingLoans().isEmpty();
+        boolean missingAccountFlows = request.monthlyAccountCashFlows() == null || request.monthlyAccountCashFlows().size() < 3;
+        boolean missingTaxSchedule = (request.scheduledTaxPayments() == null || request.scheduledTaxPayments().isEmpty())
+                && request.taxReserveRatio() == null;
+
+        if (!"LOW".equals(tier) && missingLoanDetail && missingAccountFlows && missingTaxSchedule) {
+            tier = "HIGH".equals(tier) ? "MEDIUM" : "LOW";
+            reason += " Loan-level repayment, account cash flow, and tax schedule detail were all missing, so confidence was lowered by one tier.";
+        }
+        return new SimulationResponse.Confidence(tier, reason);
     }
 
     private Optional<JsonNode> defaultsFor(String source, String id, String policyKey) {
@@ -944,8 +987,10 @@ public class SimulationService {
     }
 
     private List<SimulationRequest.CashEvent> defaultSpending(String type, BigDecimal amount, double selfFunding,
-                                                               String paymentMethod, boolean refinance) {
-        if (refinance) return List.of(new SimulationRequest.CashEvent(1, amount));
+                                                               String paymentMethod, boolean refinance, int disbursementMonth) {
+        // 대환 원금 상환은 대출금이 실제로 들어오는 달(disbursementMonth)에 나가야 한다 — 1개월차로
+        // 고정하면 실행월이 늦은 상품은 자금 유입 없이 지출만 먼저 잡혀 그 달 현금이 부당하게 낮게 나온다.
+        if (refinance) return List.of(new SimulationRequest.CashEvent(disbursementMonth, amount));
         if (GRANT.equals(type) && "REIMBURSEMENT".equals(paymentMethod)) {
             BigDecimal projectCost = amount.divide(BigDecimal.valueOf(Math.max(.01, 1 - selfFunding)), 0, RoundingMode.HALF_UP);
             return List.of(new SimulationRequest.CashEvent(1, projectCost));
@@ -1045,7 +1090,7 @@ public class SimulationService {
                                  boolean debtAssumed, boolean paymentAssumed, boolean legacyCostModel, List<String> costMessages) {}
     private record MonthlyVectors(BigDecimal[] financingInflow, BigDecimal[] subsidyInflow, BigDecimal[] projectSpending,
                                   BigDecimal[] newRepayment, BigDecimal[] interest, BigDecimal[] financingFee,
-                                  int refinanceEffectiveMonth) {}
+                                  int refinanceEffectiveMonth, BigDecimal refinanceAmount) {}
     private record AssetMonth(BigDecimal contribution, BigDecimal interest, BigDecimal maturityInflow, BigDecimal balance) {}
     private record ScenarioComputation(SimulationResponse.DeterministicResult deterministic,
                                        List<SimulationResponse.MonthlyCashFlow> flows, BigDecimal totalInterest,

@@ -152,6 +152,50 @@ class SimulationServiceTest {
     }
 
     @Test
+    void longSalesHistoryWithoutLoanAccountOrTaxDetailIsDowngradedFromHighConfidence() {
+        // 매출 이력은 12개월로 충분하지만, 대출별 상환 스케줄·계좌 흐름·세금 일정이 전부 없다 —
+        // 이런 경우 신뢰도가 이력 개월수만 보고 HIGH로 나오면 안 되고, MEDIUM으로 한 단계 낮아져야 한다.
+        SimulationRequest sparse = new SimulationRequest(
+                twelveMonthsOfSales(), bd(4_200_000), .38, bd(6_000_000), bd(900_000), bd(12_000_000),
+                .08, 24, null, null, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse result = service.simulate(sparse);
+
+        assertEquals("MEDIUM", result.confidence().level());
+        assertTrue(result.warnings().stream()
+                .anyMatch(message -> message.contains("Missing loan, account cash flow, and tax schedule")));
+    }
+
+    @Test
+    void longSalesHistoryWithAtLeastOneDetailFieldKeepsHighConfidence() {
+        // 위와 이력은 동일하지만 taxReserveRatio 하나는 채워져 있다 — "전부 다 없을 때만" 낮추는
+        // 조건이라, 하나라도 있으면 원래대로 HIGH를 유지해야 한다(불필요하게 과도한 페널티 방지).
+        SimulationRequest partial = new SimulationRequest(
+                twelveMonthsOfSales(), bd(4_200_000), .38, bd(6_000_000), bd(900_000), bd(12_000_000),
+                .08, 24, null, .08, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse result = service.simulate(partial);
+
+        assertEquals("HIGH", result.confidence().level());
+    }
+
+    @Test
+    void debtFreeBusinessIsNotPenalizedForHavingNoLoanDetail() {
+        // 기존 부채가 아예 없으면 existingLoans가 비어 있는 게 당연하다 — 이 경우까지 "대출 정보 없음"으로
+        // 취급해 신뢰도를 깎으면 안 된다.
+        SimulationRequest debtFree = new SimulationRequest(
+                twelveMonthsOfSales(), bd(4_200_000), .38, bd(6_000_000), ZERO, ZERO,
+                null, 0, null, null, null, "ONE_MONTH_FIXED_COST", null,
+                12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"), List.of());
+
+        SimulationResponse result = service.simulate(debtFree);
+
+        assertEquals("HIGH", result.confidence().level());
+    }
+
+    @Test
     void costComponentsCannotExceedTotalExpense() {
         SimulationRequest.CostStructure duplicated = new SimulationRequest.CostStructure(
                 bd(4_000_000), bd(2_000_000), bd(2_000_000), bd(1_000_000), bd(1_000_000), .2);
@@ -218,6 +262,24 @@ class SimulationServiceTest {
     }
 
     @Test
+    void failedEligibilityIsRejectedBeforeSimulationEverRuns() {
+        // 리뷰에서 "자격 FAIL 상품이 STABLE로 나올 수 있다"는 지적이 있었는데, 실제로 확인해보니
+        // normalizeAndValidateItems()가 이미 요청 단계에서 막고 있었다(FAIL이면 바로
+        // IllegalArgumentException) — evaluateConstraints/decideStatus까지 갈 일 자체가 없다.
+        // 그래서 이 테스트는 "이미 잘 막고 있다"는 걸 고정해두는 회귀 테스트다.
+        SimulationRequest.SelectedItem failedItem = new SimulationRequest.SelectedItem(
+                "CUSTOM", "fail-item", "Ineligible product", "SAVINGS", ZERO,
+                null, null, null, null, null,
+                null, null, null, null, null,
+                null, null, null, "FAIL", "fail-item",
+                null, null, null, null, null);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(baseRequest(List.of(failedItem))));
+        assertTrue(error.getMessage().contains("Eligibility failed"));
+    }
+
+    @Test
     void insurancePremiumAffectsCashButProtectionIsNotInvented() {
         SimulationRequest.SelectedItem insurance = new SimulationRequest.SelectedItem(
                 "CUSTOM", "INS-1", "Fire insurance", "INSURANCE", ZERO,
@@ -246,6 +308,58 @@ class SimulationServiceTest {
                 12, 500, 42L, new SimulationRequest.Diagnosis(.15, "MEDIUM", "CAFE", "SEOUL"),
                 List.of(refinance));
         assertThrows(IllegalArgumentException.class, () -> service.simulate(noDebt));
+    }
+
+    @Test
+    void partialRefinanceReducesExistingRepaymentProportionallyInsteadOfErasingIt() {
+        // 기존 부채 1,200만원 중 절반(600만원)만 대환하면, 기존 상환액은 사라지는 게 아니라
+        // 딱 그 비율만큼만(50%) 줄어야 한다 — 대환하지 않은 나머지 절반은 여전히 갚아야 하니까.
+        SimulationRequest.SelectedItem partialRefinance = new SimulationRequest.SelectedItem(
+                "CUSTOM", "refi-half", "Partial debt restructuring", "LOAN", bd(6_000_000),
+                .04, 24, 0, "EQUAL_PAYMENT", 1, ZERO, 0d, null, null, null,
+                null, null, null, "PASS", "refi-half",
+                null, null, null, null, null);
+
+        SimulationResponse result = service.simulate(baseRequest(List.of(partialRefinance)));
+
+        SimulationResponse.MonthlyCashFlow first = result.selectedScenario().monthlyCashFlows().get(0);
+        assertEquals(450_000, first.existingRepayment(), 1);
+    }
+
+    @Test
+    void fullRefinanceStillErasesTheExistingRepaymentEntirely() {
+        SimulationRequest.SelectedItem fullRefinance = new SimulationRequest.SelectedItem(
+                "CUSTOM", "refi-full", "Full debt restructuring", "LOAN", bd(12_000_000),
+                .04, 24, 0, "EQUAL_PAYMENT", 1, ZERO, 0d, null, null, null,
+                null, null, null, "PASS", "refi-full",
+                null, null, null, null, null);
+
+        SimulationResponse result = service.simulate(baseRequest(List.of(fullRefinance)));
+
+        SimulationResponse.MonthlyCashFlow first = result.selectedScenario().monthlyCashFlows().get(0);
+        assertEquals(0, first.existingRepayment(), 1);
+    }
+
+    @Test
+    void refinancePayoffSpendingFollowsTheProductsDisbursementMonthInsteadOfAlwaysMonthOne() {
+        // 대환 실행월이 3개월 차인 상품은, 대출금 유입도 3개월 차·기존 부채 상환(지출)도 3개월 차에
+        // 같이 반영돼야 한다. 상환만 1개월 차에 먼저 나가버리면 그 달 현금이 근거 없이 낮게 나온다.
+        SimulationRequest.SelectedItem delayedRefinance = new SimulationRequest.SelectedItem(
+                "CUSTOM", "refi-delayed", "Refinance next quarter", "LOAN", bd(12_000_000),
+                .04, 24, 0, "EQUAL_PAYMENT", 3, ZERO, 0d, null, null, null,
+                null, null, null, "PASS", "refi-delayed",
+                null, null, null, null, null);
+
+        SimulationResponse result = service.simulate(baseRequest(List.of(delayedRefinance)));
+
+        List<SimulationResponse.MonthlyCashFlow> flows = result.selectedScenario().monthlyCashFlows();
+        assertEquals(0, flows.get(0).projectSpending(), 1);
+        assertEquals(0, flows.get(1).projectSpending(), 1);
+        assertEquals(12_000_000, flows.get(2).projectSpending(), 1);
+        assertEquals(12_000_000, flows.get(2).financingInflow(), 1);
+        // 대환 시점 이전(1·2개월 차)에는 기존 상환액이 그대로 유지돼야 한다.
+        assertEquals(900_000, flows.get(0).existingRepayment(), 1);
+        assertEquals(0, flows.get(2).existingRepayment(), 1);
     }
 
     @Test
@@ -301,6 +415,11 @@ class SimulationServiceTest {
     private static List<BigDecimal> sales() {
         return List.of(bd(8_200_000), bd(7_900_000), bd(8_500_000),
                 bd(8_800_000), bd(9_100_000), bd(8_700_000));
+    }
+
+    private static List<BigDecimal> twelveMonthsOfSales() {
+        return List.of(bd(8_200_000), bd(7_900_000), bd(8_500_000), bd(8_800_000), bd(9_100_000), bd(8_700_000),
+                bd(8_600_000), bd(8_300_000), bd(8_900_000), bd(9_000_000), bd(8_750_000), bd(8_950_000));
     }
 
     private static BigDecimal bd(long value) {
