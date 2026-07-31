@@ -1,10 +1,10 @@
 import bearOwner from '../../assets/simulator/bear-owner-cutout.png';
+import rabbitOwner from '../../assets/simulator/rabbit-owner-cutout-v2.png';
 
 /**
- * 앱 첫 표지 — 크림 단색 1장 위에 워드마크(상단)와 곰돌이(하단)만 둔다.
- * 새싹 아이콘 대신 곰돌이가 로고 역할을 하므로 AppIcon 은 쓰지 않는다.
- * '시작'은 곰돌이가 든 하트 위에 얹는다 — 하트 중심은 원본 이미지의 (49.5%, 62.2%) 지점.
- * 화면 아무 곳이나 탭하면 시작.
+ * 앱 첫 표지 — 크림에서 잔디로 이어지는 배경 위에 워드마크(상단)와
+ * 사장님 부부(토끼·곰돌이)를 세우고, 아래에 '시작하기' 버튼을 둔다.
+ * 화면 아무 곳이나 탭해도 시작되고, 버튼은 눌러야 한다는 걸 명확히 보여주는 역할이다.
  */
 export default function SplashScreen({ onStart }) {
   return (
@@ -14,10 +14,14 @@ export default function SplashScreen({ onStart }) {
         <p className="splash-title">든든이</p>
         <p className="splash-sub">우리 가게, 든든하게</p>
       </div>
-      <div className="splash-char-wrap bear-sway">
-        <img className="splash-char" src={bearOwner} alt="" aria-hidden="true" />
-        <span className="splash-start" aria-hidden="true">시작</span>
+
+      {/* 발끝을 같은 바닥선에 맞춰 세운다 — 토끼는 귀 때문에 원본이 더 높다 */}
+      <div className="splash-couple">
+        <img className="splash-char splash-char--rabbit bear-sway" src={rabbitOwner} alt="" aria-hidden="true" />
+        <img className="splash-char splash-char--bear bear-sway" src={bearOwner} alt="" aria-hidden="true" />
       </div>
+
+      <button className="splash-btn" onClick={onStart}>시작하기</button>
     </div>
   );
 }

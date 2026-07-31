@@ -382,7 +382,7 @@ export default function App() {
       // 막다른 길이라, 진단 입력으로 되돌린다.
       cta = rank
         ? { label: '사업 성향분석 하러가기', onClick: () => { setRecSub('risk'); window.scrollTo(0, 0); } }
-        : { label: '진단 먼저 하기', primary: true, onClick: () => { setDiagSub('input'); go(2); } };
+        : { label: '진단 먼저 하기', bordered: true, onClick: () => { setDiagSub('input'); go(2); } };
     } else if (tab === 4 && simSub === 'sim') {
       cta = { label: '신청하기로 이동', onClick: () => { setSimSub('portfolio'); window.scrollTo(0, 0); } };
     }
@@ -603,7 +603,10 @@ export default function App() {
               ? { background: 'var(--border-strong)', color: 'var(--muted-faint)', boxShadow: 'none', cursor: 'default' }
               : cta.primary
                 ? { background: 'var(--cta-dark)', color: '#fff', boxShadow: 'none' }
-                : undefined}>
+                : cta.bordered
+                  // 노란 CTA 에 갈색 테두리 — 크림 배경 위에서 버튼 경계가 또렷해진다
+                  ? { border: '2px solid var(--cta-dark)', boxShadow: 'none' }
+                  : undefined}>
             {cta.label}
           </button>
         </div>
