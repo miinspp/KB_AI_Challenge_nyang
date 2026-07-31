@@ -382,23 +382,34 @@ button { font-family: inherit; }
 /* ── 홈 화면 ── */
 .home { animation: scrIn .4s ease both; padding: 26px 22px 110px; display: flex; flex-direction: column; gap: 18px; }
 /* ── 표지 — 크림 단색 1장 + 상단 워드마크 + 하단 곰돌이 ── */
-.splash { position: absolute; inset: 0; background: #FCF3DC; display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; overflow: hidden; }
+/* 위는 크림, 아래는 잔디 — 사장님 부부가 잔디 위에 선 것처럼 보이게 한 장으로 잇는다 */
+.splash {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; user-select: none; overflow: hidden; padding-bottom: 26px;
+  background: linear-gradient(180deg, #FCF3DC 0%, #FCF3DC 58%, #E4EDC2 74%, #A8CE86 88%, #9AC77A 100%);
+}
 .splash-mark { margin-top: 15dvh; text-align: center; }
 .splash-title { font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -1px; line-height: 1.1; }
 .splash-sub { margin-top: 10px; font-size: 13.5px; font-weight: 700; color: #A79778; letter-spacing: -.2px; }
-/* 곰돌이는 바닥에 붙이고 아래쪽을 배경으로 흐리게 지운다(컷아웃 경계 감추기) */
-.splash-char-wrap { position: relative; margin-top: auto; width: 56%; max-width: 240px; }
-.splash-char {
-  display: block; width: 100%; height: auto; object-fit: contain;
-  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
-  mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
+
+.splash-stage { margin-top: auto; display: flex; flex-direction: column; align-items: center; }
+/* 발끝을 한 바닥선에 맞춘다(align-items: flex-end) */
+.splash-couple { display: flex; align-items: flex-end; justify-content: center; gap: 10px; }
+.splash-char { display: block; height: auto; object-fit: contain; }
+.splash-char--rabbit { width: 118px; }
+.splash-char--bear { width: 136px; }
+.splash-caption {
+  margin-top: -6px; padding: 6px 14px; border-radius: 12px; background: rgba(255,255,255,.9);
+  color: #5F6B4A; font-size: 12.5px; font-weight: 800; white-space: nowrap;
+  box-shadow: 0 3px 9px rgba(60,70,40,.12);
 }
-/* '시작'은 곰돌이가 든 하트 위에 — 좌표는 원본 PNG 에서 잰 하트 중심(49.5%, 62.2%) */
-.splash-start {
-  position: absolute; left: 49.5%; top: 62.2%; transform: translate(-50%, -50%);
-  font-size: 17px; font-weight: 900; color: #6B4A12; letter-spacing: -.3px;
-  pointer-events: none; white-space: nowrap;
+
+.splash-btn {
+  width: min(84%, 330px); height: 54px; margin-top: 20px; border: none; border-radius: 15px;
+  background: var(--gold); color: var(--ink); font-size: 16px; font-weight: 900; letter-spacing: -.3px;
+  cursor: pointer; box-shadow: 0 8px 18px -8px rgba(214,150,0,.7); transition: transform .15s ease;
 }
+.splash-btn:active { transform: scale(.985); }
 
 /* ── 진단 로딩 — 결과가 나올 때까지 덮는 전체화면 ── */
 .diagnosing { position: fixed; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 100%; max-width: 480px; z-index: 40; background: #FCF3DC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px 26px; }
