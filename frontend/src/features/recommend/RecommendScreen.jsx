@@ -91,21 +91,19 @@ export default function RecommendScreen({ products, percentile, signals = [], ai
         </div>
       ) : (
         /* 진단 전 — 지금 목록이 개인화된 게 아니라는 걸 밝히고 진단으로 유도한다 */
-        <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '15px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        /* 홈의 진단 카드와 같은 갈색 카드 + 노란 버튼 — 안내와 행동을 색으로 갈라준다 */
+        <div className="cta-card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <span style={{
               flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: '#fff', background: 'var(--gold-link)',
+              justifyContent: 'center', color: 'var(--cta-dark)', background: 'var(--gold)',
             }}><IconTip size={15} /></span>
-            <p style={{ fontSize: 12.5, color: '#8A7A55', lineHeight: 1.55, fontWeight: 600 }}>
-              아직 진단 전이라 <b style={{ color: 'var(--ink)' }}>일반 안내</b>로 보여드리고 있어요.<br />
+            <p style={{ fontSize: 12.5, color: '#D3C6B2', lineHeight: 1.55, fontWeight: 600 }}>
+              아직 진단 전이라 <b style={{ color: '#fff' }}>일반 안내</b>로 보여드리고 있어요.<br />
               진단하면 적합도와 추천 이유까지 알려드려요.
             </p>
           </div>
-          <button onClick={onGoDiagnose} style={{
-            width: '100%', height: 46, border: 'none', borderRadius: 13, cursor: 'pointer',
-            background: 'var(--gold)', color: 'var(--ink)', fontSize: 14, fontWeight: 900, letterSpacing: -.3,
-          }}>
+          <button className="cta-card-btn" style={{ height: 48, marginTop: 0, fontSize: 15 }} onClick={onGoDiagnose}>
             진단하고 맞춤 추천 받기
           </button>
         </div>
