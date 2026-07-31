@@ -9,6 +9,7 @@ export const SIM_VIEWS = [
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 export const f1 = (value) => Math.round(value * 10) / 10;
+const f2 = (value) => Math.round(value * 100) / 100;
 export const sign = (value) => `${value > 0 ? '+' : ''}${f1(value)}`;
 const man = (won) => f1((Number(won) || 0) / 10_000);
 const avg = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -254,6 +255,25 @@ export function applyScenarioAdjustments(payload, { salesDeltaPct = 0, fixedCost
       otherFixedExpense,
       totalExpense: cs.rent + cs.laborCost + cs.materialCost + otherFixedExpense,
     } : null,
+    // 홈택스로 월별 지출 이력(monthlyExpenseHistory)이 3개월 이상 연동돼 있으면, 백엔드는
+    // costStructure/fixedCost를 완전히 무시하고 이 이력의 rent+laborCost+otherExpense 평균만으로
+    // 고정비를 계산한다(resolveCostModel). 이 이력을 같이 조정하지 않으면 고정비 슬라이더가
+    // 이 사용자군에게는 아무 효과가 없다 — 위 costStructure와 같은 방식으로 otherExpense에
+    // 델타를 반영하고, totalExpense도 부품 합으로 다시 맞춘다.
+    monthlyExpenseHistory: payload.monthlyExpenseHistory?.length
+      ? payload.monthlyExpenseHistory.map((entry) => {
+          const otherExpense = Math.max(0, (entry.otherExpense || 0) + fixedCostDelta);
+          const rent = entry.rent || 0;
+          const laborCost = entry.laborCost || 0;
+          const materialCost = entry.materialCost || 0;
+          const cardFee = entry.cardFee || 0;
+          return {
+            ...entry,
+            otherExpense,
+            totalExpense: rent + laborCost + materialCost + cardFee + otherExpense,
+          };
+        })
+      : payload.monthlyExpenseHistory,
   };
 }
 
@@ -389,8 +409,16 @@ function row(name, before, after, unit, goodUp) {
 }
 
 function probabilityLabel(probability, simulationCount) {
-  const percentage = (probability || 0) * 100;
-  if (percentage < 0.1) return '거의 없음';
+  const value = probability || 0;
+  const percentage = value * 100;
+  // 정말 0회 발생한 경우에만 "거의 없음" — 5,000회 중 1회(0.02%)처럼 값은 있는데
+  // 소수 첫째 자리에서 반올림하면 0.0%로 사라지는 경우까지 "없음"으로 뭉개면 안 된다.
+  if (value <= 0) return '거의 없음';
+  if (percentage < 0.1) {
+    const count = Math.max(1, Math.round(value * (simulationCount || 0)));
+    const detail = simulationCount ? ` (${simulationCount.toLocaleString()}회 중 ${count}회)` : '';
+    return `매우 낮음 (${f2(percentage)}%${detail})`;
+  }
   if (percentage < 5) return `매우 낮음 (${f1(percentage)}%)`;
   if (percentage < 20) return `낮음 (${f1(percentage)}%)`;
   return `주의 필요 (${f1(percentage)}%)`;
@@ -494,10 +522,14 @@ export function buildSimulationDetail(simulation) {
       - flow.financialAssetContribution + flow.financialAssetMaturityInflow));
   const repayPoints = flowPoints(beforeFlows, afterFlows,
     (flow) => man(flow.existingRepayment + flow.newRepayment));
+  // 그 달에만 안전선 아래로 내려갈 확률(bufferBreachAtMonthProbability)이 아니라, 그 달까지
+  // 누적된 확률(bufferBreachProbability)을 그린다 — 카드 요약("가게 운영에 필요한 현금이
+  // 모자랄 가능성")도 12개월 누적값이라, 그래프를 다른 지표로 그리면 같은 이름인데 그래프는
+  // 평평하고 카드는 높은 값이 뜨는 모순이 생긴다. 두 곳을 같은 지표로 통일한다.
   const riskPoints = beforeFlows.map((flow, index) => ({
     label: String(flow.month),
-    before: f1((beforeRiskSeries[index]?.bufferBreachAtMonthProbability || 0) * 100),
-    after: f1((afterRiskSeries[index]?.bufferBreachAtMonthProbability || 0) * 100),
+    before: f1((beforeRiskSeries[index]?.bufferBreachProbability || 0) * 100),
+    after: f1((afterRiskSeries[index]?.bufferBreachProbability || 0) * 100),
   }));
 
   const cashBefore = avg(cashPoints.map((point) => point.before));
@@ -602,6 +634,7 @@ export function buildSimulationDetail(simulation) {
       if (warning.includes('Tax reserve was not estimated')) return '세금 납부 이력이 없어 세금 대비 적립액은 계산에서 제외했어요.';
       if (warning.includes('Final product eligibility')) return '최종 가입 자격은 연결된 공식 공고에서 확인이 필요해요.';
       if (warning.includes('Short sales history')) return '매출 이력이 짧아 미래 추정의 신뢰 수준이 낮아요.';
+      if (warning.includes('Missing loan, account cash flow, and tax schedule')) return '대출 상환 스케줄·계좌 흐름·세금 일정 정보가 모두 없어 신뢰 수준을 한 단계 낮췄어요.';
       if (warning.includes('Policy financing uses')) return '정책자금 금리와 상환조건은 연결된 공식 공고에서 최종 확인해야 해요.';
       if (warning.includes('Policy benefits without structured')) return '지급 시기와 자기부담 조건이 없는 정책은 금액 효과를 임의 계산하지 않았어요.';
       if (warning.includes('Sales forecast provider')) return '미래 매출은 학습형 신용모델이 아닌 최근 매출 추세 기반 참고값이에요.';

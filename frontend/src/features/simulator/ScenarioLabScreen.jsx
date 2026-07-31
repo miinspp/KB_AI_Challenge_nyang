@@ -4,6 +4,10 @@ import { applyScenarioAdjustments, buildSimRows, buildSimulationPayload } from '
 import { SimulationSummaryPanel } from './SimulatorScreen';
 
 const SCENARIO_INIT = { salesDeltaPct: 0, fixedCostDeltaMan: 0, cashDeltaMan: 0 };
+// 몬테카를로 위험 계산은 매출·비용의 일상적인 변동성만 흔들어볼 뿐, 지원금 지연·연속된 매출
+// 급감 같은 "진짜 위기"는 반영하지 않는다. 그런 위기 상황을 직접 만들어볼 수 있게, 최근 매출
+// 하위 구간·비용 상위 구간에 해당하는 값으로 슬라이더를 한 번에 맞춰주는 프리셋을 둔다.
+const ADVERSE_PRESET = { salesDeltaPct: -20, fixedCostDeltaMan: 30, cashDeltaMan: -100 };
 const SLIDERS = [
   { key: 'salesDeltaPct', label: '매출이 지금보다', unit: '%', min: -30, max: 30, step: 5 },
   { key: 'fixedCostDeltaMan', label: '월 고정비가 지금보다', unit: '만원', min: -100, max: 100, step: 10 },
@@ -31,6 +35,9 @@ export default function ScenarioLabScreen({ equipped, simulationBase, onBack }) 
     [simulationBase, equipped],
   );
   const isDefault = scenario.salesDeltaPct === 0 && scenario.fixedCostDeltaMan === 0 && scenario.cashDeltaMan === 0;
+  const isAdversePreset = scenario.salesDeltaPct === ADVERSE_PRESET.salesDeltaPct
+    && scenario.fixedCostDeltaMan === ADVERSE_PRESET.fixedCostDeltaMan
+    && scenario.cashDeltaMan === ADVERSE_PRESET.cashDeltaMan;
 
   useEffect(() => {
     let alive = true;
@@ -68,12 +75,19 @@ export default function ScenarioLabScreen({ equipped, simulationBase, onBack }) 
             onChange={(value) => setScenario((current) => ({ ...current, [slider.key]: value }))} />
         ))}
 
-        {!isDefault && (
-          <button type="button" className="press-fx" onClick={() => setScenario(SCENARIO_INIT)} style={{
-            alignSelf: 'flex-start', border: 'none', background: 'none', padding: 0,
-            color: 'var(--gold-link)', fontWeight: 800, fontSize: 12, cursor: 'pointer',
-          }}>가정 초기화</button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button type="button" className="press-fx" onClick={() => setScenario(ADVERSE_PRESET)} disabled={isAdversePreset} style={{
+            border: 'none', background: 'none', padding: 0,
+            color: isAdversePreset ? 'var(--muted-faint)' : 'var(--danger)', fontWeight: 800, fontSize: 12,
+            cursor: isAdversePreset ? 'default' : 'pointer',
+          }}>⚠ 어려운 상황 한 번에 보기</button>
+          {!isDefault && (
+            <button type="button" className="press-fx" onClick={() => setScenario(SCENARIO_INIT)} style={{
+              border: 'none', background: 'none', padding: 0,
+              color: 'var(--gold-link)', fontWeight: 800, fontSize: 12, cursor: 'pointer',
+            }}>가정 초기화</button>
+          )}
+        </div>
       </div>
 
       <SimulationSummaryPanel simulation={simulation} simRows={simRows} loading={loading} error={error} variant="standalone" items={equipped} />
