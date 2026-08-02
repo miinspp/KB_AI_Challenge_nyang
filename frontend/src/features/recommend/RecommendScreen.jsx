@@ -1,13 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconTip, IconArrowRight } from '../../shared/Icons';
 
-// 상품 → 카테고리 (재현본 규칙 + 실제 추천 API 상품의 isFinance 반영)
+// 상품 → 카테고리
+// 예전에는 isFinance(=돈이 오가는 지원인지)만 보고 'loan'으로 몰아넣어서, 컨설팅·창업지원처럼
+// 보증·교육이 섞인 비대출 지원사업이나 KB 적금·예금 상품까지 전부 "대출" 탭에 들어가는 문제가 있었다.
+// 실제 추천 API 상품/정책은 subcategory(예: "일반·소상공인 대출", "사업자 적금·예비자금")가 내려오므로
+// 이걸로 먼저 정확히 나누고, subcategory가 없는 예전 정적 카탈로그(products.js)만 tag 문구로 판단한다.
 const CATS = [['all', '전체'], ['loan', '대출'], ['save', '적금'], ['ins', '보험'], ['gov', '정부 지원']];
+const LOAN_HINTS = ['대출', '신용', '보증', '채무조정', '셀러 금융', '공급망 금융', '융자'];
+const SAVE_HINTS = ['적금', '예금', '입출금', '유동성', '예비자금', '목돈'];
+const INS_HINTS = ['보험'];
+const hasHint = (text, hints) => hints.some((k) => text.includes(k));
 const catOf = (p) => {
+  if (p.subcategory) {
+    if (hasHint(p.subcategory, SAVE_HINTS)) return 'save';
+    if (hasHint(p.subcategory, INS_HINTS)) return 'ins';
+    if (hasHint(p.subcategory, LOAN_HINTS)) return 'loan';
+    return 'gov'; // 컨설팅·교육·창업지원 등 — isFinance가 true여도 대출이 아니라 정부 지원으로 분류
+  }
   const tag = p.tag || '';
-  if (tag.includes('대출') || p.isFinance) return 'loan';
+  if (tag.includes('대출')) return 'loan';
   if (tag.includes('적금')) return 'save';
   if (tag.includes('보험')) return 'ins';
+  if (p.isFinance) return 'loan';
   return 'gov';
 };
 
@@ -80,29 +94,19 @@ export default function RecommendScreen({ products, percentile, signals = [], ai
       </div>
 
       {diagnosed ? (
-        <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{
-            flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: '#fff', background: 'var(--gold-link)',
-          }}><IconTip size={15} /></span>
+        <div style={{ background: '#FFF6DD', border: '1.5px solid #F3E4C0', borderRadius: 14, padding: '12px 15px' }}>
           <p style={{ fontSize: 12.5, color: '#8A7A55', lineHeight: 1.55, fontWeight: 600 }}>
-            아래 체험 상품을 탭하면 간략한 정보를 볼 수 있어요.<br />다음 화면에서 직접 <b style={{ color: 'var(--ink)' }}>장착해 보며 체험</b>할 수 있어요!
+            아래 상품을 탭하면 자세한 정보를 볼 수 있어요.
           </p>
         </div>
       ) : (
         /* 진단 전 — 지금 목록이 개인화된 게 아니라는 걸 밝히고 진단으로 유도한다 */
         /* 흰 카드 안내 + 노란 버튼 — 목록 카드와 같은 결로 두되 버튼만 색으로 띄운다 */
         <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{
-              flex: 'none', width: 28, height: 28, borderRadius: 9, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', color: 'var(--cta-dark)', background: 'var(--gold)',
-            }}><IconTip size={15} /></span>
-            <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.55, fontWeight: 600 }}>
-              아직 진단 전이라 <b style={{ color: 'var(--ink)' }}>일반 안내</b>로 보여드리고 있어요.<br />
-              진단하면 적합도와 추천 이유까지 알려드려요.
-            </p>
-          </div>
+          <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.55, fontWeight: 600 }}>
+            아직 진단 전이라 <b style={{ color: 'var(--ink)' }}>일반 안내</b>로 보여드리고 있어요.<br />
+            진단하면 적합도와 추천 이유까지 알려드려요.
+          </p>
           <button className="cta-card-btn" style={{ height: 48, marginTop: 0, fontSize: 15 }} onClick={onGoDiagnose}>
             진단하고 맞춤 추천 받기
           </button>
@@ -135,7 +139,6 @@ export default function RecommendScreen({ products, percentile, signals = [], ai
             display: 'flex', flexDirection: 'column', gap: 10, cursor: 'pointer', transition: 'border .2s',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="icon-badge" style={{ width: 40, height: 40, background: p.iconBg, color: p.iconColor, fontSize: 18 }}>{p.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', letterSpacing: -.3 }}>{p.name}</p>
                 <span className="tag" style={{ color: p.tagColor, background: p.tagBg }}>{p.tag}</span>
@@ -176,20 +179,14 @@ export default function RecommendScreen({ products, percentile, signals = [], ai
                     })}
                   </div>
                 )}
-                {p.details.map((d) => (
+                {/* AI 3줄 요약(초록 라벨)이 있으면 같은 내용을 반복하는 회색 상세 목록은 보여주지 않는다.
+                    summaryShort가 없는 상품(주로 규칙기반 폴백)에는 details가 유일한 정보라 그대로 둔다. */}
+                {!p.summaryShort && p.details.map((d) => (
                   <div key={d.k} style={{ display: 'flex', gap: 10, fontSize: 12 }}>
                     <span style={{ flex: 'none', width: 64, fontWeight: 800, color: 'var(--muted-mid)' }}>{d.k}</span>
                     <span style={{ flex: 1, color: 'var(--ink)', fontWeight: 600, lineHeight: 1.55 }}>{d.v}</span>
                   </div>
                 ))}
-                <p style={{ fontSize: 11.5, color: '#8A7A55', background: '#FFF6DD', borderRadius: 10, padding: '9px 11px', lineHeight: 1.55, fontWeight: 600, display: 'flex', gap: 7 }}>
-                  <IconArrowRight size={14} style={{ flex: 'none', marginTop: 2 }} />
-                  <span>
-                    {diagnosed
-                      ? '다음 화면의 시뮬레이터에서 이 상품을 장착하면, 우리 가게 현금흐름이 어떻게 바뀌는지 미리 체험할 수 있어요.'
-                      : '진단을 마치면 이 상품이 우리 가게 현금흐름을 어떻게 바꾸는지 시뮬레이터에서 체험할 수 있어요.'}
-                  </span>
-                </p>
               </div>
             )}
           </div>

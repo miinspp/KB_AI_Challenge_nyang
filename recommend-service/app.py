@@ -148,6 +148,10 @@ def to_product(item: dict) -> dict:
         "name": title,
         "short": title if len(title) <= 13 else title[:12] + "…",  # 시뮬레이터 장착 슬롯용 축약 이름
         "tag": p.get("category") or "지원제도",
+        # 프론트 대출/적금/보험/정부지원 탭 분류용 — category(tag)만으로는 "금융" 안에 대출·적금·
+        # 컨설팅이 섞여 있어 구분이 안 된다(예: is_finance=True인데 컨설팅·창업지원인 항목이 있음).
+        # subcategory(예: "일반·소상공인 대출", "사업자 적금·예비자금")를 같이 내려줘야 정확히 나뉜다.
+        "subcategory": p.get("subcategory") or "",
         **st,
         "fit": int(round(item["final_score"] * 100)),
         # reason(상품별 한 줄 근거)은 내보내지 않는다 — 규칙 evidence 는 사장님 재무상황
