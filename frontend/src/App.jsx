@@ -22,8 +22,6 @@ import { fetchRecommendations, rankToProfile } from './api/recommend';
 import SimulatorScreen from './features/simulator/SimulatorScreen';
 import PortfolioScreen from './features/simulator/PortfolioScreen';
 import ScenarioLabScreen from './features/simulator/ScenarioLabScreen';
-import CustomComboScreen from './features/simulator/CustomComboScreen';
-import ComboDetailScreen from './features/simulator/ComboDetailScreen';
 import {
   buildSimRows, buildSimulationOptions, buildSimulationPayload,
   pickOptionsForProfile, generateCandidateCombos, buildCandidatePayloads, summarizeSimulationForAdvisor,
@@ -57,7 +55,7 @@ export default function App() {
   const [recSub, setRecSub] = useState('list');      // list | risk (추천 목록 → 성향분석 → 시뮬레이터)
   const [riskProfile, setRiskProfile] = useState(null);  // 성향분석 결과 — 시뮬레이터/에이전트 입력값으로 전달
   const [simSub, setSimSub] = useState('sim');       // sim | portfolio
-  const [overlay, setOverlay] = useState(null);      // null | 'account' | 'hometax' | 'scenario' | 'custom' | 'comboDetail'
+  const [overlay, setOverlay] = useState(null);      // null | 'account' | 'hometax' | 'scenario'
   const [requestSheet, setRequestSheet] = useState(null);  // 내 정보 → 진단 입력 시트 열기
 
   const [industries, setIndustries] = useState([]);
@@ -87,7 +85,6 @@ export default function App() {
   const [comboAnalysisLoading, setComboAnalysisLoading] = useState(false);
   const [comboAnalysisError, setComboAnalysisError] = useState('');
   const [comboAnalysisDone, setComboAnalysisDone] = useState(false);
-  const [openComboId, setOpenComboId] = useState(null);  // Top3 목록에서 "들어가서" 보고 있는 조합(overlay==='comboDetail')
 
   // 업종 목록·메타 최초 로드
   const loadIndustries = useCallback(() => {
@@ -136,7 +133,6 @@ export default function App() {
   const simulationBase = useMemo(() => ({ rank, diag, hometax, kb: kbLinked ? KB_LINK : null }),
     [rank, diag, hometax, kbLinked]);
   const equippedComboId = useMemo(() => equipped.map((item) => item.key).sort().join('+'), [equipped]);
-  const openCombo = topCombos.find((combo) => combo.comboId === openComboId) || null;
 
   // 시뮬레이터 탭에 들어왔을 때만 계산 요청
   useEffect(() => {
@@ -355,7 +351,7 @@ export default function App() {
     setDiag(DIAG_INIT); setNeeds([]); setHometax(null); setDetail(null); setRank(null);
     setEquipped([]); setAnalyzeError(''); setApiProducts(null); setRecoSignals([]);
     setSimulation(null); setSimulationError(''); setKbLinked(false);
-    setTopCombos([]); setComboSimulations({}); setComboAnalysisDone(false); setComboAnalysisError(''); setOpenComboId(null);
+    setTopCombos([]); setComboSimulations({}); setComboAnalysisDone(false); setComboAnalysisError('');
     setTab(1); setDiagSub('input'); setRecSub('list'); setRiskProfile(null); setSimSub('sim'); setOverlay(null);
     window.scrollTo(0, 0);
   };
@@ -477,22 +473,7 @@ export default function App() {
         {overlay === 'scenario' && (
           <ScenarioLabScreen
             equipped={equipped} simulationBase={simulationBase}
-            onBack={() => setOverlay(null)}
-          />
-        )}
-        {overlay === 'custom' && (
-          <CustomComboScreen
-            options={simulationOptions} equipped={equipped} toggle={toggle}
-            simRows={simRows} simulation={simulation} loading={simulationLoading}
-            error={simulationError || (!simulationReady
-              ? '진단 입력의 자금 상황에서 보유 현금과 기존 대출 여부를 입력해 주세요.'
-              : '')}
-            onBack={() => setOverlay(null)}
-          />
-        )}
-        {overlay === 'comboDetail' && openCombo && (
-          <ComboDetailScreen
-            combo={openCombo} simulation={comboSimulations[openCombo.comboId]} riskProfile={riskProfile}
+            topCombos={topCombos} equippedComboId={equippedComboId} onApplyCombo={applyCombo}
             onBack={() => setOverlay(null)}
           />
         )}
@@ -543,7 +524,7 @@ export default function App() {
             onComplete={(profile) => {
               setRiskProfile(profile);
               // 새 성향 결과이니 이전 조합 분석은 버리고 다시 계산한다.
-              setComboAnalysisDone(false); setTopCombos([]); setComboSimulations({}); setComboAnalysisError(''); setOpenComboId(null);
+              setComboAnalysisDone(false); setTopCombos([]); setComboSimulations({}); setComboAnalysisError('');
               setRecSub('list');
               go(4);
             }}
@@ -558,18 +539,22 @@ export default function App() {
               onChange={(k) => { setSimSub(k); window.scrollTo(0, 0); }}
             />
             {simSub === 'sim' && (
-              <SimulatorScreen options={simulationOptions} equipped={equipped}
+              <SimulatorScreen options={simulationOptions} equipped={equipped} toggle={toggle} simRows={simRows}
+                simulation={simulation} loading={simulationLoading}
+                error={simulationError || (!simulationReady
+                  ? '진단 입력의 자금 상황에서 보유 현금과 기존 대출 여부를 입력해 주세요.'
+                  : '')}
                 riskProfile={riskProfile} simulationReady={simulationReady}
                 topCombos={topCombos} comboSimulations={comboSimulations}
                 comboAnalysisLoading={comboAnalysisLoading} comboAnalysisDone={comboAnalysisDone} comboAnalysisError={comboAnalysisError}
                 equippedComboId={equippedComboId} onApplyCombo={applyCombo} onRetryComboAnalysis={retryComboAnalysis}
                 onOpenScenarioLab={() => { setOverlay('scenario'); window.scrollTo(0, 0); }}
-                onOpenCustomCombo={() => { setOverlay('custom'); window.scrollTo(0, 0); }}
-                onOpenComboDetail={(combo) => { setOpenComboId(combo.comboId); setOverlay('comboDetail'); window.scrollTo(0, 0); }} />
+                onGoApply={() => { setSimSub('portfolio'); window.scrollTo(0, 0); }} />
             )}
             {simSub === 'portfolio' && (
               <PortfolioScreen equipped={equipped} simRows={simRows}
-                percentile={topPercent} simulation={simulation} products={products} />
+                percentile={topPercent} simulation={simulation} products={products}
+                topCombos={topCombos} equippedComboId={equippedComboId} />
             )}
           </>
         )}

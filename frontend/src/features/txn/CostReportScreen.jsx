@@ -37,7 +37,7 @@ function buildSuggestionSteps(sug, months) {
   const period = `최근 ${months.length}개월 합계`;
   if (!income) return null;
 
-  const make = (label, amount, benchPct, benchLabel, warnAdvice, okAdvice, judge) => {
+  const make = (label, amount, benchPct, benchLabel, judge) => {
     if (amount == null) return null;
     const myPct = (amount / income) * 100;
     const diff = myPct - benchPct;
@@ -46,28 +46,42 @@ function buildSuggestionSteps(sug, months) {
       ...(judge ? [{ k: '판단 기준', v: judge }] : []),
       { k: '업종 평균', v: `음식점업 ${benchLabel} 비중 ${benchPct}% (KOSIS 소상공인실태조사 2023)` },
       { k: '차이', v: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%p · 월 ${fmtMan(Math.abs(income * diff / 100))} 수준` },
-      { k: '그래서', v: sug.status === 'warn' ? warnAdvice : okAdvice },
     ];
   };
 
-  if (sug.metric.includes('인건비')) {
-    return make('인건비', amountOf('LABOR'), KOSIS_BENCH.labor, '인건비',
-      '피크타임 위주로 근무 스케줄을 조정하거나 두루누리 사회보험료 지원(80%)을 신청해 보세요.',
-      '현재 인력 구조는 유지해도 좋아요.');
-  }
+  if (sug.metric.includes('인건비')) return make('인건비', amountOf('LABOR'), KOSIS_BENCH.labor, '인건비');
   if (sug.metric.includes('임대료')) {
     return make('임대료', amountOf('RENT'), KOSIS_BENCH.rent, '임차료',
-      '매출 확대 없이는 고정비 압박이 커요. 착한임대인 세액공제 협의나 임대료 인하 요청, 배달·포장 매출 확대를 함께 검토해 보세요.',
-      '임대료 부담은 안정권이에요.',
       '임차료율 10%가 소상공인 경영 안정 경계선 (진단 리포트 비용구조 축과 동일 기준)');
   }
   if (sug.metric.includes('원가') || sug.metric.includes('매입')) {
     return make('매입·원재료', amountOf('SUPPLIES'), KOSIS_BENCH.purchase, '재료비',
-      '식자재 거래처를 2곳 이상 비교하거나 공동구매·식자재 카드 할인 활용으로 1~3%p 절감 여지가 있어요.',
-      '원가는 안정적으로 관리되고 있어요.',
       '외식업 원가율 35% 초과 시 수익성 경고 구간');
   }
   return null;
+}
+
+// 상태 메시지("매출 대비 높음")는 문제가 있다는 것만 알려주고 뭘 해야 하는지는 안 알려준다.
+// "이렇게 개선해 보세요" 섹션에서 사장님이 실제로 취할 수 있는 행동을 지표별로 짚어준다 —
+// 이 텍스트가 항상 먼저 보이고, buildSuggestionSteps의 계산 근거는 펼쳐야만 보인다.
+function buildSuggestionAdvice(sug) {
+  const warn = sug.status === 'warn';
+  if (sug.metric.includes('인건비')) {
+    return warn
+      ? '피크타임 위주로 근무 스케줄을 조정하거나, 두루누리 사회보험료 지원(최대 80%)을 신청해 보세요.'
+      : '지금 인력 구조는 업종 평균 수준이에요. 유지해도 좋아요.';
+  }
+  if (sug.metric.includes('임대료')) {
+    return warn
+      ? '착한임대인 세액공제를 협의하거나 임대료 인하를 요청해 보세요. 배달·포장 매출을 늘려 임대료 비중을 낮추는 것도 방법이에요.'
+      : '임대료 부담은 업종 평균보다 낮은 안정권이에요.';
+  }
+  if (sug.metric.includes('원가') || sug.metric.includes('매입')) {
+    return warn
+      ? '식자재 거래처를 2곳 이상 비교 견적받거나, 공동구매·식자재 카드 할인을 활용해 1~3%p 절감을 노려보세요.'
+      : '원가는 업종 평균 대비 안정적으로 관리되고 있어요.';
+  }
+  return sug.message;
 }
 
 /** 상단 요약 숫자 카드 */
@@ -210,37 +224,45 @@ export default function CostReportScreen({ report }) {
         })}
       </section>
 
-      {/* 개선 제안 — 펼치면 계산 근거 */}
+      {/* 개선 제안 — "무엇을 해야 하는지"를 항상 보이는 콜아웃으로 먼저 보여주고,
+          계산이 어떻게 나온 건지는 펼쳐야 보이는 근거로 뒤로 뺀다. */}
       {report.suggestions?.length > 0 && (
         <section className="sec-card">
           <div className="sec-card-head"><p className="sec-card-title">이렇게 개선해 보세요</p></div>
           {report.suggestions.map((s, si) => {
             const warn = s.status === 'warn';
+            const advice = buildSuggestionAdvice(s);
             const steps = buildSuggestionSteps(s, months);
             const open = openTip === s.metric;
             return (
-              <div key={s.metric} style={{ borderTop: si === 0 ? 'none' : '1px solid var(--border)' }}>
-                <button onClick={() => steps && setOpenTip(open ? null : s.metric)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 2px', background: 'none', border: 'none', cursor: steps ? 'pointer' : 'default', textAlign: 'left' }}>
+              <div key={s.metric} style={{ padding: '13px 2px', borderTop: si === 0 ? 'none' : '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{
                     flex: 'none', width: 22, height: 22, borderRadius: '50%', display: 'flex',
                     alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900,
                     background: warn ? 'var(--danger-bg)' : 'var(--green-bg)', color: warn ? 'var(--danger)' : 'var(--green-mid)',
                   }}>{warn ? '!' : '✓'}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
-                      {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
-                    </p>
-                    <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>{s.message}</p>
-                  </div>
-                  {steps && (
-                    <span style={{ flex: 'none', fontSize: 10.5, fontWeight: 800, color: 'var(--muted-faint)', whiteSpace: 'nowrap' }}>
-                      {open ? '▲' : '근거 보기 ▼'}
-                    </span>
-                  )}
-                </button>
+                  <p style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 800, color: 'var(--ink)' }}>
+                    {s.metric} <span style={{ color: warn ? 'var(--danger)' : 'var(--green-mid)' }}>{s.value}%</span>
+                  </p>
+                </div>
+
+                {/* 실제로 뭘 하면 되는지 — 상태 메시지 대신 이 문장을 기본으로 보여준다 */}
+                <p style={{
+                  marginTop: 8, marginLeft: 32, padding: '10px 12px', borderRadius: 10,
+                  background: warn ? 'var(--danger-bg)' : 'var(--green-bg)',
+                  color: warn ? '#9C3F36' : 'var(--green-deep)',
+                  fontSize: 12.5, fontWeight: 700, lineHeight: 1.55,
+                }}>{advice}</p>
+
+                {steps && (
+                  <button onClick={() => setOpenTip(open ? null : s.metric)} style={{
+                    marginTop: 7, marginLeft: 32, border: 'none', background: 'none', padding: 0,
+                    fontSize: 10.5, fontWeight: 800, color: 'var(--muted-faint)', cursor: 'pointer',
+                  }}>{open ? '계산 근거 접기 ▲' : '어떻게 계산했는지 보기 ▼'}</button>
+                )}
                 {open && steps && (
-                  <div className="pop" style={{ background: 'var(--warm)', borderRadius: 12, padding: 14, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div className="pop" style={{ marginLeft: 32, background: 'var(--warm)', borderRadius: 12, padding: 14, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 9 }}>
                     {steps.map((st, i) => (
                       <div key={st.k} style={{ display: 'flex', gap: 10, alignItems: 'baseline', borderTop: i === 0 ? 'none' : '1px solid var(--border-strong)', paddingTop: i === 0 ? 0 : 9 }}>
                         <span style={{ flex: 'none', width: 58, fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>{st.k}</span>
