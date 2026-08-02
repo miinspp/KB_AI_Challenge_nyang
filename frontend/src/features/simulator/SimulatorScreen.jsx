@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import Couple from './Couple';
 import { IconSparkle } from '../../shared/Icons';
-import { buildComboDetailCandidate, buildSimRows, buildSimulationDetail, SIM_VIEWS, summarizeSimulationForAdvisor } from './sim';
+import { buildComboDetailCandidate, buildSimulationDetail, SIM_VIEWS, summarizeSimulationForAdvisor } from './sim';
 import { requestPortfolioDetail } from '../../api/portfolio';
 
 // 직접 조합하기 드롭다운의 카테고리 — 맞춤 추천 화면(RecommendScreen)과 같은 방식으로 묶는다.
@@ -15,21 +14,28 @@ const PRODUCT_CATS = [
   ['INSURANCE', '보험'],
 ];
 
+// ─────────────────────────────────────────────────────────────
+// 화면 흐름 — 예전엔 Top3 행을 누르면 전체화면 시트가 새로 뜨고, 그 안에 결과 패널이
+// 또 하나(직접 조합할 때 쓰던 것과 별개로) 들어 있어서 "같은 결과를 두 가지 다른 방식으로
+// 보여주는" 상태가 됐다. 지금은 하나로 합쳤다:
+//   1) Top3 카드를 누르거나 직접 상품을 고르면 → 그 즉시 장착된다(equipped 갱신).
+//   2) 화면 아래에는 항상 결과 패널이 "하나만" 있고, 지금 장착된 조합 기준으로 바로 갱신된다.
+//   3) 장착된 조합이 Top3 중 하나면 그 카드의 AI 설명(핵심 요약/확인할 점)이 결과 패널 위에 이어 붙는다.
+// 시트·모달을 새로 띄우지 않으니 "탭 → 결과가 바로 아래에 나타난다"는 흐름 하나만 남는다.
+// ─────────────────────────────────────────────────────────────
 export default function SimulatorScreen({
   equipped, options, toggle, simRows, simulation, loading, error,
   riskProfile, simulationReady, topCombos = [], comboSimulations = {},
   comboAnalysisLoading, comboAnalysisDone, comboAnalysisError, equippedComboId, onApplyCombo, onRetryComboAnalysis,
-  onOpenScenarioLab,
+  onOpenScenarioLab, onGoApply,
 }) {
-  // 직접 고른 상품의 "시뮬레이션 요약"은 눌러야만 보여준다(항상 떠 있던 고정 블록 제거).
-  // undefined = "아직 아무것도 안 눌렀다" — 이 경우엔 아래 default 값을 매 렌더 다시 계산해서 쓴다.
-  // (Top3 계산이 비동기로 끝나기 전엔 topCombos가 비어 있으므로, useState 초기값에 그대로 고정해두면
-  //  로딩이 끝난 뒤에도 낡은 값이 남는다 — 그래서 override가 없는 한 매 렌더 새로 계산한다.)
-  const [manualSummaryOverride, setManualSummaryOverride] = useState(undefined);
   const [customOpenOverride, setCustomOpenOverride] = useState(undefined);
   const [customCat, setCustomCat] = useState('all');
-  // Top3 리스트에서 탭한 조합의 상세 시트 — 목록은 항상 최소한만 보여주고, 눌렀을 때만 "들어가서" 본다.
-  const [openComboId, setOpenComboId] = useState(null);
+  // 결과 패널 위 "AI가 분석했어요" 카드에 달린 심화 분석 — 지금 장착된 조합이 바뀔 때마다 초기화한다.
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiDetail, setAiDetail] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   // AI 조합 분석 중엔 전체화면 테이크오버로 전환한다 — 헤더·탭바·CTA까지 전부 가려서
   // 로딩 중에 뒤로가거나 다른 탭으로 못 옮겨가게 막는다(계산이 끝나야만 사라짐).
@@ -43,27 +49,48 @@ export default function SimulatorScreen({
     if (riskProfile && simulationReady && !comboAnalysisDone) setTakeoverVisible(true);
   }, [riskProfile, simulationReady, comboAnalysisDone]);
 
+  useEffect(() => {
+    setAiOpen(false); setAiDetail(null); setAiError('');
+  }, [equippedComboId]);
+
   if (takeoverVisible) {
     return <ComboLoadingTakeover active={comboAnalysisLoading} onDone={() => setTakeoverVisible(false)} />;
   }
 
-  // 이미 장착된 조합/상품이 있으면 그 맥락을 그대로 이어서 보여준다 — 없으면 아무 것도 펼치지 않는다.
-  const defaultManualSummaryOpen = equipped.length > 0 && !topCombos.some((combo) => combo.comboId === equippedComboId);
-  const manualSummaryOpen = manualSummaryOverride !== undefined ? manualSummaryOverride : defaultManualSummaryOpen;
+  // 지금 장착된 조합이 Top3 중 하나와 같으면, 그 카드의 설명을 결과 패널 위에 그대로 이어 붙인다.
+  const matchedCombo = topCombos.find((combo) => combo.comboId === equippedComboId) || null;
 
   // 직접 상품 고르기 드롭다운 — Top3가 없거나, 이미 Top3에 없는 나만의 조합을 쓰고 있으면 열어둔다.
-  const defaultCustomOpen = topCombos.length === 0
-    || (equipped.length > 0 && !topCombos.some((combo) => combo.comboId === equippedComboId));
+  const defaultCustomOpen = topCombos.length === 0 || (equipped.length > 0 && !matchedCombo);
   const customOpen = customOpenOverride !== undefined ? customOpenOverride : defaultCustomOpen;
 
-  const toggleCustom = (item) => {
-    toggle(item);
-    setManualSummaryOverride(true);
-  };
-
-  const openCombo = topCombos.find((combo) => combo.comboId === openComboId) || null;
   const availableCats = PRODUCT_CATS.filter(([key]) => key === 'all' || options.some((item) => item.type === key));
   const visibleOptions = options.filter((item) => customCat === 'all' || item.type === customCat);
+
+  const fetchAiDetail = async () => {
+    if (!matchedCombo) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const res = await requestPortfolioDetail({
+        riskProfile,
+        candidate: buildComboDetailCandidate(matchedCombo, simulation),
+        headline: matchedCombo.headline,
+        reason: matchedCombo.reason,
+        caution: matchedCombo.caution || '',
+      });
+      setAiDetail(res && (res.fit || res.strength) ? res : { fit: matchedCombo.reason, strength: '', caution: matchedCombo.caution || '' });
+    } catch (e) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+  const handleAiClick = () => {
+    const next = !aiOpen;
+    setAiOpen(next);
+    if (next && !aiDetail && !aiLoading) fetchAiDetail();
+  };
 
   return (
     <div className="scr" style={{ padding: '18px 0 200px', gap: 0 }}>
@@ -72,7 +99,7 @@ export default function SimulatorScreen({
           riskProfile={riskProfile} topCombos={topCombos} comboSimulations={comboSimulations}
           loading={comboAnalysisLoading} error={comboAnalysisError}
           equippedComboId={equippedComboId}
-          onOpenCombo={(combo) => { onApplyCombo?.(combo.items); setOpenComboId(combo.comboId); }}
+          onSelect={(combo) => onApplyCombo?.(combo.items)}
           onRetry={onRetryComboAnalysis}
         />
       )}
@@ -113,7 +140,7 @@ export default function SimulatorScreen({
                 const eligibility = eligibilityLabel(item.eligibilityStatus);
                 const terms = productTerms(item);
                 return (
-                  <button key={item.key} className="press-fx-row" onClick={() => toggleCustom(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
+                  <button key={item.key} className="press-fx-row" onClick={() => toggle(item)} type="button" aria-pressed={selected} title={item.name || item.short} style={{
                     border: selected ? '1.5px solid #E8B93E' : conflicts ? '1.5px solid #E7C7C2' : '1.5px solid #EFE8DB',
                     background: selected ? '#FFF6DD' : conflicts ? '#FBF3F1' : '#fff', borderRadius: 14, padding: '11px 12px', cursor: 'pointer',
                     display: 'flex', alignItems: 'flex-start', gap: 10, textAlign: 'left', minHeight: 60,
@@ -160,15 +187,78 @@ export default function SimulatorScreen({
         </section>
       )}
 
-      {manualSummaryOpen && (
-        <SimulationSummaryPanel simulation={simulation} simRows={simRows} loading={loading} error={error} variant="standalone" items={equipped} />
-      )}
+      {equipped.length > 0 && (
+        <>
+          {matchedCombo && (
+            <section style={{ margin: '14px 22px 0', padding: '14px 15px', borderRadius: 14, background: '#FFF9E8', border: '1px solid #F3E4C0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ flex: 'none', color: 'var(--gold-link)', display: 'flex' }}><IconSparkle size={14} /></span>
+                <p style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--gold-link)' }}>AI가 분석했어요</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <p style={{ fontSize: 10.5, fontWeight: 800, color: '#8A7A55' }}>핵심 요약</p>
+                <p style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600, color: 'var(--ink-soft)' }}>{matchedCombo.reason}</p>
+              </div>
+              {matchedCombo.caution && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 9, borderTop: '1px solid #F3E4C0' }}>
+                  <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--danger)' }}>확인할 점</p>
+                  <p style={{ fontSize: 12.5, lineHeight: 1.6, fontWeight: 700, color: 'var(--danger)' }}>{matchedCombo.caution}</p>
+                </div>
+              )}
+            </section>
+          )}
 
-      {openCombo && (
-        <ComboDetailSheet key={openCombo.comboId} combo={openCombo} riskProfile={riskProfile}
-          simulation={comboSimulations[openCombo.comboId]}
-          isEquipped={equippedComboId === openCombo.comboId}
-          onClose={() => setOpenComboId(null)} />
+          <SimulationSummaryPanel simulation={simulation} simRows={simRows} loading={loading} error={error} items={equipped}
+            onApply={() => onGoApply?.()} />
+
+          {matchedCombo && (
+            <section style={{ margin: '10px 22px 0' }}>
+              <button type="button" className="combo-ai-btn press-fx" onClick={handleAiClick} disabled={aiLoading} style={{
+                width: '100%', height: 46, border: 'none', borderRadius: 13, fontSize: 13.5, fontWeight: 900,
+                cursor: aiLoading ? 'default' : 'pointer', color: 'var(--ink)',
+              }}>
+                {!aiLoading && <IconSparkle size={16} />}
+                <span>{aiLoading ? 'AI가 분석하고 있어요…' : aiOpen ? '분석 결과 접기' : 'AI 분석 더 보기'}</span>
+              </button>
+
+              {aiOpen && (
+                <div className="evidence-box">
+                  {aiLoading && (
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>AI가 더 자세히 분석하고 있어요…</p>
+                  )}
+                  {!aiLoading && aiError && (
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>
+                      불러오지 못했어요: {aiError}{' '}
+                      <button type="button" className="press-fx" onClick={fetchAiDetail} style={{ border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, cursor: 'pointer', padding: 0 }}>다시 시도</button>
+                    </p>
+                  )}
+                  {!aiLoading && !aiError && aiDetail && (
+                    <>
+                      {aiDetail.fit && (
+                        <div className="evidence-row">
+                          <span className="evidence-k">왜 맞나요</span>
+                          <span className="evidence-v">{aiDetail.fit}</span>
+                        </div>
+                      )}
+                      {aiDetail.strength && (
+                        <div className="evidence-row">
+                          <span className="evidence-k">장점</span>
+                          <span className="evidence-v">{aiDetail.strength}</span>
+                        </div>
+                      )}
+                      {aiDetail.caution && (
+                        <div className="evidence-row">
+                          <span className="evidence-k">확인할 점</span>
+                          <span className="evidence-v">{aiDetail.caution}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+        </>
       )}
     </div>
   );
@@ -211,7 +301,7 @@ function ScenarioLabThumb() {
   );
 }
 
-function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading, error, equippedComboId, onOpenCombo, onRetry }) {
+function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading, error, equippedComboId, onSelect, onRetry }) {
   const showEmpty = !loading && !error && topCombos.length === 0;
   return (
     <section style={{ margin: '14px 22px 0' }}>
@@ -242,7 +332,7 @@ function ComboAdvisorSection({ riskProfile, topCombos, comboSimulations, loading
             <ComboAdviceCard key={combo.comboId} combo={combo} index={index}
               simulation={comboSimulations[combo.comboId]}
               isEquipped={equippedComboId === combo.comboId}
-              onOpen={() => onOpenCombo(combo)} />
+              onSelect={() => onSelect(combo)} />
           ))}
         </div>
       )}
@@ -328,13 +418,14 @@ function ComboLoadingTakeover({ active, onDone }) {
   );
 }
 
-// 토스증권 "실시간 이슈" 리스트 참고 — 순위·제목·한 줄 요약·메타 정보만 보여주고,
-// 나머지(수치·근거·AI 분석)는 전부 탭해서 "들어가야" 보이는 상세 시트로 옮긴다.
-function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
+// 토스증권 "실시간 이슈" 리스트 참고 — 순위·제목·한 줄 요약·메타 정보만 보여준다.
+// 행을 누르면 그 즉시 장착되고(onSelect), 화면 아래 결과 패널이 그 조합 기준으로 바로 갱신된다 —
+// 별도의 상세 시트를 새로 열지 않는다.
+function ComboAdviceCard({ combo, index, simulation, isEquipped, onSelect }) {
   const metrics = summarizeSimulationForAdvisor(simulation);
 
   return (
-    <button type="button" className="combo-row press-fx-row" onClick={onOpen} style={{
+    <button type="button" className="combo-row press-fx-row" onClick={onSelect} style={{
       animationDelay: `${index * 90}ms`,
       width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left',
       flexDirection: 'row', alignItems: 'center', gap: 11,
@@ -357,158 +448,30 @@ function ComboAdviceCard({ combo, index, simulation, isEquipped, onOpen }) {
             )}
         </div>
         <p style={{ display: '-webkit-box', marginTop: 3, overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 1, fontSize: 11, lineHeight: 1.4, fontWeight: 700, color: 'var(--muted)' }}>{combo.reason}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 5 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 7 }}>
           {combo.items.slice(0, 3).map((item) => (
-            <span key={item.key} className="icon-badge" style={{ width: 15, height: 15, borderRadius: 5, background: item.iconBg, color: item.iconColor, fontSize: 7.5, flex: 'none' }}>{item.icon}</span>
-          ))}
-          {metrics && (
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted-faint)' }}>
-              상품 {combo.items.length}개 · 부족위험 {Math.round(metrics.cashShortageRisk * 100)}%
+            <span key={item.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px 3px 3px', borderRadius: 20, background: '#F3EEE4' }}>
+              <span className="icon-badge" style={{ width: 19, height: 19, borderRadius: 6, background: item.iconBg, color: item.iconColor, fontSize: 9.5, flex: 'none' }}>{item.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#5C5449', whiteSpace: 'nowrap' }}>{item.short || item.name}</span>
             </span>
+          ))}
+          {combo.items.length > 3 && (
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted-faint)' }}>+{combo.items.length - 3}개</span>
           )}
         </div>
+        {metrics && (
+          <p style={{ marginTop: 5, fontSize: 10, fontWeight: 700, color: 'var(--muted-faint)' }}>부족위험 {Math.round(metrics.cashShortageRisk * 100)}%</p>
+        )}
       </div>
 
-      <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#CBC3B3' }}>›</span>
+      <span aria-hidden="true" style={{ flex: 'none', fontSize: 17, fontWeight: 700, color: '#CBC3B3' }}>{isEquipped ? '✓' : '›'}</span>
     </button>
   );
 }
 
-// Top3 로우를 탭하면 "들어가서" 보는 상세 시트 — 수치·근거·AI 분석을 한 곳에 모은다.
-// 목록에서 보여주지 않던 내용은 전부 여기서 comboSimulations(이미 계산된 값)만 그대로 인용한다.
-// 행을 누르는 순간 이 조합이 이미 장착되므로(App.jsx onOpenCombo), 여기엔 별도의 "적용하기" 버튼이 없다 —
-// 시트는 "지금 보고 있는 조합 = 지금 장착된 조합"을 그대로 설명해주는 역할만 한다.
-// .scr에 걸린 scrIn 애니메이션(transform)이 자손의 position:fixed를 가둬버리므로,
-// body에 직접 렌더한다(InfoScreen.jsx의 바텀시트와 동일한 이유).
-function ComboDetailSheet({ combo, simulation, riskProfile, onClose }) {
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiDetail, setAiDetail] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
-
-  const fetchAiDetail = async () => {
-    setAiLoading(true);
-    setAiError('');
-    try {
-      const res = await requestPortfolioDetail({
-        riskProfile,
-        candidate: buildComboDetailCandidate(combo, simulation),
-        headline: combo.headline,
-        reason: combo.reason,
-        caution: combo.caution || '',
-      });
-      setAiDetail(res && (res.fit || res.strength) ? res : { fit: combo.reason, strength: '', caution: combo.caution || '' });
-    } catch (e) {
-      setAiError(e.message);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleAiClick = () => {
-    const next = !aiOpen;
-    setAiOpen(next);
-    if (next && !aiDetail && !aiLoading) fetchAiDetail();
-  };
-
-  return createPortal(
-    <div className="sheet-dim" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        {/* 스크롤해도 항상 보이는 헤더 — "뒤로가기 안 보인다"는 문제를 막기 위해 닫기 버튼을 고정한다 */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 2, background: '#fff', paddingBottom: 12, marginBottom: 4, borderBottom: '1px solid var(--border)' }}>
-          <div className="sheet-grip"><span /></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button type="button" onClick={onClose} aria-label="닫기" className="press-fx" style={{
-              flex: 'none', width: 32, height: 32, border: 'none', borderRadius: 10, background: 'var(--chip)',
-              color: 'var(--ink-soft)', fontSize: 16, fontWeight: 900, cursor: 'pointer', display: 'grid', placeItems: 'center',
-            }}>‹</button>
-            <span style={{ flex: 'none', display: 'grid', placeItems: 'center' }}><RankIcon rank={combo.rank} size={24} /></span>
-            <p style={{ fontSize: 16, fontWeight: 900, color: 'var(--ink)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{combo.headline}</p>
-          </div>
-          <p style={{ marginTop: 6, fontSize: 10.5, fontWeight: 800, color: 'var(--gold-link)' }}>지금 이 조합으로 장착해서 보고 있어요</p>
-        </div>
-
-        {/* 상품 이름은 아래 "시뮬레이션 요약 > 이 숫자에 포함된 상품"에 풀네임으로 나오므로
-            여기서 축약된 칩으로 중복 표시하지 않는다.
-            "AI가 분석한 내용"임이 한눈에 보이도록 별도 톤(연한 골드)의 콜아웃 박스로 묶고,
-            문단 하나로 흘려쓰지 않고 라벨(핵심 요약/확인할 점)로 나눠 문서처럼 정리한다. */}
-        <div style={{ marginTop: 14, padding: '14px 15px', borderRadius: 14, background: '#FFF9E8', border: '1px solid #F3E4C0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ flex: 'none', color: 'var(--gold-link)', display: 'flex' }}><IconSparkle size={14} /></span>
-            <p style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--gold-link)' }}>AI가 분석했어요</p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <p style={{ fontSize: 10.5, fontWeight: 800, color: '#8A7A55' }}>핵심 요약</p>
-            <p style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600, color: 'var(--ink-soft)' }}>{combo.reason}</p>
-          </div>
-          {combo.caution && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 9, borderTop: '1px solid #F3E4C0' }}>
-              <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--danger)' }}>확인할 점</p>
-              <p style={{ fontSize: 12.5, lineHeight: 1.6, fontWeight: 700, color: 'var(--danger)' }}>{combo.caution}</p>
-            </div>
-          )}
-        </div>
-
-        <SimulationSummaryPanel simulation={simulation} simRows={buildSimRows(simulation)} loading={false} error="" variant="nested" items={combo.items} />
-
-        <button type="button" className="combo-ai-btn press-fx" onClick={handleAiClick} disabled={aiLoading} style={{
-          marginTop: 14, height: 46, border: 'none', borderRadius: 13, fontSize: 13.5, fontWeight: 900,
-          cursor: aiLoading ? 'default' : 'pointer', color: 'var(--ink)',
-        }}>
-          {!aiLoading && <IconSparkle size={16} />}
-          <span>{aiLoading ? 'AI가 분석하고 있어요…' : aiOpen ? '분석 결과 접기' : 'AI 분석하기'}</span>
-        </button>
-        {!aiOpen && !aiLoading && (
-          <p style={{ marginTop: 6, textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: 'var(--muted-faint)' }}>
-            숨은 장점과 확인할 점까지 짚어드려요
-          </p>
-        )}
-
-        {aiOpen && (
-          <div className="evidence-box">
-            {aiLoading && (
-              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>AI가 더 자세히 분석하고 있어요…</p>
-            )}
-            {!aiLoading && aiError && (
-              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>
-                불러오지 못했어요: {aiError}{' '}
-                <button type="button" className="press-fx" onClick={fetchAiDetail} style={{ border: 'none', background: 'none', color: 'var(--gold-link)', fontWeight: 800, cursor: 'pointer', padding: 0 }}>다시 시도</button>
-              </p>
-            )}
-            {!aiLoading && !aiError && aiDetail && (
-              <>
-                {aiDetail.fit && (
-                  <div className="evidence-row">
-                    <span className="evidence-k">왜 맞나요</span>
-                    <span className="evidence-v">{aiDetail.fit}</span>
-                  </div>
-                )}
-                {aiDetail.strength && (
-                  <div className="evidence-row">
-                    <span className="evidence-k">장점</span>
-                    <span className="evidence-v">{aiDetail.strength}</span>
-                  </div>
-                )}
-                {aiDetail.caution && (
-                  <div className="evidence-row">
-                    <span className="evidence-k">확인할 점</span>
-                    <span className="evidence-v">{aiDetail.caution}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-// 조합 카드를 펼쳤을 때(nested) / 직접 고른 상품 조합일 때(standalone) 공용으로 쓰는
-// "시뮬레이션 요약" — 실제 시뮬레이션 엔진(comboSimulations 또는 equipped 기반 simulation) 결과를
-// 그대로 보여줄 뿐, 여기서 새 숫자를 계산하지 않는다.
-export function SimulationSummaryPanel({ simulation, simRows, loading, error, variant = 'standalone', items = [] }) {
+// 시뮬레이터 탭(직접 고른 조합)과 상황 실험실이 함께 쓰는 "시뮬레이션 요약" 결과 패널 —
+// 실제 시뮬레이션 엔진(equipped 기반 simulation) 결과를 그대로 보여줄 뿐, 여기서 새 숫자를 계산하지 않는다.
+export function SimulationSummaryPanel({ simulation, simRows, loading, error, items = [], onApply }) {
   const [view, setView] = useState('cash');
   const [salesCase, setSalesCase] = useState('average');
   const [activeMonth, setActiveMonth] = useState(null);
@@ -525,14 +488,8 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
     : detail.riskAfter < detail.riskBefore ? 'good' : 'base';
   const hasSimulationData = Boolean(simulation?.baseline?.monthlyCashFlows?.length);
 
-  const isNested = variant === 'nested';
-  const Wrapper = isNested ? 'div' : 'section';
-  const wrapperStyle = isNested
-    ? { marginTop: 12, padding: '13px 14px', background: '#fff', border: '1.5px solid var(--border)', borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 14 }
-    : { margin: '14px 22px 0', padding: '16px', background: '#fff', border: '1.5px solid var(--border)', borderRadius: 20, display: 'flex', flexDirection: 'column', gap: 14 };
-
   return (
-    <Wrapper style={wrapperStyle}>
+    <section style={{ margin: '14px 22px 0', padding: '16px', background: '#fff', border: '1.5px solid var(--border)', borderRadius: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 15, fontWeight: 900, color: '#1E1A14' }}>시뮬레이션 요약</p>
@@ -546,12 +503,12 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
 
       {/* 목록·칩에서는 이름이 잘려 보이니, 이 숫자들이 어떤 상품 조합인지 여기서 풀네임으로 다시 밝힌다 */}
       {items.length > 0 && (
-        <div style={{ padding: '11px 12px', borderRadius: 12, background: 'var(--warm)', display: 'flex', flexDirection: 'column', gap: 7 }}>
-          <p style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted-mid)' }}>이 숫자에 포함된 상품 {items.length}개</p>
+        <div style={{ padding: '13px 13px 12px', borderRadius: 14, background: '#fff', border: '1.5px solid #F0E5C8', display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <p style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--muted-mid)' }}>이 숫자에 포함된 상품 {items.length}개</p>
           {items.map((item) => (
-            <div key={item.key || item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="icon-badge" style={{ flex: 'none', width: 22, height: 22, borderRadius: 8, background: item.iconBg, color: item.iconColor, fontSize: 10.5 }}>{item.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
+            <div key={item.key || item.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="icon-badge" style={{ flex: 'none', width: 28, height: 28, borderRadius: 9, background: item.iconBg, color: item.iconColor, fontSize: 13 }}>{item.icon}</span>
+              <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>{item.name || item.short}</span>
             </div>
           ))}
         </div>
@@ -564,15 +521,30 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
 
       {!loading && !error && hasSimulationData && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {simRows.slice(0, 4).map((metric) => (
-              <div key={metric.name} style={{ background: '#F8F4EB', border: '1px solid #EFE8DB', borderRadius: 12, padding: '10px 11px', minWidth: 0 }}>
-                <p style={{ fontSize: 10.5, fontWeight: 800, color: '#A39B8C' }}>{metric.name}</p>
-                <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 900, color: '#1E1A14', whiteSpace: 'nowrap' }}>{metric.after}</p>
-                <p style={{ marginTop: 3, fontSize: 10.5, fontWeight: 800, color: metric.deltaColor }}>{metric.delta} <span style={{ color: '#B6AE9F', fontWeight: 600 }}>기준 {metric.before}</span></p>
+          {simRows.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* 히어로 넘버 — 이 조합을 골랐을 때 가장 먼저 봐야 할 숫자 하나만 크게 보여준다.
+                  나머지는 아래 작은 칩으로 내려 "다 똑같이 진한" 4칸 그리드를 없앤다. */}
+              <div style={{ background: '#fff', border: '2px solid var(--gold-deep)', borderRadius: 16, padding: '15px 16px 13px' }}>
+                <p style={{ fontSize: 11.5, fontWeight: 700, color: '#8F8779' }}>{simRows[0].name}</p>
+                <p style={{ marginTop: 5, fontSize: 32, fontWeight: 900, color: '#1E1A14', letterSpacing: -1, lineHeight: 1.08, whiteSpace: 'nowrap' }}>{simRows[0].after}</p>
+                <p style={{ marginTop: 5, fontSize: 12, fontWeight: 800, color: simRows[0].deltaColor }}>
+                  {simRows[0].delta} <span style={{ color: '#B6AE9F', fontWeight: 500 }}>기준 {simRows[0].before}</span>
+                </p>
               </div>
-            ))}
-          </div>
+
+              {simRows.length > 1 && (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(simRows.length - 1, 3)}, 1fr)`, gap: 7 }}>
+                  {simRows.slice(1, 4).map((metric) => (
+                    <div key={metric.name} style={{ background: '#F8F4EB', border: '1px solid #EFE8DB', borderRadius: 12, padding: '9px 9px 8px', minWidth: 0 }}>
+                      <p style={{ fontSize: 9.5, fontWeight: 700, color: '#A39B8C', lineHeight: 1.3 }}>{metric.name}</p>
+                      <p style={{ marginTop: 4, fontSize: 13.5, fontWeight: 800, color: '#1E1A14', whiteSpace: 'nowrap' }}>{metric.after}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, background: '#F3EEE4', padding: 4, borderRadius: 13 }}>
             {SIM_VIEWS.map((item) => {
@@ -607,9 +579,9 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
                 </p>
               </div>
             )}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-              <p style={{ fontSize: 14, fontWeight: 900, color: '#1E1A14' }}>{current.title}</p>
-              <p style={{ fontSize: 11.5, fontWeight: 900, color: current.unavailable ? '#A39B8C' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: '#5C5449' }}>{current.title}</p>
+              <p style={{ fontSize: 15, fontWeight: 900, letterSpacing: -.3, color: current.unavailable ? '#A39B8C' : current.inverse ? (current.after <= current.before ? '#5E8A3E' : '#D0564C') : (current.after >= current.before ? '#5E8A3E' : '#D0564C') }}>
                 {current.unavailable ? '최근 6개월 매출 필요' : `${current.displayBefore ?? current.before} → ${current.displayAfter ?? `${current.after}${current.unit}`}`}
               </p>
             </div>
@@ -636,8 +608,8 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
             {current.facts.map((fact) => (
               <div key={fact.k} style={{ display: 'flex', alignItems: 'baseline', gap: 12, borderTop: '1.5px solid #EFE8DB', paddingTop: 9 }}>
-                <p style={{ flex: 'none', width: 152, fontSize: 10.5, fontWeight: 800, color: '#A39B8C', lineHeight: 1.4 }}>{fact.k}</p>
-                <p style={{ flex: 1, minWidth: 0, textAlign: 'right', fontSize: 13, fontWeight: 900, color: '#1E1A14', lineHeight: 1.3 }}>{fact.v}</p>
+                <p style={{ flex: 'none', width: 152, fontSize: 10.5, fontWeight: 700, color: '#A39B8C', lineHeight: 1.4 }}>{fact.k}</p>
+                <p style={{ flex: 1, minWidth: 0, textAlign: 'right', fontSize: 13.5, fontWeight: 900, color: '#1E1A14', lineHeight: 1.3 }}>{fact.v}</p>
               </div>
             ))}
           </div>
@@ -647,9 +619,16 @@ export function SimulationSummaryPanel({ simulation, simRows, loading, error, va
               <p style={{ fontSize: 11.5, fontWeight: 900, color: detail.violations.length ? '#D0564C' : '#8F8779' }}>{detail.violations[0] || detail.warnings[0]}</p>
             </div>
           )}
+
+          {onApply && (
+            <button type="button" className="press-fx" onClick={onApply} style={{
+              marginTop: 2, height: 48, border: 'none', borderRadius: 13,
+              background: 'var(--cta-dark)', color: '#fff', fontSize: 14, fontWeight: 900, cursor: 'pointer',
+            }}>이 조합으로 신청하기 →</button>
+          )}
         </>
       )}
-    </Wrapper>
+    </section>
   );
 }
 
@@ -733,13 +712,10 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
   const activePoint = activeIndex == null ? null : points[activeIndex];
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1.5px solid #EFE8DB', borderRadius: 14, padding: '13px 11px 10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11 }}>
-        <div>
-          <p style={{ fontSize: 11.5, fontWeight: 900, color: '#1E1A14' }}>월별 변화</p>
-          <p style={{ marginTop: 2, fontSize: 10.5, fontWeight: 700, color: '#A39B8C' }}>그래프 위에 마우스를 올려 월별 수치를 확인하세요.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, fontSize: 10, fontWeight: 800, color: '#8F8779' }}>
+    <div style={{ background: '#FBF9F3', border: '1.5px solid #EFE8DB', borderRadius: 16, padding: '14px 13px 12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#5C5449' }}>월별 변화 그래프</p>
+        <div style={{ display: 'flex', gap: 8, fontSize: 10.5, fontWeight: 700, color: '#8F8779' }}>
           <span><i style={{ display: 'inline-block', width: 12, height: 2, borderRadius: 2, background: '#B2AA9B', marginRight: 4, verticalAlign: 'middle' }} />기준</span>
           <span><i style={{ display: 'inline-block', width: 12, height: 3, borderRadius: 2, background: afterColor, marginRight: 4, verticalAlign: 'middle' }} />장착 후</span>
         </div>
@@ -754,11 +730,11 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
           </div>
         )}
       </div>
-      <div style={{ position: 'relative', height: 182, paddingLeft: 34 }}>
-        <span style={{ position: 'absolute', left: 0, top: 2, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round(max)}{unit}</span>
-        <span style={{ position: 'absolute', left: 0, top: 67, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round((max + min) / 2)}{unit}</span>
-        <span style={{ position: 'absolute', left: 0, bottom: 22, fontSize: 9, fontWeight: 800, color: '#B6AE9F' }}>{Math.round(min)}{unit}</span>
-        <svg viewBox="0 0 100 84" preserveAspectRatio="none" role="img" aria-label={`${title} 월별 변화 그래프`} style={{ width: '100%', height: 144, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 190, paddingLeft: 36 }}>
+        <span style={{ position: 'absolute', left: 0, top: 2, fontSize: 10, fontWeight: 700, color: '#B0A794' }}>{Math.round(max)}{unit}</span>
+        <span style={{ position: 'absolute', left: 0, top: 69, fontSize: 10, fontWeight: 700, color: '#B0A794' }}>{Math.round((max + min) / 2)}{unit}</span>
+        <span style={{ position: 'absolute', left: 0, bottom: 24, fontSize: 10, fontWeight: 700, color: '#B0A794' }}>{Math.round(min)}{unit}</span>
+        <svg viewBox="0 0 100 84" preserveAspectRatio="none" role="img" aria-label={`${title} 월별 변화 그래프`} style={{ width: '100%', height: 150, overflow: 'hidden' }}>
           <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor={afterColor} stopOpacity=".26" />
@@ -768,9 +744,9 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
           {[10, 43, 76].map((lineY) => <line key={lineY} x1="0" y1={lineY} x2="100" y2={lineY} stroke="#E7DFCF" strokeWidth=".7" vectorEffect="non-scaling-stroke" />)}
           {zeroLineY != null && <line x1="0" y1={zeroLineY} x2="100" y2={zeroLineY} stroke="#CBC3B3" strokeWidth="1" strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />}
           <path d={areaPath} fill={`url(#${gradientId})`} />
-          <path d={path('before')} fill="none" stroke="#B2AA9B" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
-          <path d={path('after')} fill="none" stroke="#fff" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
-          <path d={path('after')} fill="none" stroke={afterColor} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          <path d={path('before')} fill="none" stroke="#B2AA9B" strokeWidth="1.6" strokeDasharray="4 3" strokeLinecap="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          <path d={path('after')} fill="none" stroke="#fff" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+          <path d={path('after')} fill="none" stroke={afterColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           {activeIndex != null && <>
             <rect x={x(activeIndex) - 3.5} y="3" width="7" height="73" rx="2" fill={afterColor} opacity=".1" pointerEvents="none" />
             <line x1={x(activeIndex)} y1="4" x2={x(activeIndex)} y2="76" stroke={afterColor} strokeWidth="1" strokeDasharray="2 3" vectorEffect="non-scaling-stroke" pointerEvents="none" />
@@ -793,12 +769,12 @@ function MiniCompareChart({ points, scaleValues, scaleFromZero = false, inverse,
               tabIndex="0" role="button" aria-label={`${point.label}개월차 상세 보기`} style={{ cursor: 'pointer', outline: 'none' }} />
           ))}
           {activeIndex != null && <>
-            <circle cx={x(activeIndex)} cy={y(points[activeIndex].before)} r="1.7" fill="#FFFFFF" stroke="#B2AA9B" strokeWidth="1" vectorEffect="non-scaling-stroke" pointerEvents="none" />
-            <circle cx={x(activeIndex)} cy={y(points[activeIndex].after)} r="2.3" fill="#FFFFFF" stroke={afterColor} strokeWidth="1.6" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            <circle cx={x(activeIndex)} cy={y(points[activeIndex].before)} r="1.9" fill="#FFFFFF" stroke="#B2AA9B" strokeWidth="1.1" vectorEffect="non-scaling-stroke" pointerEvents="none" />
+            <circle cx={x(activeIndex)} cy={y(points[activeIndex].after)} r="2.8" fill="#FFFFFF" stroke={afterColor} strokeWidth="2" vectorEffect="non-scaling-stroke" pointerEvents="none" />
           </>}
         </svg>
-        <div style={{ position: 'absolute', left: 34, right: 0, bottom: 0, display: 'flex', justifyContent: 'space-between' }}>
-          {points.map((point, index) => <span key={point.label} style={{ fontSize: 9, fontWeight: 800, color: index % 2 === 0 || index === points.length - 1 ? '#B6AE9F' : 'transparent' }}>{point.label}월</span>)}
+        <div style={{ position: 'absolute', left: 38, right: 0, bottom: 0, display: 'flex', justifyContent: 'space-between' }}>
+          {points.map((point, index) => <span key={point.label} style={{ fontSize: 10, fontWeight: 700, color: index % 2 === 0 || index === points.length - 1 ? '#B0A794' : 'transparent' }}>{point.label}월</span>)}
         </div>
       </div>
     </div>
@@ -821,7 +797,7 @@ function RiskGauge({ beforeProbability, afterProbability, simulationCount }) {
   return (
     <div style={{ background: '#F8F4EB', borderRadius: 12, padding: '11px 12px 10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <p style={{ fontSize: 11, fontWeight: 900, color: '#8F8779' }}>가게 운영에 필요한 현금이 모자랄 가능성</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#8F8779' }}>가게 운영에 필요한 현금이 모자랄 가능성</p>
         <p style={{ fontSize: 15, fontWeight: 900, color }}>{label(afterProbability)} · {level(afterValue)}</p>
       </div>
       <div style={{ position: 'relative', height: 13, marginTop: 10, borderRadius: 7, background: 'linear-gradient(90deg,#A8D284 0 20%,#FFD66B 20% 40%,#F0968C 40% 100%)' }}>

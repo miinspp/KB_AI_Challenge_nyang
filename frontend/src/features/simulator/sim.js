@@ -363,6 +363,24 @@ export function summarizeSimulationForAdvisor(simulation) {
   };
 }
 
+// 상황 실험실의 "조합 A vs 조합 B" 비교 카드용 — DSR·몬테카를로 판정·현금부족확률만 뽑는다.
+// summarizeSimulationForAdvisor와 달리 %/회 단위로 그대로 표시할 값을 만든다(신규 계산 없음).
+export function summarizeConstraintCheck(simulation) {
+  if (!simulation) return null;
+  const financing = simulation.financingResult;
+  const constraints = simulation.constraints;
+  const stochastic = simulation.selectedScenario?.stochastic;
+  const passed = Boolean(constraints?.repaymentBurdenPassed) && (constraints?.violations?.length ?? 0) === 0;
+  return {
+    dsrPct: Math.round((financing?.maxRepaymentBurdenRatio || 0) * 1000) / 10,
+    dsrPassed: Boolean(constraints?.repaymentBurdenPassed),
+    passed,
+    violationCount: constraints?.violations?.length ?? 0,
+    simulationCount: stochastic?.simulationCount ?? 5000,
+    cashShortageRiskPct: Math.round((stochastic?.bufferBreachProbability || 0) * 1000) / 10,
+  };
+}
+
 function tone(delta, goodUp) {
   if (Math.abs(delta) < 0.0001) return { color: '#B6AE9F', dark: '#8F8779', bg: '#F2ECE1' };
   const good = goodUp ? delta > 0 : delta < 0;

@@ -473,6 +473,7 @@ export default function App() {
         {overlay === 'scenario' && (
           <ScenarioLabScreen
             equipped={equipped} simulationBase={simulationBase}
+            topCombos={topCombos} equippedComboId={equippedComboId} onApplyCombo={applyCombo}
             onBack={() => setOverlay(null)}
           />
         )}
@@ -547,11 +548,13 @@ export default function App() {
                 topCombos={topCombos} comboSimulations={comboSimulations}
                 comboAnalysisLoading={comboAnalysisLoading} comboAnalysisDone={comboAnalysisDone} comboAnalysisError={comboAnalysisError}
                 equippedComboId={equippedComboId} onApplyCombo={applyCombo} onRetryComboAnalysis={retryComboAnalysis}
-                onOpenScenarioLab={() => { setOverlay('scenario'); window.scrollTo(0, 0); }} />
+                onOpenScenarioLab={() => { setOverlay('scenario'); window.scrollTo(0, 0); }}
+                onGoApply={() => { setSimSub('portfolio'); window.scrollTo(0, 0); }} />
             )}
             {simSub === 'portfolio' && (
               <PortfolioScreen equipped={equipped} simRows={simRows}
-                percentile={topPercent} simulation={simulation} products={products} />
+                percentile={topPercent} simulation={simulation} products={products}
+                topCombos={topCombos} equippedComboId={equippedComboId} />
             )}
           </>
         )}
