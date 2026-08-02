@@ -212,9 +212,16 @@ button { font-family: inherit; }
 @keyframes comboCardIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes comboBadgeGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,188,0,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,188,0,0); } }
 @keyframes comboFitFill { from { width: 0; } }
-.combo-list { background: #fff; border: 1.5px solid var(--border); border-radius: 20px; padding: 4px 15px; box-shadow: 0 1px 2px rgba(25,27,31,.05); }
-.combo-row { padding: 17px 0; display: flex; flex-direction: column; gap: 10px; animation: comboCardIn .38s cubic-bezier(.2,.9,.3,1) both; transition: background .15s ease; }
-.combo-row + .combo-row { border-top: 2px solid var(--border-strong); }
+/* 세 조합을 하나의 리스트(구분선만 있는 flush row)로 묶으면, 행마다 주는 hover/press
+   box-shadow가 카드 자체의 둥근 모서리 없이 네모반듯하게 차서 각지게 떠 보인다.
+   그래서 조합마다 완전히 분리된 둥근 카드로 바꾸고, 카드 사이는 간격(gap)으로만 구분한다 —
+   구분도 더 잘 되고, box-shadow도 카드 자신의 border-radius를 그대로 따라간다. */
+.combo-list { display: flex; flex-direction: column; gap: 10px; }
+.combo-row {
+  padding: 15px 16px; display: flex; flex-direction: column; gap: 10px;
+  animation: comboCardIn .38s cubic-bezier(.2,.9,.3,1) both; transition: background .15s ease, border-color .15s ease;
+  background: #fff; border: 1.5px solid var(--border); border-radius: 18px; box-shadow: 0 1px 2px rgba(25,27,31,.05);
+}
 .combo-card-head { cursor: pointer; transition: transform .12s ease; }
 .combo-card-head:active { transform: scale(.99); }
 .combo-rank-badge--top { animation: comboBadgeGlow 2.4s ease-in-out infinite; }
@@ -267,6 +274,18 @@ button { font-family: inherit; }
   box-shadow: 0 2px 6px rgba(25,27,31,.2); cursor: pointer;
 }
 @media (prefers-reduced-motion: reduce) { .scenario-slider { transition: none; } }
+
+/* 시뮬레이터 화면의 "상황 실험실"/"직접 조합하기" 진입 카드 — 그림자를 인라인 style로 주면
+   같은 요소의 :hover/:active box-shadow(press-fx-row)를 인라인이 항상 이겨버려서 눌림·호버
+   효과가 안 보이게 된다. 그래서 기본 그림자를 클래스로 분리해, 명시도가 더 높은 pseudo-class
+   규칙이 정상적으로 덮어쓸 수 있게 한다. */
+.entry-card { box-shadow: 0 1px 2px rgba(25,27,31,.05); }
+
+/* 직접 조합하기 — 카테고리 안 상품이 많아도 페이지 전체를 뒤덮지 않도록, 목록 자체를
+   일정 높이로 잘라 드롭다운처럼 보이게 하고 나머지는 이 안에서만 스크롤한다. */
+.combo-picker-list { max-height: 380px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(139,149,161,.45) transparent; }
+.combo-picker-list::-webkit-scrollbar { width: 4px; }
+.combo-picker-list::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(139,149,161,.45); }
 
 .hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
 .hdr-back { width: 38px; height: 38px; border: none; background: #FFF1CC; border-radius: 12px; font-size: 20px; color: var(--ink); cursor: pointer; line-height: 1; }
@@ -483,7 +502,9 @@ button.sec-row:active { transform: scale(.99); }
 
 /* ── 계좌 거래내역 화면 ── */
 .acct { animation: scrIn .4s ease both; padding-bottom: 100px; }
-.acct-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; }
+/* 포털 없이 일반 페이지 흐름 안에서 sticky를 쓰므로(옛 바텀시트의 fixed+portal 조합과는
+   원인이 다르다), 내용을 한참 내려도 뒤로가기 헤더가 화면 위에 그대로 붙어 있는다. */
+.acct-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; position: sticky; top: 0; z-index: 2; background: var(--canvas); }
 .acct-head { padding: 10px 22px 18px; }
 .acct-num { font-size: 12.5px; font-weight: 700; color: var(--muted-mid); text-decoration: underline; text-underline-offset: 3px; }
 .acct-balance { margin-top: 8px; font-size: 30px; font-weight: 900; color: var(--ink); letter-spacing: -1.1px; }
